@@ -14,3 +14,4 @@ opt-level = 2
 [profile.production]
 inherits = "release"
 strip = "symbols"
+codegen-units = 1

@@ -16,7 +16,7 @@ impl<T> FuncVec<T> {
         self.funclist.push(Box::new(func));
     }
 
-    fn callAll(&self, data: &mut T) {
+    fn call_all(&self, data: &mut T) {
         for func in &self.funclist {
             func(data);
         }
