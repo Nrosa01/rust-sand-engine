@@ -4,7 +4,7 @@ use app_core::Plugin;
 struct Counter;
 
 impl Plugin for Counter {
-    fn hook(&mut self, game_state: &mut app_core::GameState) -> Result<(), app_core::Error> {
+    fn hook(&mut self, game_state: &mut app_core::GameState) {
         let (x, y) = (game_state.current_x, game_state.current_y);
 
         if y > 0 {
@@ -14,7 +14,7 @@ impl Plugin for Counter {
             }
         }
 
-        Ok(())
+        // Ok(())
     }
 }
 

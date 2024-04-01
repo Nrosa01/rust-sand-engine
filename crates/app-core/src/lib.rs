@@ -65,5 +65,5 @@ impl GameState {
     }
 }
 pub trait Plugin {
-    fn hook(&mut self, context: &mut GameState) -> Result<(), Error>;
+    fn hook(&mut self, context: &mut GameState);
 }

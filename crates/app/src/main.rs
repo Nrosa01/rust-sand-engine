@@ -65,7 +65,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 game_state.current_x = x;
                 game_state.current_y = y;
 
-                plugin.hook(&mut game_state)?;
+                plugin.hook(&mut game_state);
                 // if y > 0 {
                 //     if game_state.get_particle_id(x, y) == 1 && game_state.get_particle_id(x, y - 1) == 0{
                 //         game_state.set_particle(x, y, 0);
