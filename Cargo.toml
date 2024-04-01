@@ -5,7 +5,12 @@ members = ["crates/*"]
 [workspace.dependencies]
 libloading = "0.8.3"
 app-core = { path = "crates/app-core", version = "*" }
+func-holder = { path = "crates/func-holder", version = "*" }
 
 [profile.release]
 strip = "debuginfo"
-opt-level = "z"
+opt-level = 2
+
+[profile.production]
+inherits = "release"
+strip = "symbols"
