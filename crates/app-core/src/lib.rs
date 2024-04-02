@@ -6,7 +6,7 @@ use macroquad::color::Color;
 pub struct PluginResult {
     pub name: String,
     pub color: u32,
-    pub update_func: fn(&mut Particle, &mut GameState) -> (),
+    pub update_func: fn(Particle, &mut GameState) -> (),
 }
 
 impl From<PluginResult> for ParticleDefinition {

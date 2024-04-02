@@ -1,6 +1,6 @@
 use macroquad::prelude::*;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Copy)]
 pub struct Particle {
     pub id: usize,
     pub clock: bool,
@@ -9,6 +9,11 @@ pub struct Particle {
 impl Particle {
     pub const EMPTY: Particle = Particle {
         id: 0,
+        clock: false,
+    };
+
+    pub(crate) const INVALID: Particle = Particle {
+        id: usize::MAX,
         clock: false,
     };
 }
@@ -22,7 +27,7 @@ impl PartialEq for Particle {
 #[derive(Debug)]
 pub struct ParticleDefinition {
     pub name: String,
-    pub update_func: fn(&mut Particle, &mut GameState) -> (),
+    pub update_func: fn(Particle, &mut GameState) -> (),
     pub color: Color,
 }
 
@@ -94,15 +99,15 @@ impl GameState {
         self.particles[y][x].clock = !self.clock;
     }
 
-    pub fn get(&self, x: i32, y: i32) -> &Particle {
+    pub fn get(&self, x: i32, y: i32) -> Particle {
         let local_x = (self.current_x as i32 - x) as usize;
         let local_y = (self.current_y as i32 - y) as usize;
 
         if !self.is_inside(local_x, local_y) {
-            return &self.particles[0][0]; // TODO: Change this to return a particle with id max usize value
+            return Particle::INVALID; // TODO: Change this to return a particle with id max usize value
         }
 
-        &self.particles[local_y][local_x]
+        self.particles[local_y][local_x]
     }
 
     pub fn set(&mut self, x: i32, y: i32, particle: Particle) -> () {
@@ -136,7 +141,7 @@ impl GameState {
                     continue;
                 }
 
-                (self.particle_definitions[particle_id].update_func)(&mut self.particles[y][x].to_owned(), self);
+                (self.particle_definitions[particle_id].update_func)(self.particles[y][x], self);
             }
         }
 

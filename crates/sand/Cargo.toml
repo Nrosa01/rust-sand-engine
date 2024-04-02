@@ -10,3 +10,4 @@ crate-type = ["dylib"]
 
 [dependencies]
 app-core.workspace = true
+rand = "0.8.5"
