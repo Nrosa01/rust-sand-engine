@@ -1,4 +1,7 @@
+use std::{collections::HashMap, hash::{BuildHasher, BuildHasherDefault}};
+
 use macroquad::prelude::*;
+use rustc_hash::FxHashMap;
 
 #[derive(Clone, Debug, Copy)]
 pub struct Particle {
@@ -24,11 +27,37 @@ impl PartialEq for Particle {
     }
 }
 
+impl PartialEq<usize> for Particle {
+    fn eq(&self, other: &usize) -> bool {
+        self.id == *other
+    }
+}
+
 #[derive(Debug)]
 pub struct ParticleDefinition {
     pub name: String,
     pub update_func: fn(Particle, &mut GameState) -> (),
     pub color: Color,
+}
+
+struct MiStruct<'a> {
+    mapa: HashMap<&'a str, i32>,
+}
+
+impl<'a> MiStruct<'a> {
+    fn nuevo() -> MiStruct<'a> {
+        MiStruct {
+            mapa: HashMap::new(),
+        }
+    }
+
+    fn insertar(&mut self, clave: &'a str, valor: i32) {
+        self.mapa.insert(clave, valor);
+    }
+
+    fn obtener(&self, clave: &'a str) -> Option<&i32> {
+        self.mapa.get(clave)
+    }
 }
 
 #[derive(Debug)]
@@ -42,6 +71,7 @@ pub struct GameState {
     image: Image,
     texture: Texture2D,
     clock: bool,
+    particle_name_to_id: FxHashMap<String, usize>
 }
 
 impl GameState {
@@ -73,6 +103,7 @@ impl GameState {
             image: image,
             texture: texture,
             clock: false,
+            particle_name_to_id: FxHashMap::default()
         }
     }
 
@@ -80,8 +111,13 @@ impl GameState {
         &self.particle_definitions
     }
 
+    pub fn id_from_name(&self, name: &str) -> usize {
+        *self.particle_name_to_id.get(name).unwrap()
+    }
+
     pub fn add_particle_definition(&mut self, particle_definition: ParticleDefinition) -> () {
         self.particle_definitions.push(particle_definition);
+        self.particle_name_to_id.insert(self.particle_definitions.last().unwrap().name.clone(), self.particle_definitions.len() - 1);
 
         // Print the name of the particle definition
         println!(

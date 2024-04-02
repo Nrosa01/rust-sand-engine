@@ -1,9 +1,4 @@
-
-use app_core::{
-    api::Particle,
-    Plugin,
-};
-
+use app_core::{api::Particle, Plugin};
 use rand::Rng;
 
 #[derive(Debug)]

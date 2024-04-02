@@ -10,3 +10,4 @@ crate-type = ["dylib"]
 
 [dependencies]
 macroquad = "0.4.5"
+rustc-hash = "1.1.0"
