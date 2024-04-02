@@ -114,7 +114,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                         game_state.set_particle(
                             pos_x as usize,
                             pos_y as usize,
-                            selected_plugin as u32,
+                            selected_plugin,
                         );
 
                         // Hacky way to update particles that has just been added, ill fix this later

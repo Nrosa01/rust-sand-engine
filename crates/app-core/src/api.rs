@@ -2,15 +2,28 @@ use macroquad::prelude::*;
 
 #[derive(Clone, Debug)]
 pub struct Particle {
-    pub id: u32,
-    pub clock: bool
+    pub id: usize,
+    pub clock: bool,
+}
+
+impl Particle {
+    pub const EMPTY: Particle = Particle {
+        id: 0,
+        clock: false,
+    };
+}
+
+impl PartialEq for Particle {
+    fn eq(&self, other: &Self) -> bool {
+        self.id == other.id
+    }
 }
 
 #[derive(Debug)]
 pub struct ParticleDefinition {
     pub name: String,
-    pub update_func: fn(&mut GameState, usize, usize) -> (),
-    pub color: Color
+    pub update_func: fn(&mut Particle, &mut GameState) -> (),
+    pub color: Color,
 }
 
 #[derive(Debug)]
@@ -23,7 +36,7 @@ pub struct GameState {
     pub height: usize,
     image: Image,
     texture: Texture2D,
-    clock: bool
+    clock: bool,
 }
 
 impl GameState {
@@ -33,19 +46,28 @@ impl GameState {
         texture.set_filter(FilterMode::Nearest); // Set the filter mode to nearest to avoid blurring the pixels
 
         GameState {
-            particles: vec![vec![Particle { id: 0, clock:false }; width]; height],
+            particles: vec![
+                vec![
+                    Particle {
+                        id: 0,
+                        clock: false
+                    };
+                    width
+                ];
+                height
+            ],
             current_x: 0,
             current_y: 0,
             width,
             height,
             particle_definitions: vec![ParticleDefinition {
                 name: String::from("empty"),
-                update_func: |_, _, _| {}, // Función vacía
+                update_func: |_, _| {}, // Función vacía
                 color: BLACK,
             }],
             image: image,
             texture: texture,
-            clock: false
+            clock: false,
         }
     }
 
@@ -63,15 +85,43 @@ impl GameState {
         );
     }
 
-    pub fn set_particle(&mut self, x: usize, y: usize, id: u32) -> () {
-        if x >= self.width || y >= self.height || x < 0 || y < 0 {
+    pub fn set_particle(&mut self, x: usize, y: usize, id: usize) -> () {
+        if !self.is_inside(x, y) {
             return;
         }
+
         self.particles[y][x].id = id;
         self.particles[y][x].clock = !self.clock;
     }
 
-    pub fn get_particle_id(&self, x: usize, y: usize) -> u32 {
+    pub fn get(&self, x: i32, y: i32) -> &Particle {
+        let local_x = (self.current_x as i32 - x) as usize;
+        let local_y = (self.current_y as i32 - y) as usize;
+
+        if !self.is_inside(local_x, local_y) {
+            return &self.particles[0][0]; // TODO: Change this to return a particle with id max usize value
+        }
+
+        &self.particles[local_y][local_x]
+    }
+
+    pub fn set(&mut self, x: i32, y: i32, particle: Particle) -> () {
+        let local_x = (self.current_x as i32 - x) as usize;
+        let local_y = (self.current_y as i32 - y) as usize;
+
+        if !self.is_inside(local_x, local_y) {
+            return;
+        }
+
+        self.particles[local_y][local_x] = particle;
+        self.particles[local_y][local_x].clock = !self.clock;
+    }
+
+    pub fn is_inside(&self, x: usize, y: usize) -> bool {
+        x >= 0 && x < self.width && y >= 0 && y < self.height
+    }
+
+    pub fn get_particle_id(&self, x: usize, y: usize) -> usize {
         self.particles[y][x].id
     }
 
@@ -82,11 +132,11 @@ impl GameState {
                 self.current_y = y;
                 let current_particle = &self.particles[y][x];
                 let particle_id = self.get_particle_id(x, y);
-                if particle_id == 0 || current_particle.clock != self.clock{
+                if particle_id == 0 || current_particle.clock != self.clock {
                     continue;
                 }
 
-                (self.particle_definitions[particle_id as usize].update_func)(self, x, y);
+                (self.particle_definitions[particle_id].update_func)(&mut self.particles[y][x].to_owned(), self);
             }
         }
 

@@ -1,11 +1,12 @@
 pub mod api;
 use crate::api::{GameState, ParticleDefinition};
+use api::Particle;
 use macroquad::color::Color;
 
 pub struct PluginResult {
     pub name: String,
     pub color: u32,
-    pub update_func: fn(&mut GameState, usize, usize) -> (),
+    pub update_func: fn(&mut Particle, &mut GameState) -> (),
 }
 
 impl From<PluginResult> for ParticleDefinition {

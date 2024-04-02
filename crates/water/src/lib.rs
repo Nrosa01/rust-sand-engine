@@ -8,13 +8,23 @@ impl Plugin for Water {
         app_core::PluginResult {
             name: String::from("Water"),
             color: 0x00FFFF,
-            update_func: |state, x, y| {
-                if y > 0 {
-                    if state.get_particle_id(x, y - 1) == 0 {
-                        state.set_particle(x, y, 0);
-                        state.set_particle(x, y - 1, 2);
-                    }
-                }
+            update_func: |cell, api| {
+                // if api.get(0, -1) == Particle::Empty {
+                //     api.set(0, -1, cell);
+                //     api.set(0, 0, Particle::Empty);
+                // } else if api.get(-1, -1) == Particle::Empty {
+                //     api.set(-1, -1, cell);
+                //     api.set(0, 0, Particle::Empty);
+                // } else if api.get(1, -1) == Particle::Empty {
+                //     api.set(1, -1, cell);
+                //     api.set(0, 0, Particle::Empty);
+                // } else if api.get(-1, 0) == Particle::Empty {
+                //     api.set(-1, 0, cell);
+                //     api.set(0, 0, Particle::Empty);
+                // } else if api.get(1, 0) == Particle::Empty {
+                //     api.set(1, 0, cell);
+                //     api.set(0, 0, Particle::Empty);
+                // }
             },
         }
     }

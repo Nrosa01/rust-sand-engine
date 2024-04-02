@@ -1,4 +1,9 @@
-use app_core::{api::GameState, Plugin};
+use std::borrow::Borrow;
+
+use app_core::{
+    api::{GameState, Particle},
+    Plugin,
+};
 
 #[derive(Debug)]
 struct Sand;
@@ -8,12 +13,18 @@ impl Plugin for Sand {
         app_core::PluginResult {
             name: String::from("Sand"),
             color: 0xFFFF00,
-            update_func: |state, x, y| {
-                if y < state.height - 1 {
-                    if state.get_particle_id(x, y + 1) == 0 {
-                        state.set_particle(x, y, 0);
-                        state.set_particle(x, y + 1, 1);
-                    }
+            update_func: |cell, api| {
+                let non_mutable_particle: Particle = cell.clone();
+                
+                if *api.get(0, -1) == Particle::EMPTY {
+                    api.set(0, -1, non_mutable_particle);
+                    api.set(0, 0, Particle::EMPTY);
+                } else if *api.get(-1, -1) == Particle::EMPTY {
+                    api.set(-1, -1, non_mutable_particle);
+                    api.set(0, 0, Particle::EMPTY);
+                } else if *api.get(1, -1) == Particle::EMPTY {
+                    api.set(1, -1, non_mutable_particle);
+                    api.set(0, 0, Particle::EMPTY);
                 }
             },
         }
