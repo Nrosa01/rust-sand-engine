@@ -4,8 +4,8 @@ use app_core::Plugin;
 struct Sand;
 
 impl Plugin for Sand {
-    fn register(&mut self) -> app_core::ParticleDefinition {
-        app_core::ParticleDefinition {
+    fn register(&mut self) -> app_core::PluginResult {
+        app_core::PluginResult {
             name: String::from("Sand"),
             color: 0xFFFF00,
             update_func: |state, x, y| {

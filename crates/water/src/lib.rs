@@ -4,8 +4,8 @@ use app_core::Plugin;
 struct Water;
 
 impl Plugin for Water {
-    fn register(&mut self) -> app_core::ParticleDefinition {
-        app_core::ParticleDefinition {
+    fn register(&mut self) -> app_core::PluginResult {
+        app_core::PluginResult {
             name: String::from("Water"),
             color: 0x00FFFF,
             update_func: |state, x, y| {
