@@ -81,6 +81,7 @@ impl GameState {
             for x in 0..self.width {
                 self.current_x = x;
                 self.current_y = y;
+               
                 (self.particle_definitions[self.get_particle_id(x,y) as usize].update_func)(self, x, y);
             }
         }
