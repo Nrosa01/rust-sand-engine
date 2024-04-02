@@ -69,6 +69,10 @@ impl GameState {
     }
 
     pub fn set_particle(&mut self, x: usize, y: usize, id: u32) -> () {
+        
+        if x >= self.width || y >= self.height || x < 0 || y < 0{
+            return;
+        }
         self.particles[y][x] = Particle { id: id };
     }
 

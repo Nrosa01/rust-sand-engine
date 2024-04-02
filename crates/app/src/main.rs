@@ -7,13 +7,13 @@ use std::time::{Duration, Instant};
 fn conf() -> Conf {
     Conf {
         window_title: String::from("Pixel Flow"),
-        window_width: 400,
-        window_height: 400,
+        window_width: 800,
+        window_height: 800,
         ..Default::default()
     }
 }
 
-const TARGET_FPS: f64 = 120.0;
+const TARGET_FPS: f64 = 60.0;
 const WIDTH: usize = 400;
 const HEIGHT: usize = 400;
 
@@ -25,9 +25,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let mut game_state = GameState::new(WIDTH, HEIGHT);
     let mut plugins = Vec::new(); // I need to keep the libraries open, so they won't be unloaded when going out of scope in the loop below
 
-    let mut selected_plugin = 0;
+    let mut selected_plugin = 1;
     let mut image = Image::gen_image_color(WIDTH as u16, HEIGHT as u16, BLACK);
     let texture = Texture2D::from_image(&image);
+    texture.set_filter(FilterMode::Nearest); // Set the filter mode to nearest to avoid blurring the pixels
 
     // I just search for plugins in the same directory as the executable and load them if they are valid
     for entry in std::fs::read_dir(std::env::current_exe()?.parent().unwrap())? {
@@ -88,15 +89,30 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
         if is_mouse_button_down(MouseButton::Left) {
             let (mouse_x, mouse_y) = mouse_position();
-            for y in (mouse_y - radius as f32) as i32..(mouse_y + radius as f32) as i32 {
-                for x in (mouse_x - radius as f32) as i32..(mouse_x + radius as f32) as i32 {
-                    if (x as f32 - mouse_x).powi(2) + (y as f32 - mouse_y).powi(2)
-                        < radius as f32 * radius as f32
-                    {
-                        if x >= 0 && x < WIDTH as i32 && y >= 0 && y < HEIGHT as i32 {
-                            //buffer[(x + y * WIDTH as i32) as usize] = 0xFFFF00;
-                            game_state.set_particle(x as usize, y as usize, selected_plugin as u32);
-                        }
+
+            // Calcula el factor de escala para convertir las coordenadas del mouse a las coordenadas de la textura
+            let scale_x = image.width as f32 / screen_width();
+            let scale_y = image.height as f32 / screen_height();
+
+            // Aplica el factor de escala a las coordenadas del mouse
+            let scaled_mouse_x = (mouse_x * scale_x).floor();
+            let scaled_mouse_y = (mouse_y * scale_y).floor();
+
+            let radius = radius as i32 / 2;
+
+            for x in -radius..radius {
+                for y in -radius..radius {
+                    let pos_x = scaled_mouse_x + x as f32;
+                    let pos_y = scaled_mouse_y + y as f32;
+
+                    let distance_squared =
+                        (pos_x - scaled_mouse_x).powi(2) + (pos_y - scaled_mouse_y).powi(2);
+                    if distance_squared <= radius.pow(2) as f32 {
+                        game_state.set_particle(
+                            pos_x as usize,
+                            pos_y as usize,
+                            selected_plugin as u32,
+                        );
                     }
                 }
             }
@@ -121,7 +137,16 @@ async fn main() -> Result<(), Box<dyn Error>> {
         texture.update(&image);
 
         // Draw the texture
-        draw_texture(&texture, 0.0, 0.0, WHITE);
+        draw_texture_ex(
+            &texture,
+            0.0,
+            0.0,
+            WHITE,
+            DrawTextureParams {
+                dest_size: Some(vec2(screen_width(), screen_height())),
+                ..Default::default()
+            },
+        );
 
         // Draw the selected particle
         draw_text(
