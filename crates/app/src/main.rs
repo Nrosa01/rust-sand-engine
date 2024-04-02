@@ -1,4 +1,4 @@
-use app_core::{GameState, Plugin};
+use app_core::{api::GameState, Plugin};
 use macroquad::prelude::*;
 use std::error::Error;
 use std::thread::sleep;
@@ -7,15 +7,15 @@ use std::time::{Duration, Instant};
 fn conf() -> Conf {
     Conf {
         window_title: String::from("Pixel Flow"),
-        window_width: 800,
+        window_width: 880,
         window_height: 800,
         ..Default::default()
     }
 }
 
 const TARGET_FPS: f64 = 60.0;
-const WIDTH: usize = 2000;
-const HEIGHT: usize = 2000;
+const WIDTH: usize = 1200;
+const HEIGHT: usize = 1200;
 
 #[macroquad::main(conf)]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -29,6 +29,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let mut image = Image::gen_image_color(WIDTH as u16, HEIGHT as u16, BLACK);
     let texture = Texture2D::from_image(&image);
     texture.set_filter(FilterMode::Nearest); // Set the filter mode to nearest to avoid blurring the pixels
+
+    let screen_ratio_to_texture = screen_width() / WIDTH as f32;
+
+    print!("Screen ratio to texture: {}", screen_ratio_to_texture);
 
     // I just search for plugins in the same directory as the executable and load them if they are valid
     for entry in std::fs::read_dir(std::env::current_exe()?.parent().unwrap())? {
@@ -46,8 +50,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     > = unsafe { plugin_lib.get(b"plugin") };
                     if let Ok(plugin_loader) = plugin_loader {
                         let mut plugin = plugin_loader();
-                        let (name, color, update_func) = plugin.register();
-                        game_state.add_particle_definition_safe(name, color, update_func);
+                        game_state.add_particle_definition(plugin.register().into());
                         print!("Loaded plugin: {}", file_name);
                         plugins.push(plugin_lib);
                     }
@@ -99,7 +102,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             let scaled_mouse_x = (mouse_x * scale_x).floor();
             let scaled_mouse_y = (mouse_y * scale_y).floor();
 
-            let radius = radius as i32 / 2;
+            let radius = (radius as  f32 / screen_ratio_to_texture) as i32;
 
             for x in -radius..radius {
                 for y in -radius..radius {
