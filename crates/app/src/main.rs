@@ -1,3 +1,5 @@
+#![windows_subsystem = "windows"]
+
 use app_core::{api::GameState, Plugin};
 use macroquad::prelude::*;
 use std::error::Error;
@@ -14,8 +16,8 @@ fn conf() -> Conf {
 }
 
 const TARGET_FPS: f64 = 60.0;
-const WIDTH: usize = 1200;
-const HEIGHT: usize = 1200;
+const WIDTH: usize = 2000;
+const HEIGHT: usize = 2000;
 
 #[macroquad::main(conf)]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -26,9 +28,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let mut plugins = Vec::new(); // I need to keep the libraries open, so they won't be unloaded when going out of scope in the loop below
 
     let mut selected_plugin = 1;
-    let mut image = Image::gen_image_color(WIDTH as u16, HEIGHT as u16, BLACK);
-    let texture = Texture2D::from_image(&image);
-    texture.set_filter(FilterMode::Nearest); // Set the filter mode to nearest to avoid blurring the pixels
 
     let screen_ratio_to_texture = screen_width() / WIDTH as f32;
 
@@ -95,8 +94,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
             let (mouse_x, mouse_y) = mouse_position();
 
             // Calcula el factor de escala para convertir las coordenadas del mouse a las coordenadas de la textura
-            let scale_x = image.width as f32 / screen_width();
-            let scale_y = image.height as f32 / screen_height();
+            let scale_x = game_state.width as f32 / screen_width();
+            let scale_y = game_state.height as f32 / screen_height();
 
             // Aplica el factor de escala a las coordenadas del mouse
             let scaled_mouse_x = (mouse_x * scale_x).floor();
@@ -127,30 +126,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         // Clear the screen
         clear_background(BLACK);
 
-        // Draw the particles by modifying the buffer
-        for y in 0..HEIGHT as u32{
-            for x in 0..WIDTH as u32 {
-                let particle = &game_state.particles[y as usize][x as usize];
-                let particle_definition =
-                    &game_state.get_particle_definitions()[particle.id as usize];
-                let color = particle_definition.color;
-                image.set_pixel(x, y, color);
-            }
-        }
-
-        texture.update(&image);
-
-        // Draw the texture
-        draw_texture_ex(
-            &texture,
-            0.0,
-            0.0,
-            WHITE,
-            DrawTextureParams {
-                dest_size: Some(vec2(screen_width(), screen_height())),
-                ..Default::default()
-            },
-        );
+        game_state.draw();
 
         // Draw the selected particle
         draw_text(
@@ -177,7 +153,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
             sleep(frame_time - elapsed);
         }
     }
-    //game_state.draw();
 
     Ok(())
 }

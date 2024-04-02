@@ -13,7 +13,7 @@ impl From<PluginResult> for ParticleDefinition {
         ParticleDefinition {
             name: plugin_result.name,
             update_func: plugin_result.update_func,
-            color: Color::from_hex(plugin_result.color),
+            color: Color::from_hex(plugin_result.color)
         }
     }
 }
