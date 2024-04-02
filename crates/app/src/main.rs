@@ -16,8 +16,8 @@ fn conf() -> Conf {
 }
 
 const TARGET_FPS: f64 = 60.0;
-const WIDTH: usize = 2000;
-const HEIGHT: usize = 2000;
+const WIDTH: usize = 400;
+const HEIGHT: usize = 400;
 
 #[macroquad::main(conf)]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -116,6 +116,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
                             pos_y as usize,
                             selected_plugin as u32,
                         );
+
+                        // Hacky way to update particles that has just been added, ill fix this later
+                        game_state.particles[pos_y as usize][pos_x as usize].clock = !game_state.particles[pos_y as usize][pos_x as usize].clock;
                     }
                 }
             }

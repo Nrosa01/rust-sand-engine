@@ -1,4 +1,4 @@
-use app_core::Plugin;
+use app_core::{api::GameState, Plugin};
 
 #[derive(Debug)]
 struct Sand;
@@ -9,10 +9,10 @@ impl Plugin for Sand {
             name: String::from("Sand"),
             color: 0xFFFF00,
             update_func: |state, x, y| {
-                if y > 0 {
-                    if state.get_particle_id(x, y - 1) == 0 {
+                if y < state.height - 1 {
+                    if state.get_particle_id(x, y + 1) == 0 {
                         state.set_particle(x, y, 0);
-                        state.set_particle(x, y - 1, 1);
+                        state.set_particle(x, y + 1, 1);
                     }
                 }
             },

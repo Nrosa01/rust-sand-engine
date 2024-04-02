@@ -3,6 +3,7 @@ use macroquad::prelude::*;
 #[derive(Clone, Debug)]
 pub struct Particle {
     pub id: u32,
+    pub clock: bool
 }
 
 #[derive(Debug)]
@@ -22,6 +23,7 @@ pub struct GameState {
     pub height: usize,
     image: Image,
     texture: Texture2D,
+    clock: bool
 }
 
 impl GameState {
@@ -31,7 +33,7 @@ impl GameState {
         texture.set_filter(FilterMode::Nearest); // Set the filter mode to nearest to avoid blurring the pixels
 
         GameState {
-            particles: vec![vec![Particle { id: 0 }; width]; height],
+            particles: vec![vec![Particle { id: 0, clock:false }; width]; height],
             current_x: 0,
             current_y: 0,
             width,
@@ -43,6 +45,7 @@ impl GameState {
             }],
             image: image,
             texture: texture,
+            clock: false
         }
     }
 
@@ -64,7 +67,8 @@ impl GameState {
         if x >= self.width || y >= self.height || x < 0 || y < 0 {
             return;
         }
-        self.particles[y][x] = Particle { id: id };
+        self.particles[y][x].id = id;
+        self.particles[y][x].clock = !self.clock;
     }
 
     pub fn get_particle_id(&self, x: usize, y: usize) -> u32 {
@@ -76,14 +80,17 @@ impl GameState {
             for x in 0..self.width {
                 self.current_x = x;
                 self.current_y = y;
+                let current_particle = &self.particles[y][x];
                 let particle_id = self.get_particle_id(x, y);
-                if particle_id == 0 {
+                if particle_id == 0 || current_particle.clock != self.clock{
                     continue;
                 }
 
                 (self.particle_definitions[particle_id as usize].update_func)(self, x, y);
             }
         }
+
+        self.clock = !self.clock;
     }
 
     pub fn draw(&mut self) -> () {
