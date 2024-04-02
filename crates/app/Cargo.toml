@@ -8,5 +8,4 @@ edition = "2021"
 [dependencies]
 libloading.workspace = true
 app-core.workspace = true
-func-holder.workspace = true
 minifb = "0.25.0"

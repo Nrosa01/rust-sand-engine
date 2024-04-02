@@ -19,11 +19,21 @@ pub struct Particle {
 }
 
 #[derive(Debug)]
+pub struct ParticleDefinition
+{
+    pub name: String,
+    pub update_func: fn(&mut GameState, usize, usize) -> (),
+    pub color: u32,
+
+}
+
+#[derive(Debug)]
 pub struct GameState {
     buffer: Vec<u32>,
     pub particles: Vec<Vec<Particle>>,
-    pub current_x: usize,
-    pub current_y: usize,
+    particle_definitions: Vec<ParticleDefinition>,
+    current_x: usize,
+    current_y: usize,
     pub width: usize,
     pub height: usize,
 }
@@ -37,7 +47,21 @@ impl GameState {
             current_y: 0,
             width,
             height,
+            particle_definitions: vec![
+                ParticleDefinition {
+                    name: String::from("empty"),
+                    update_func: |_, _, _| {}, // Función vacía
+                    color: 0,
+                }
+            ],
         }
+    }
+
+    pub fn add_particle_definition(&mut self, particle_definition: ParticleDefinition) -> () {
+        self.particle_definitions.push(particle_definition);
+
+        // Print the name of the particle definition
+        println!("Added particle definition: {}", self.particle_definitions.last().unwrap().name);
     }
 
     pub fn set_particle(&mut self, x: usize, y: usize, id: u32) -> () {
@@ -52,18 +76,25 @@ impl GameState {
         &self.buffer
     }
 
+    pub fn update(&mut self) -> () {
+        for y in 0..self.height {
+            for x in 0..self.width {
+                self.current_x = x;
+                self.current_y = y;
+                (self.particle_definitions[self.get_particle_id(x,y) as usize].update_func)(self, x, y);
+            }
+        }
+    }
+
     pub fn draw(&mut self) -> () {
         for y in 0..self.height {
             for x in 0..self.width {
-                if self.particles[y][x].id == 1 {
-                    self.buffer[(x + y * self.width as usize) as usize] = 0xFFFF00;
-                } else {
-                    self.buffer[(x + y * self.width as usize) as usize] = 0x000000;
-                }
+                self.buffer[(x + y * self.width as usize) as usize] = self.particle_definitions[self.particles[y][x].id as usize].color;
             }
         }
     }
 }
+
 pub trait Plugin {
-    fn hook(&mut self, context: &mut GameState);
+    fn register(&mut self) -> ParticleDefinition;
 }

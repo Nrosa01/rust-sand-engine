@@ -1,9 +1,9 @@
 use app_core::{GameState, Plugin};
-use std::error::Error;
 use minifb::{Key, Window, WindowOptions};
+use std::error::Error;
 
-const WIDTH: usize = 2000;
-const HEIGHT: usize = 2000;
+const WIDTH: usize = 400;
+const HEIGHT: usize = 400;
 const RADIUS: usize = 20;
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -18,9 +18,11 @@ fn main() -> Result<(), Box<dyn Error>> {
     let plugin_loader: libloading::Symbol<fn() -> Box<dyn Plugin>> =
         unsafe { plugin_lib.get(b"plugin") }?;
     let mut plugin = plugin_loader();
-    
+
     // Create vector of Test structs
     let mut game_state = GameState::new(WIDTH, HEIGHT);
+
+    game_state.add_particle_definition(plugin.register());
 
     let mut window = Window::new(
         "Test - ESC to exit",
@@ -60,21 +62,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             }
         }
 
-        for y in 0..HEIGHT {
-            for x in 0..WIDTH {
-                game_state.current_x = x;
-                game_state.current_y = y;
-
-                plugin.hook(&mut game_state);
-                // if y > 0 {
-                //     if game_state.get_particle_id(x, y) == 1 && game_state.get_particle_id(x, y - 1) == 0{
-                //         game_state.set_particle(x, y, 0);
-                //         game_state.set_particle(x, y - 1, 1);
-                //     }
-                // }
-            }
-        }
-
+        game_state.update();
         // Draw particles, if id is 1, draw it as yellow
         game_state.draw();
 
