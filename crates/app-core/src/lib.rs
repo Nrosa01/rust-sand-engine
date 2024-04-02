@@ -57,6 +57,10 @@ impl GameState {
         }
     }
 
+    pub fn get_particle_definitions(&self) -> &Vec<ParticleDefinition> {
+        &self.particle_definitions
+    }
+
     pub fn add_particle_definition(&mut self, particle_definition: ParticleDefinition) -> () {
         self.particle_definitions.push(particle_definition);
 

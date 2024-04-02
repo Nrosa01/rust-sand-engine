@@ -1,18 +1,35 @@
 use app_core::{GameState, Plugin};
-use minifb::{Key, Window, WindowOptions};
+use macroquad::prelude::*;
 use std::error::Error;
+use std::thread::sleep;
+use std::time::{Duration, Instant};
 
+fn conf() -> Conf {
+    Conf {
+        window_title: String::from("Pixel Flow"),
+        window_width: 400,
+        window_height: 400,
+        ..Default::default()
+    }
+}
+
+const TARGET_FPS: f64 = 120.0;
 const WIDTH: usize = 400;
 const HEIGHT: usize = 400;
-const RADIUS: usize = 20;
 
-fn main() -> Result<(), Box<dyn Error>> {
+#[macroquad::main(conf)]
+async fn main() -> Result<(), Box<dyn Error>> {
+    let frame_time: Duration = Duration::from_secs_f64(1.0 / (TARGET_FPS + 1.0));
+    let mut radius: usize = 20;
+
     let mut game_state = GameState::new(WIDTH, HEIGHT);
     let mut plugins = Vec::new(); // I need to keep the libraries open, so they won't be unloaded when going out of scope in the loop below
 
     let mut selected_plugin = 0;
+    let mut image = Image::gen_image_color(WIDTH as u16, HEIGHT as u16, BLACK);
+    let texture = Texture2D::from_image(&image);
 
-    // Iterate all dll files in the current directory, load them and find the plugin function, if it's not exist, ignore it and close the library
+    // I just search for plugins in the same directory as the executable and load them if they are valid
     for entry in std::fs::read_dir(std::env::current_exe()?.parent().unwrap())? {
         let entry = entry?;
         let path = entry.path();
@@ -37,81 +54,101 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
     }
 
-    let mut window = Window::new(
-        "Test - ESC to exit",
-        WIDTH,
-        HEIGHT,
-        WindowOptions::default(),
-    )
-    .unwrap_or_else(|e| {
-        panic!("{}", e);
-    });
+    loop {
+        let frame_start = Instant::now();
 
-    // Limit to max ~60 fps update rate
-    window.limit_update_rate(Some(std::time::Duration::from_micros(16600)));
+        if is_key_pressed(KeyCode::Right) {
+            selected_plugin += 1;
+            if selected_plugin >= game_state.get_particle_definitions().len() {
+                selected_plugin = 0;
+            }
+        }
+        if is_key_pressed(KeyCode::Left) {
+            if selected_plugin == 0 {
+                selected_plugin = game_state.get_particle_definitions().len() - 1;
+            } else {
+                selected_plugin -= 1;
+            }
+        }
 
-    let mut timer = std::time::Instant::now();
-    let mut frame_count = 0;
+        // Use mouse wheel to change radius
+        let mouse_wheel = mouse_wheel().1;
+        // Draw both mouse wheelv alues
+        if mouse_wheel != 0.0 {
+            let new_radius = radius as i32 + mouse_wheel as i32;
+            // ADD radius sign to the new_radius, so if new_radius is negative, it will substract -1, otherwise it will add 1
+            let sign = new_radius.signum();
+            radius = (radius as i32 + sign) as usize;
+        }
 
-    while window.is_open() && !window.is_key_down(Key::Escape) {
-        // for i in buffer.iter_mut() {
-        //     *i = 0; // write something more funny here!
-        // }
+        // Break the loop if the user closes the window OR presses the escape key
+        if is_key_pressed(KeyCode::Escape) {
+            break;
+        }
 
-        // Paint yellow when left mouse button is down
-        if window.get_mouse_down(minifb::MouseButton::Left) {
-            let (mouse_x, mouse_y) = window.get_mouse_pos(minifb::MouseMode::Clamp).unwrap();
-            for y in (mouse_y - RADIUS as f32) as i32..(mouse_y + RADIUS as f32) as i32 {
-                for x in (mouse_x - RADIUS as f32) as i32..(mouse_x + RADIUS as f32) as i32 {
+        if is_mouse_button_down(MouseButton::Left) {
+            let (mouse_x, mouse_y) = mouse_position();
+            for y in (mouse_y - radius as f32) as i32..(mouse_y + radius as f32) as i32 {
+                for x in (mouse_x - radius as f32) as i32..(mouse_x + radius as f32) as i32 {
                     if (x as f32 - mouse_x).powi(2) + (y as f32 - mouse_y).powi(2)
-                        < RADIUS as f32 * RADIUS as f32
+                        < radius as f32 * radius as f32
                     {
                         if x >= 0 && x < WIDTH as i32 && y >= 0 && y < HEIGHT as i32 {
                             //buffer[(x + y * WIDTH as i32) as usize] = 0xFFFF00;
-                            game_state.set_particle(x as usize, y as usize, selected_plugin);
+                            game_state.set_particle(x as usize, y as usize, selected_plugin as u32);
                         }
                     }
                 }
             }
         }
 
-        // Uswe a match instead of this
-        let keys = window.get_keys_pressed(minifb::KeyRepeat::No);
-        if keys.len() > 0 {
-            match keys[0] {
-                Key::Key1 => selected_plugin = 1,
-                Key::Key2 => selected_plugin = 2,
-                Key::Key3 => selected_plugin = 3,
-                Key::Key4 => selected_plugin = 4,
-                Key::Key5 => selected_plugin = 5,
-                Key::Key6 => selected_plugin = 6,
-                Key::Key7 => selected_plugin = 7,
-                Key::Key8 => selected_plugin = 8,
-                Key::Key9 => selected_plugin = 9,
-                Key::Key0 => selected_plugin = 0,
-                _ => {}
+        game_state.update();
+
+        // Clear the screen
+        clear_background(BLACK);
+
+        // Draw the particles by modifying the buffer
+        for y in 0..HEIGHT {
+            for x in 0..WIDTH {
+                let particle = &game_state.particles[y][x];
+                let particle_definition =
+                    &game_state.get_particle_definitions()[particle.id as usize];
+                let color = particle_definition.color;
+                image.set_pixel(x as u32, y as u32, Color::from_hex(color));
             }
         }
 
+        texture.update(&image);
 
-        game_state.update();
-        // Draw particles, if id is 1, draw it as yellow
-        game_state.draw();
+        // Draw the texture
+        draw_texture(&texture, 0.0, 0.0, WHITE);
 
-        // We unwrap here as we want this code to exit if it fails. Real applications may want to handle this in a different way
-        window
-            .update_with_buffer(game_state.get_buffer(), WIDTH, HEIGHT)
-            .unwrap();
+        // Draw the selected particle
+        draw_text(
+            &format!(
+                "Selected particle: {}",
+                game_state.get_particle_definitions()[selected_plugin].name
+            ),
+            10.0,
+            screen_height() - 30.0,
+            20.0,
+            WHITE,
+        );
 
-        // Update timer, every one second, print the fps
-        let elapsed = timer.elapsed();
-        frame_count += 1;
-        if elapsed.as_secs() > 0 {
-            println!("FPS: {} with {} plugin", frame_count / elapsed.as_secs(), selected_plugin);
-            frame_count = 0;
-            timer = std::time::Instant::now();
+        draw_text(&format!("FPS: {}", get_fps()), 10.0, 30.0, 30.0, RED);
+
+        // Draw circle line with radius at mouse position
+        let (mouse_x, mouse_y) = mouse_position();
+        draw_circle_lines(mouse_x, mouse_y, radius as f32, 1.0, WHITE);
+
+        next_frame().await;
+
+        let elapsed = frame_start.elapsed();
+        if elapsed < frame_time {
+            sleep(frame_time - elapsed);
         }
     }
+    //game_state.draw();
 
     Ok(())
 }

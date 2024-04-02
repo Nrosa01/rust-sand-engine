@@ -8,4 +8,4 @@ edition = "2021"
 [dependencies]
 libloading.workspace = true
 app-core.workspace = true
-minifb = "0.25.0"
+macroquad = "0.4.5"

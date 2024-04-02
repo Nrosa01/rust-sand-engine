@@ -14,3 +14,6 @@ opt-level = 2
 inherits = "release"
 strip = "symbols"
 codegen-units = 1
+
+[workspace.metadata.docs.rs]
+rust = "1.76.0"
