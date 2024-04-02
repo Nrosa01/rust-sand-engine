@@ -97,6 +97,7 @@ impl GameState {
 
         self.particles[y][x].id = id;
         self.particles[y][x].clock = !self.clock;
+        self.image.set_pixel(x as u32, y as u32, self.particle_definitions[id].color);
     }
 
     pub fn get(&self, x: i32, y: i32) -> Particle {
@@ -120,6 +121,7 @@ impl GameState {
 
         self.particles[local_y][local_x] = particle;
         self.particles[local_y][local_x].clock = !self.clock;
+        self.image.set_pixel(local_x as u32, local_y as u32, self.particle_definitions[particle.id].color);
     }
 
     pub fn is_inside(&self, x: usize, y: usize) -> bool {
@@ -149,16 +151,6 @@ impl GameState {
     }
 
     pub fn draw(&mut self) -> () {
-        // Draw the particles by modifying the buffer
-        for y in 0..self.height as u32 {
-            for x in 0..self.width as u32 {
-                let particle = &self.particles[y as usize][x as usize];
-                let particle_definition = &self.particle_definitions[particle.id as usize];
-                let color = particle_definition.color;
-                self.image.set_pixel(x, y, color);
-            }
-        }
-
         self.texture.update(&self.image);
 
         // Draw the texture
