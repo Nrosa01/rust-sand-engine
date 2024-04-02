@@ -14,8 +14,8 @@ fn conf() -> Conf {
 }
 
 const TARGET_FPS: f64 = 60.0;
-const WIDTH: usize = 400;
-const HEIGHT: usize = 400;
+const WIDTH: usize = 2000;
+const HEIGHT: usize = 2000;
 
 #[macroquad::main(conf)]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -46,7 +46,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     > = unsafe { plugin_lib.get(b"plugin") };
                     if let Ok(plugin_loader) = plugin_loader {
                         let mut plugin = plugin_loader();
-                        game_state.add_particle_definition(plugin.register());
+                        let (name, color, update_func) = plugin.register();
+                        game_state.add_particle_definition_safe(name, color, update_func);
                         print!("Loaded plugin: {}", file_name);
                         plugins.push(plugin_lib);
                     }
@@ -124,13 +125,13 @@ async fn main() -> Result<(), Box<dyn Error>> {
         clear_background(BLACK);
 
         // Draw the particles by modifying the buffer
-        for y in 0..HEIGHT {
-            for x in 0..WIDTH {
-                let particle = &game_state.particles[y][x];
+        for y in 0..HEIGHT as u32{
+            for x in 0..WIDTH as u32 {
+                let particle = &game_state.particles[y as usize][x as usize];
                 let particle_definition =
                     &game_state.get_particle_definitions()[particle.id as usize];
                 let color = particle_definition.color;
-                image.set_pixel(x as u32, y as u32, Color::from_hex(color));
+                image.set_pixel(x, y, color);
             }
         }
 

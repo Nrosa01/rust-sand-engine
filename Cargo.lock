@@ -32,6 +32,9 @@ dependencies = [
 [[package]]
 name = "app-core"
 version = "0.1.0"
+dependencies = [
+ "macroquad",
+]
 
 [[package]]
 name = "autocfg"
