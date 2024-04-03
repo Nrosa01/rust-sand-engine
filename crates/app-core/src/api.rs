@@ -61,8 +61,8 @@ pub struct ParticleCommonData {
 }
 
 pub struct PluginData {
-    pub(crate) libraries: Vec<libloading::Library>,
     pub(crate) plugins: Vec<Box<dyn Plugin>>,
+    pub(crate) libraries: Vec<libloading::Library>,
 }
 
 impl PluginData {
@@ -142,8 +142,8 @@ impl Simulation {
                 let mut plugin = plugin_loader();
                 self.simulation_state
                     .add_particle_definition(plugin.register().into());
-                self.plugin_data.plugins.push(plugin);
                 self.plugin_data.libraries.push(plugin_lib);
+                self.plugin_data.plugins.push(plugin);
             }
         }
     }
