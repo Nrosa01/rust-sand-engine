@@ -115,12 +115,20 @@ impl Simulation {
         self.simulation_state.draw();
     }
 
-    pub fn get_particle_name(&self, id: usize) -> &String {
-        &self.simulation_state.particle_definitions[id].name
+    pub fn get_particle_name(&self, id: usize) -> Result<&String, String> {
+        if id >= self.get_plugin_count() {
+            return Err(format!("Particle with id {} not found", id));
+        }
+        
+        Ok(&self.simulation_state.get_particle_name(id))
     }
 
-    pub fn get_particle_color(&self, id: usize) -> &Color {
-        &self.simulation_state.particle_definitions[id].color
+    pub fn get_particle_color(&self, id: usize) -> Result<&Color, String> {
+        if id >= self.get_plugin_count() {
+            return Err(format!("Particle with id {} not found", id));
+        }
+        
+        Ok(&self.simulation_state.get_particle_color(id))
     }
 
     pub fn add_plugin_from(&mut self, path: &str) -> () {
@@ -194,7 +202,10 @@ impl SimulationState {
         *self.particle_name_to_id.get(name).unwrap()
     }
 
-    pub(crate) fn add_particle_definition(&mut self, particle_definition: ParticleCommonData) -> () {
+    pub(crate) fn add_particle_definition(
+        &mut self,
+        particle_definition: ParticleCommonData,
+    ) -> () {
         self.particle_definitions.push(particle_definition);
         self.particle_name_to_id.insert(
             self.particle_definitions.last().unwrap().name.clone(),
@@ -208,15 +219,28 @@ impl SimulationState {
         );
     }
 
+    pub(crate) fn get_particle_name(&self, id: usize) -> &String {
+        &self.particle_definitions[id].name
+    }
+
+    pub(crate) fn get_particle_color(&self, id: usize) -> &Color {
+        &self.particle_definitions[id].color
+    }
+
     pub(crate) fn set_particle_at(&mut self, x: usize, y: usize, particle: Particle) -> () {
         if !self.is_inside(x, y) {
             return;
         }
 
+        let mut particle = particle;
+        particle.id = particle.id.min(self.particle_definitions.len() - 1);
         self.particles[y][x] = particle;
         self.particles[y][x].clock = !self.clock;
-        self.image
-            .set_pixel(x as u32, y as u32, self.particle_definitions[particle.id].color);
+        self.image.set_pixel(
+            x as u32,
+            y as u32,
+            *self.get_particle_color(particle.id),
+        );
     }
 
     pub fn get(&self, x: i32, y: i32) -> Particle {

@@ -1,6 +1,6 @@
-#![windows_subsystem = "windows"]
+// #![windows_subsystem = "windows"]
 
-use app_core::{api::Simulation};
+use app_core::api::Simulation;
 use macroquad::prelude::*;
 use std::error::Error;
 use std::thread::sleep;
@@ -23,7 +23,7 @@ const HEIGHT: usize = 400;
 async fn main() -> Result<(), Box<dyn Error>> {
     let frame_time: Duration = Duration::from_secs_f64(1.0 / (TARGET_FPS + 1.0));
     let mut radius: usize = 20;
-    
+
     let mut simulation = Simulation::new(WIDTH, HEIGHT);
 
     let mut selected_plugin = 1;
@@ -115,7 +115,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         draw_text(
             &format!(
                 "Selected particle: {}",
-                simulation.get_particle_name(selected_plugin)
+                simulation.get_particle_name(selected_plugin).unwrap_or(&"None".to_string())
             ),
             10.0,
             screen_height() - 30.0,
