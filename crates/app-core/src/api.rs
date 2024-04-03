@@ -1,11 +1,20 @@
 use std::vec;
 
-use macroquad::{prelude::*, rand::ChooseRandom};
+use macroquad::prelude::*;
 use rustc_hash::FxHashMap;
 
 use crate::{Plugin, PluginResult};
 
 pub struct Empty;
+
+pub(crate) struct Vec2u {
+    pub x: usize,
+    pub y: usize,
+}
+
+pub(crate) fn vec2u(x: usize, y: usize) -> Vec2u {
+    Vec2u { x, y }
+}
 
 impl Plugin for Empty {
     fn register(&mut self) -> PluginResult {
@@ -89,7 +98,7 @@ impl PluginData {
 pub struct Simulation {
     simulation_state: SimulationState,
     plugin_data: PluginData,
-    positions: Vec<(usize, usize)>,
+    positions: Vec<Vec2u>,
     frames: usize,
 }
 
@@ -98,10 +107,10 @@ impl Simulation {
         let mut positions = Vec::with_capacity(width * height);
         for y in 0..height {
             for x in 0..width {
-                positions.push((x, y));
+                positions.push(vec2u(x,y));
             }
         }
-        positions.shuffle();
+        // positions.shuffle();
 
         Simulation {
             simulation_state: SimulationState::new(width, height),
@@ -315,12 +324,12 @@ impl SimulationState {
     pub(crate) fn update(
         &mut self,
         plugins: &mut Vec<Box<dyn Plugin>>,
-        positions: &Vec<(usize, usize)>,
+        positions: &Vec<Vec2u>,
     ) -> () {
         self.clock = !self.clock;
 
-        positions.iter().for_each(|&x| {
-            let (x, y) = (x.0, x.1);
+        positions.iter().for_each(|x| {
+            let (x, y) = (x.x, x.y);
 
             self.current_x = x;
             self.current_y = y;
