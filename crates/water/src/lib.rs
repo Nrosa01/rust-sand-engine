@@ -1,4 +1,4 @@
-use app_core::{ParticleApi, Plugin};
+use app_core::{api::Particle, ParticleApi, Plugin};
 
 struct Water;
 
@@ -10,7 +10,7 @@ impl Plugin for Water {
         }
     }
 
-    fn update(&self, _cell: app_core::api::Particle, _api: &mut ParticleApi) {
+    fn update(&self, _cell: Particle, _api: &mut ParticleApi) {
         
     }
 }

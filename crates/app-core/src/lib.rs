@@ -23,5 +23,5 @@ impl From<PluginResult> for ParticleCommonData {
 pub trait Plugin {
     fn register(&mut self) -> PluginResult;
     fn update(&self, cell: Particle, api: &mut ParticleApi);
-    fn post_update(&mut self, _: &mut ParticleApi) {}
+    fn post_update(&mut self, _: &ParticleApi) {}
 }

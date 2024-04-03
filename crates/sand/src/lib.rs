@@ -30,7 +30,7 @@ impl Plugin for Sand {
         }
     }
 
-    fn post_update(&mut self, _api: &mut ParticleApi) {
+    fn post_update(&mut self, _: &ParticleApi) {
         self.count += 1;
 
         if self.count > 10 {
