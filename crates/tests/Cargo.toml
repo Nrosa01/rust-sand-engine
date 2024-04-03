@@ -1,0 +1,17 @@
+[package]
+name = "tests"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+crate-type = ["dylib"]
+
+[dependencies]
+app-core.workspace = true
+
+[dev-dependencies]
+rand = "0.8.5"
+time = "0.3.34"
+rustc-hash = "1.1.0"

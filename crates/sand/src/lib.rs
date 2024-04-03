@@ -1,7 +1,13 @@
 use app_core::{api::Particle, ParticleApi, Plugin};
 
 struct Sand {
-    count: i32,
+    collision_targets: [u8; 2]
+}
+
+impl Sand {
+    pub fn new() -> Self {
+        Sand { collision_targets: [0,2]}
+    }
 }
 
 impl Plugin for Sand {
@@ -13,32 +19,25 @@ impl Plugin for Sand {
     }
 
     fn update(&self, cell: Particle, api: &mut ParticleApi) {
-        let dir = api.gen_range(-1,1);
+        let dir = api.gen_range(-1, 1);
 
         let down_direction = -1;
-        // if self.count != 0 {
-        //     return;
-        // }
-
-        if api.get(0, down_direction) == Particle::EMPTY {
+   
+        if api.is_any_particle_at(0, down_direction, &self.collision_targets) {
             api.swap(0, down_direction, cell);
-        } else if api.get(dir, down_direction) == Particle::EMPTY {
+        } else if api.is_any_particle_at(dir, down_direction, &self.collision_targets) {
             api.swap(dir, down_direction, cell);
-        } else if api.get(-dir, down_direction) == Particle::EMPTY {
+        } else if api.is_any_particle_at(-dir, down_direction, &self.collision_targets) {
             api.swap(-dir, down_direction, cell);
         }
     }
 
-    fn post_update(&mut self, _: &ParticleApi) {
-        self.count += 1;
-
-        if self.count > 10 {
-            self.count = 0;
-        }
+    fn post_update(&mut self, api: &ParticleApi) {
+        self.collision_targets[1] = api.id_from_name("Water");
     }
 }
 
 #[no_mangle]
 pub fn plugin() -> Box<dyn Plugin> {
-    Box::new(Sand { count: 0 })
+    Box::new(Sand::new())
 }

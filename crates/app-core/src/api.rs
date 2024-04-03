@@ -286,6 +286,11 @@ impl Simulation {
     }
 }
 
+pub struct Vec2i {
+    pub x: isize,
+    pub y: isize,
+}
+
 pub struct SimulationState {
     particle_definitions: Vec<ParticleCommonData>,
     particles: Vec<Vec<Particle>>,
@@ -296,7 +301,7 @@ pub struct SimulationState {
     clock: bool,
     image: Image,
     texture: Texture2D,
-    particle_name_to_id: FxHashMap<String, usize>,
+    particle_name_to_id: FxHashMap<String, u8>,
 }
 
 impl SimulationState {
@@ -335,7 +340,18 @@ impl SimulationState {
         }
     }
 
-    pub fn id_from_name(&self, name: &str) -> usize {
+    pub const NEIGHBORS: [Vec2i; 8] = [
+        Vec2i { x: 0, y: -1 },
+        Vec2i { x: 1, y: -1 },
+        Vec2i { x: 1, y: 0 },
+        Vec2i { x: 1, y: 1 },
+        Vec2i { x: 0, y: 1 },
+        Vec2i { x: -1, y: 1 },
+        Vec2i { x: -1, y: 0 },
+        Vec2i { x: -1, y: -1 },
+    ];
+
+    pub fn id_from_name(&self, name: &str) -> u8 {
         *self.particle_name_to_id.get(name).unwrap()
     }
 
@@ -346,7 +362,7 @@ impl SimulationState {
         self.particle_definitions.push(particle_definition);
         self.particle_name_to_id.insert(
             self.particle_definitions.last().unwrap().name.clone(),
-            self.particle_definitions.len() - 1,
+            self.particle_definitions.len() as u8 - 1,
         );
 
         // Print the name of the particle definition
@@ -401,6 +417,15 @@ impl SimulationState {
             local_y as u32,
             color,
         );
+    }
+
+    pub fn is_particle_at(&self, x: i32, y: i32, particle_id: u8) -> bool {
+        self.get(x, y) == particle_id
+    }
+
+    pub fn is_any_particle_at(&self, x: i32, y: i32, particles: &[u8]) -> bool {
+        let particle = self.get(x, y);
+        particles.contains(&particle.id)
     }
 
     pub fn is_inside(&self, x: usize, y: usize) -> bool {
