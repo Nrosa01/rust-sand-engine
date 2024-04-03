@@ -1,9 +1,22 @@
-use std::{collections::HashMap, hash::{BuildHasher, BuildHasherDefault}};
+use std::vec;
 
 use macroquad::prelude::*;
 use rustc_hash::FxHashMap;
 
-use crate::Plugin;
+use crate::{Plugin, PluginResult};
+
+pub struct Empty;
+
+impl Plugin for Empty {
+    fn register(&mut self) -> PluginResult {
+        PluginResult {
+            name: String::from("Empty"),
+            color: 0x000000,
+        }
+    }
+
+    fn update(&self, _cell: Particle, _api: &mut SimulationState) {}
+}
 
 #[derive(Clone, Debug, Copy)]
 pub struct Particle {
@@ -35,39 +48,123 @@ impl PartialEq<usize> for Particle {
     }
 }
 
+impl From<usize> for Particle {
+    fn from(id: usize) -> Self {
+        Particle { id, clock: false }
+    }
+}
+
 #[derive(Debug)]
-pub struct ParticleDefinition {
+pub struct ParticleCommonData {
     pub name: String,
-    pub update_func: fn(Particle, &mut GameState) -> (),
     pub color: Color,
 }
 
-pub struct PluginData
-{
-    libraries: Vec<libloading::Library>,
-    plugins: Vec<Box<dyn Plugin>>,
+pub struct PluginData {
+    pub(crate) libraries: Vec<libloading::Library>,
+    pub(crate) plugins: Vec<Box<dyn Plugin>>,
 }
 
-pub struct GameState {
-    pub particles: Vec<Vec<Particle>>,
-    particle_definitions: Vec<ParticleDefinition>,
+impl PluginData {
+    pub fn new() -> PluginData {
+        PluginData {
+            libraries: Vec::new(),
+            plugins: vec![Box::new(Empty)],
+        }
+    }
+}
+
+pub struct Simulation {
+    simulation_state: SimulationState,
+    plugin_data: PluginData,
+}
+
+impl Simulation {
+    pub fn new(width: usize, height: usize) -> Simulation {
+        Simulation {
+            simulation_state: SimulationState::new(width, height),
+            plugin_data: PluginData::new(),
+        }
+    }
+
+    pub fn get_state(&self) -> &SimulationState {
+        &self.simulation_state
+    }
+
+    pub fn get_state_mut(&mut self) -> &mut SimulationState {
+        &mut self.simulation_state
+    }
+
+    pub fn get_plugin_count(&self) -> usize {
+        self.plugin_data.plugins.len()
+    }
+
+    pub fn get_width(&self) -> usize {
+        self.simulation_state.width
+    }
+
+    pub fn get_height(&self) -> usize {
+        self.simulation_state.height
+    }
+
+    pub fn update(&mut self) -> () {
+        self.simulation_state.update(&mut self.plugin_data.plugins);
+    }
+
+    pub fn draw(&mut self) -> () {
+        self.simulation_state.draw();
+    }
+
+    pub fn get_particle_name(&self, id: usize) -> &String {
+        &self.simulation_state.particle_definitions[id].name
+    }
+
+    pub fn get_particle_color(&self, id: usize) -> &Color {
+        &self.simulation_state.particle_definitions[id].color
+    }
+
+    pub fn add_plugin_from(&mut self, path: &str) -> () {
+        let plugin_lib = unsafe { libloading::Library::new(path) };
+        if let Ok(plugin_lib) = plugin_lib {
+            let plugin_loader: Result<
+                libloading::Symbol<fn() -> Box<dyn Plugin>>,
+                libloading::Error,
+            > = unsafe { plugin_lib.get(b"plugin") };
+            if let Ok(plugin_loader) = plugin_loader {
+                let mut plugin = plugin_loader();
+                self.simulation_state
+                    .add_particle_definition(plugin.register().into());
+                self.plugin_data.plugins.push(plugin);
+                self.plugin_data.libraries.push(plugin_lib);
+            }
+        }
+    }
+
+    pub fn set_particle(&mut self, x: usize, y: usize, particle: Particle) -> () {
+        self.simulation_state.set_particle_at(x, y, particle);
+    }
+}
+
+pub struct SimulationState {
+    particle_definitions: Vec<ParticleCommonData>,
+    particles: Vec<Vec<Particle>>,
     current_x: usize,
     current_y: usize,
-    pub width: usize,
-    pub height: usize,
+    width: usize,
+    height: usize,
+    clock: bool,
     image: Image,
     texture: Texture2D,
-    clock: bool,
-    particle_name_to_id: FxHashMap<String, usize>
+    particle_name_to_id: FxHashMap<String, usize>,
 }
 
-impl GameState {
-    pub fn new(width: usize, height: usize) -> GameState {
+impl SimulationState {
+    pub fn new(width: usize, height: usize) -> SimulationState {
         let image = Image::gen_image_color(width as u16, height as u16, BLACK);
         let texture = Texture2D::from_image(&image);
         texture.set_filter(FilterMode::Nearest); // Set the filter mode to nearest to avoid blurring the pixels
 
-        GameState {
+        SimulationState {
             particles: vec![
                 vec![
                     Particle {
@@ -82,9 +179,8 @@ impl GameState {
             current_y: 0,
             width,
             height,
-            particle_definitions: vec![ParticleDefinition {
+            particle_definitions: vec![ParticleCommonData {
                 name: String::from("empty"),
-                update_func: |_, _| {}, // Función vacía
                 color: BLACK,
             }],
             image: image,
@@ -94,17 +190,16 @@ impl GameState {
         }
     }
 
-    pub fn get_particle_definitions(&self) -> &Vec<ParticleDefinition> {
-        &self.particle_definitions
-    }
-
     pub fn id_from_name(&self, name: &str) -> usize {
         *self.particle_name_to_id.get(name).unwrap()
     }
 
-    pub fn add_particle_definition(&mut self, particle_definition: ParticleDefinition) -> () {
+    pub(crate) fn add_particle_definition(&mut self, particle_definition: ParticleCommonData) -> () {
         self.particle_definitions.push(particle_definition);
-        self.particle_name_to_id.insert(self.particle_definitions.last().unwrap().name.clone(), self.particle_definitions.len() - 1);
+        self.particle_name_to_id.insert(
+            self.particle_definitions.last().unwrap().name.clone(),
+            self.particle_definitions.len() - 1,
+        );
 
         // Print the name of the particle definition
         println!(
@@ -113,14 +208,15 @@ impl GameState {
         );
     }
 
-    pub fn set_particle(&mut self, x: usize, y: usize, id: usize) -> () {
+    pub(crate) fn set_particle_at(&mut self, x: usize, y: usize, particle: Particle) -> () {
         if !self.is_inside(x, y) {
             return;
         }
 
-        self.particles[y][x].id = id;
+        self.particles[y][x] = particle;
         self.particles[y][x].clock = !self.clock;
-        self.image.set_pixel(x as u32, y as u32, self.particle_definitions[id].color);
+        self.image
+            .set_pixel(x as u32, y as u32, self.particle_definitions[particle.id].color);
     }
 
     pub fn get(&self, x: i32, y: i32) -> Particle {
@@ -144,30 +240,29 @@ impl GameState {
 
         self.particles[local_y][local_x] = particle;
         self.particles[local_y][local_x].clock = !self.clock;
-        self.image.set_pixel(local_x as u32, local_y as u32, self.particle_definitions[particle.id].color);
+        self.image.set_pixel(
+            local_x as u32,
+            local_y as u32,
+            self.particle_definitions[particle.id].color,
+        );
     }
 
     pub fn is_inside(&self, x: usize, y: usize) -> bool {
-        x >= 0 && x < self.width && y >= 0 && y < self.height
+        x < self.width && y < self.height
     }
 
-    pub fn get_particle_id(&self, x: usize, y: usize) -> usize {
-        self.particles[y][x].id
-    }
-
-    pub fn update(&mut self, plugins: &mut Vec<Box<dyn Plugin>>) -> () {
+    pub(crate) fn update(&mut self, plugins: &mut Vec<Box<dyn Plugin>>) -> () {
         for y in 0..self.height {
             for x in 0..self.width {
                 self.current_x = x;
                 self.current_y = y;
                 let current_particle = &self.particles[y][x];
-                let particle_id = self.get_particle_id(x, y);
+                let particle_id = self.particles[y][x]; // Not using getter here to avoid the if check that will never be true here
                 if particle_id == 0 || current_particle.clock != self.clock {
                     continue;
                 }
 
-                //(self.particle_definitions[particle_id].update_func)(self.particles[y][x], self);
-                let plugin = &mut plugins[particle_id-1];
+                let plugin = &mut plugins[particle_id.id];
                 plugin.update(self.particles[y][x], self);
             }
         }
@@ -180,7 +275,7 @@ impl GameState {
         }
     }
 
-    pub fn draw(&mut self) -> () {
+    pub(crate) fn draw(&mut self) -> () {
         self.texture.update(&self.image);
 
         // Draw the texture
