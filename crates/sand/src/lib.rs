@@ -5,10 +5,10 @@ struct Sand {
 }
 
 impl Plugin for Sand {
-    fn register(&mut self) -> app_core::PluginResult {
-        app_core::PluginResult {
+    fn register(&mut self) -> app_core::api::ParticleCommonData {
+        app_core::api::ParticleCommonData {
             name: String::from("Sand"),
-            color: 0xFFFF00,
+            color: app_core::Color::from_hex(0xFFFF00),
         }
     }
 

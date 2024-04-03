@@ -1,8 +1,7 @@
 pub mod api;
 use crate::api::{SimulationState, ParticleCommonData};
 use api::Particle;
-use macroquad::color::Color;
-
+pub use macroquad::color::Color;
 
 pub type ParticleApi = SimulationState;
 
@@ -21,7 +20,7 @@ impl From<PluginResult> for ParticleCommonData {
 }
 
 pub trait Plugin {
-    fn register(&mut self) -> PluginResult;
+    fn register(&mut self) -> ParticleCommonData;
     fn update(&self, cell: Particle, api: &mut ParticleApi);
     fn post_update(&mut self, _: &ParticleApi) {}
 }

@@ -1,15 +1,17 @@
-use std::vec;
+use crate::Plugin;
 use macroquad::prelude::*;
 use rustc_hash::FxHashMap;
-use crate::{Plugin, PluginResult};
+use std::vec;
+
+pub const TO_NORMALIZED_COLOR: f32 = 1.0 / 255.0;
 
 pub struct Empty;
 
 impl Plugin for Empty {
-    fn register(&mut self) -> PluginResult {
-        PluginResult {
+    fn register(&mut self) -> ParticleCommonData {
+        ParticleCommonData {
             name: String::from("Empty"),
-            color: 0x000000,
+            color: BLACK,
         }
     }
 
@@ -20,17 +22,42 @@ impl Plugin for Empty {
 pub struct Particle {
     pub id: u8,
     pub clock: bool,
+    pub light: u8,
+    pub extra: u8,
 }
 
 impl Particle {
+    pub fn new() -> Particle {
+        Particle {
+            id: 0,
+            clock: false,
+            light: rand::gen_range(-1, 256) as u8,
+            extra: 0,
+        }
+    }
+
+    pub fn from_id(id: u8) -> Particle {
+        //print something
+        Particle {
+            id,
+            clock: false,
+            light: rand::gen_range(-1, 256) as u8,
+            extra: 0,
+        }
+    }
+
     pub const EMPTY: Particle = Particle {
         id: 0,
         clock: false,
+        light: 0,
+        extra: 0,
     };
 
     pub(crate) const INVALID: Particle = Particle {
         id: u8::MAX,
         clock: false,
+        light: 0,
+        extra: 0,
     };
 }
 
@@ -54,16 +81,13 @@ impl PartialEq<u8> for Particle {
 
 impl From<usize> for Particle {
     fn from(id: usize) -> Self {
-        Particle {
-            id: id as u8,
-            clock: false,
-        }
+        Particle ::from_id(id as u8)
     }
 }
 
 impl From<u8> for Particle {
     fn from(id: u8) -> Self {
-        Particle { id, clock: false }
+        Particle ::from_id(id as u8)
     }
 }
 
@@ -108,7 +132,8 @@ impl Iterator for CustomRange {
     type Item = isize;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if (self.step > 0 && self.current < self.end) || (self.step < 0 && self.current > self.end) {
+        if (self.step > 0 && self.current < self.end) || (self.step < 0 && self.current > self.end)
+        {
             let result = self.current;
             self.current += self.step;
             Some(result)
@@ -142,12 +167,23 @@ struct OrderSchemes {
 
 impl OrderSchemes {
     pub fn new(width: usize, height: usize) -> OrderSchemes {
-        OrderSchemes
-        {
-            ltr_ttb: OrderScheme::new(CustomRange::new(0, width as isize, 1), CustomRange::new(0, height as isize, 1)),
-            ltr_btt: OrderScheme::new(CustomRange::new(0, width as isize, 1), CustomRange::new((height - 1) as isize, -1, -1)),
-            rtl_ttb: OrderScheme::new(CustomRange::new((width - 1) as isize, -1, -1), CustomRange::new(0, height as isize, 1)),
-            rtl_btt: OrderScheme::new(CustomRange::new((width - 1) as isize, -1, -1), CustomRange::new((height - 1) as isize, -1, -1)),
+        OrderSchemes {
+            ltr_ttb: OrderScheme::new(
+                CustomRange::new(0, width as isize, 1),
+                CustomRange::new(0, height as isize, 1),
+            ),
+            ltr_btt: OrderScheme::new(
+                CustomRange::new(0, width as isize, 1),
+                CustomRange::new((height - 1) as isize, -1, -1),
+            ),
+            rtl_ttb: OrderScheme::new(
+                CustomRange::new((width - 1) as isize, -1, -1),
+                CustomRange::new(0, height as isize, 1),
+            ),
+            rtl_btt: OrderScheme::new(
+                CustomRange::new((width - 1) as isize, -1, -1),
+                CustomRange::new((height - 1) as isize, -1, -1),
+            ),
             current: 0,
         }
     }
@@ -202,8 +238,10 @@ impl Simulation {
     }
 
     pub fn update(&mut self) -> () {
-        self.simulation_state
-            .update(&mut self.plugin_data.plugins, &self.order_scheme.get_ciclying());
+        self.simulation_state.update(
+            &mut self.plugin_data.plugins,
+            &self.order_scheme.get_ciclying(),
+        );
     }
 
     pub fn draw(&mut self) -> () {
@@ -277,10 +315,7 @@ impl SimulationState {
         SimulationState {
             particles: vec![
                 vec![
-                    Particle {
-                        id: 0,
-                        clock: false
-                    };
+                    Particle::new();
                     width
                 ];
                 height
@@ -334,15 +369,7 @@ impl SimulationState {
             return;
         }
 
-        let mut particle = particle;
-        particle.id = particle.id.min((self.particle_definitions.len() - 1) as u8);
-        self.particles[y][x] = particle;
-        self.particles[y][x].clock = !self.clock;
-        self.image.set_pixel(
-            x as u32,
-            y as u32,
-            *self.get_particle_color(particle.id as usize),
-        );
+        self.set(-(x as i32), -(y as i32), particle);
     }
 
     pub fn get(&self, x: i32, y: i32) -> Particle {
@@ -366,10 +393,13 @@ impl SimulationState {
 
         self.particles[local_y][local_x] = particle;
         self.particles[local_y][local_x].clock = !self.clock;
+        let mut color = self.particle_definitions[particle.id as usize].color;
+        color.a = (particle.light as f32 * TO_NORMALIZED_COLOR) * 0.15 + 0.85; // I don't like magic numbers, but for now...
+        // print the light
         self.image.set_pixel(
             local_x as u32,
             local_y as u32,
-            self.particle_definitions[particle.id as usize].color,
+            color,
         );
     }
 
@@ -379,7 +409,8 @@ impl SimulationState {
 
     pub(crate) fn update(
         &mut self,
-        plugins: &mut Vec<Box<dyn Plugin>>, order_scheme: &OrderScheme,
+        plugins: &mut Vec<Box<dyn Plugin>>,
+        order_scheme: &OrderScheme,
     ) -> () {
         self.clock = !self.clock;
 
@@ -387,7 +418,7 @@ impl SimulationState {
             for x in order_scheme.order_x {
                 let x = x as usize;
                 let y = y as usize;
-                
+
                 self.current_x = x;
                 self.current_y = y;
                 let current_particle = &self.particles[y][x];
@@ -405,11 +436,14 @@ impl SimulationState {
         for plugin in plugins.iter_mut() {
             plugin.post_update(self);
         }
+
+        self.current_x = 0;
+        self.current_y = 0;
     }
 
     /// Range, min and max are inclusive
     pub fn gen_range(&self, min: i32, max: i32) -> i32 {
-        rand::gen_range(min-1, max+1)
+        rand::gen_range(min - 1, max + 1)
     }
 
     pub fn random_sign(&self) -> i32 {
