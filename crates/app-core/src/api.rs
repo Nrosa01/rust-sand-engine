@@ -407,6 +407,17 @@ impl SimulationState {
         x < self.width && y < self.height
     }
 
+    pub fn move_to(&mut self, x: i32, y: i32, particle: Particle) -> () {
+        self.set(x, y, particle);
+        self.set(0, 0, Particle::EMPTY);
+    }
+
+    pub fn swap(&mut self, x: i32, y: i32, particle: Particle) -> () {
+        let swap_particle = self.get(x, y);
+        self.set(0, 0, swap_particle);
+        self.set(x, y, particle);
+    }
+
     pub(crate) fn update(
         &mut self,
         plugins: &mut Vec<Box<dyn Plugin>>,

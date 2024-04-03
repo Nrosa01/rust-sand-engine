@@ -21,14 +21,11 @@ impl Plugin for Sand {
         // }
 
         if api.get(0, down_direction) == Particle::EMPTY {
-            api.set(0, down_direction, cell);
-            api.set(0, 0, Particle::EMPTY);
+            api.swap(0, down_direction, cell);
         } else if api.get(dir, down_direction) == Particle::EMPTY {
-            api.set(dir, -1, cell);
-            api.set(0, 0, Particle::EMPTY);
+            api.swap(dir, down_direction, cell);
         } else if api.get(-dir, down_direction) == Particle::EMPTY {
-            api.set(-dir, -1, cell);
-            api.set(0, 0, Particle::EMPTY);
+            api.swap(-dir, down_direction, cell);
         }
     }
 
