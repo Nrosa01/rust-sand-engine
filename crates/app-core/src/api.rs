@@ -1,6 +1,6 @@
 use std::vec;
 
-use macroquad::prelude::*;
+use macroquad::{prelude::*, rand::ChooseRandom};
 use rustc_hash::FxHashMap;
 
 use crate::{Plugin, PluginResult};
@@ -20,7 +20,7 @@ impl Plugin for Empty {
 
 #[derive(Clone, Debug, Copy)]
 pub struct Particle {
-    pub id: usize,
+    pub id: u8,
     pub clock: bool,
 }
 
@@ -31,7 +31,7 @@ impl Particle {
     };
 
     pub(crate) const INVALID: Particle = Particle {
-        id: usize::MAX,
+        id: u8::MAX,
         clock: false,
     };
 }
@@ -44,12 +44,24 @@ impl PartialEq for Particle {
 
 impl PartialEq<usize> for Particle {
     fn eq(&self, other: &usize) -> bool {
+        self.id == *other as u8
+    }
+}
+
+impl PartialEq<u8> for Particle {
+    fn eq(&self, other: &u8) -> bool {
         self.id == *other
     }
 }
 
 impl From<usize> for Particle {
     fn from(id: usize) -> Self {
+        Particle { id: id as u8, clock: false }
+    }
+}
+
+impl From<u8> for Particle {
+    fn from(id: u8) -> Self {
         Particle { id, clock: false }
     }
 }
@@ -77,13 +89,25 @@ impl PluginData {
 pub struct Simulation {
     simulation_state: SimulationState,
     plugin_data: PluginData,
+    positions: Vec<(usize, usize)>,
+    frames: usize,
 }
 
 impl Simulation {
     pub fn new(width: usize, height: usize) -> Simulation {
+        let mut positions = Vec::with_capacity(width * height);
+        for y in 0..height {
+            for x in 0..width {
+                positions.push((x, y));
+            }
+        }
+        positions.shuffle();
+
         Simulation {
             simulation_state: SimulationState::new(width, height),
             plugin_data: PluginData::new(),
+            positions: positions,
+            frames: 0,
         }
     }
 
@@ -108,7 +132,16 @@ impl Simulation {
     }
 
     pub fn update(&mut self) -> () {
-        self.simulation_state.update(&mut self.plugin_data.plugins);
+        self.simulation_state
+            .update(&mut self.plugin_data.plugins, &self.positions);
+
+        // self.frames += 1;
+
+        // if self.frames >= 60 {
+        //     self.frames = 0;
+        //     self.positions.shuffle();
+        // }
+
     }
 
     pub fn draw(&mut self) -> () {
@@ -119,7 +152,7 @@ impl Simulation {
         if id >= self.get_plugin_count() {
             return Err(format!("Particle with id {} not found", id));
         }
-        
+
         Ok(&self.simulation_state.get_particle_name(id))
     }
 
@@ -127,7 +160,7 @@ impl Simulation {
         if id >= self.get_plugin_count() {
             return Err(format!("Particle with id {} not found", id));
         }
-        
+
         Ok(&self.simulation_state.get_particle_color(id))
     }
 
@@ -171,6 +204,13 @@ impl SimulationState {
         let image = Image::gen_image_color(width as u16, height as u16, BLACK);
         let texture = Texture2D::from_image(&image);
         texture.set_filter(FilterMode::Nearest); // Set the filter mode to nearest to avoid blurring the pixels
+
+        let mut positions = Vec::with_capacity(width * height);
+        for y in 0..height {
+            for x in 0..width {
+                positions.push((x, y));
+            }
+        }
 
         SimulationState {
             particles: vec![
@@ -233,14 +273,11 @@ impl SimulationState {
         }
 
         let mut particle = particle;
-        particle.id = particle.id.min(self.particle_definitions.len() - 1);
+        particle.id = particle.id.min((self.particle_definitions.len() - 1) as u8);
         self.particles[y][x] = particle;
         self.particles[y][x].clock = !self.clock;
-        self.image.set_pixel(
-            x as u32,
-            y as u32,
-            *self.get_particle_color(particle.id),
-        );
+        self.image
+            .set_pixel(x as u32, y as u32, *self.get_particle_color(particle.id as usize));
     }
 
     pub fn get(&self, x: i32, y: i32) -> Particle {
@@ -267,7 +304,7 @@ impl SimulationState {
         self.image.set_pixel(
             local_x as u32,
             local_y as u32,
-            self.particle_definitions[particle.id].color,
+            self.particle_definitions[particle.id as usize].color,
         );
     }
 
@@ -275,23 +312,27 @@ impl SimulationState {
         x < self.width && y < self.height
     }
 
-    pub(crate) fn update(&mut self, plugins: &mut Vec<Box<dyn Plugin>>) -> () {
-        for y in 0..self.height {
-            for x in 0..self.width {
-                self.current_x = x;
-                self.current_y = y;
-                let current_particle = &self.particles[y][x];
-                let particle_id = self.particles[y][x]; // Not using getter here to avoid the if check that will never be true here
-                if particle_id == 0 || current_particle.clock != self.clock {
-                    continue;
-                }
-
-                let plugin = &mut plugins[particle_id.id];
-                plugin.update(self.particles[y][x], self);
-            }
-        }
-
+    pub(crate) fn update(
+        &mut self,
+        plugins: &mut Vec<Box<dyn Plugin>>,
+        positions: &Vec<(usize, usize)>,
+    ) -> () {
         self.clock = !self.clock;
+
+        positions.iter().for_each(|&x| {
+            let (x, y) = (x.0, x.1);
+
+            self.current_x = x;
+            self.current_y = y;
+            let current_particle = &self.particles[y][x];
+            let particle_id = self.particles[y][x]; // Not using getter here to avoid the if check that will never be true here
+            if particle_id == Particle::EMPTY || current_particle.clock != self.clock {
+                return;
+            }
+
+            let plugin = &mut plugins[particle_id.id as usize];
+            plugin.update(self.particles[y][x], self);
+        });
 
         // Post update
         for plugin in plugins.iter_mut() {
