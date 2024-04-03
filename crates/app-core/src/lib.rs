@@ -21,4 +21,6 @@ impl From<PluginResult> for ParticleDefinition {
 
 pub trait Plugin {
     fn register(&mut self) -> PluginResult;
+    fn update(&self, cell: Particle, api: &mut GameState);
+    fn post_update(&mut self, api: &mut GameState) {}
 }

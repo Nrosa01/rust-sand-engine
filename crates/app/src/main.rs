@@ -25,7 +25,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let mut radius: usize = 20;
 
     let mut game_state = GameState::new(WIDTH, HEIGHT);
-    let mut plugins = Vec::new(); // I need to keep the libraries open, so they won't be unloaded when going out of scope in the loop below
+    let mut libraries = Vec::new(); // I need to keep the libraries open, so they won't be unloaded when going out of scope in the loop below
+
+    let mut plugins: Vec<Box<dyn Plugin>> = Vec::new();
 
     let mut selected_plugin = 1;
 
@@ -51,7 +53,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
                         let mut plugin = plugin_loader();
                         game_state.add_particle_definition(plugin.register().into());
                         print!("Loaded plugin: {}", file_name);
-                        plugins.push(plugin_lib);
+                        libraries.push(plugin_lib);
+                        plugins.push(plugin);
                     }
                 }
             }
@@ -101,7 +104,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             let scaled_mouse_x = (mouse_x * scale_x).floor();
             let scaled_mouse_y = (mouse_y * scale_y).floor();
 
-            let radius = (radius as  f32 / screen_ratio_to_texture) as i32;
+            let radius = (radius as f32 / screen_ratio_to_texture) as i32;
 
             for x in -radius..radius {
                 for y in -radius..radius {
@@ -111,20 +114,17 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     let distance_squared =
                         (pos_x - scaled_mouse_x).powi(2) + (pos_y - scaled_mouse_y).powi(2);
                     if distance_squared <= radius.pow(2) as f32 {
-                        game_state.set_particle(
-                            pos_x as usize,
-                            pos_y as usize,
-                            selected_plugin,
-                        );
+                        game_state.set_particle(pos_x as usize, pos_y as usize, selected_plugin);
 
                         // Hacky way to update particles that has just been added, ill fix this later
-                        game_state.particles[pos_y as usize][pos_x as usize].clock = !game_state.particles[pos_y as usize][pos_x as usize].clock;
+                        game_state.particles[pos_y as usize][pos_x as usize].clock =
+                            !game_state.particles[pos_y as usize][pos_x as usize].clock;
                     }
                 }
             }
         }
 
-        game_state.update();
+        game_state.update(&mut plugins);
 
         // Clear the screen
         clear_background(BLACK);

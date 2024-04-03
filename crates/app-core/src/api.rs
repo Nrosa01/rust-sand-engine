@@ -3,6 +3,8 @@ use std::{collections::HashMap, hash::{BuildHasher, BuildHasherDefault}};
 use macroquad::prelude::*;
 use rustc_hash::FxHashMap;
 
+use crate::Plugin;
+
 #[derive(Clone, Debug, Copy)]
 pub struct Particle {
     pub id: usize,
@@ -40,27 +42,12 @@ pub struct ParticleDefinition {
     pub color: Color,
 }
 
-struct MiStruct<'a> {
-    mapa: HashMap<&'a str, i32>,
+pub struct PluginData
+{
+    libraries: Vec<libloading::Library>,
+    plugins: Vec<Box<dyn Plugin>>,
 }
 
-impl<'a> MiStruct<'a> {
-    fn nuevo() -> MiStruct<'a> {
-        MiStruct {
-            mapa: HashMap::new(),
-        }
-    }
-
-    fn insertar(&mut self, clave: &'a str, valor: i32) {
-        self.mapa.insert(clave, valor);
-    }
-
-    fn obtener(&self, clave: &'a str) -> Option<&i32> {
-        self.mapa.get(clave)
-    }
-}
-
-#[derive(Debug)]
 pub struct GameState {
     pub particles: Vec<Vec<Particle>>,
     particle_definitions: Vec<ParticleDefinition>,
@@ -103,7 +90,7 @@ impl GameState {
             image: image,
             texture: texture,
             clock: false,
-            particle_name_to_id: FxHashMap::default()
+            particle_name_to_id: FxHashMap::default(),
         }
     }
 
@@ -168,7 +155,7 @@ impl GameState {
         self.particles[y][x].id
     }
 
-    pub fn update(&mut self) -> () {
+    pub fn update(&mut self, plugins: &mut Vec<Box<dyn Plugin>>) -> () {
         for y in 0..self.height {
             for x in 0..self.width {
                 self.current_x = x;
@@ -179,11 +166,18 @@ impl GameState {
                     continue;
                 }
 
-                (self.particle_definitions[particle_id].update_func)(self.particles[y][x], self);
+                //(self.particle_definitions[particle_id].update_func)(self.particles[y][x], self);
+                let plugin = &mut plugins[particle_id-1];
+                plugin.update(self.particles[y][x], self);
             }
         }
 
         self.clock = !self.clock;
+
+        // Post update
+        for plugin in plugins.iter_mut() {
+            plugin.post_update(self);
+        }
     }
 
     pub fn draw(&mut self) -> () {

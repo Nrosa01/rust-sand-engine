@@ -1,6 +1,5 @@
 use app_core::Plugin;
 
-#[derive(Debug)]
 struct Water;
 
 impl Plugin for Water {
@@ -8,7 +7,7 @@ impl Plugin for Water {
         app_core::PluginResult {
             name: String::from("Water"),
             color: 0x00FFFF,
-            update_func: |cell, api| {
+            update_func: |_cell, _api| {
                 // if api.get(0, -1) == Particle::Empty {
                 //     api.set(0, -1, cell);
                 //     api.set(0, 0, Particle::Empty);
@@ -27,6 +26,10 @@ impl Plugin for Water {
                 // }
             },
         }
+    }
+
+    fn update(&self, _cell: app_core::api::Particle, _api: &mut app_core::api::GameState) {
+        
     }
 }
 
