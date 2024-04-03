@@ -16,15 +16,15 @@ fn conf() -> Conf {
 }
 
 const TARGET_FPS: f64 = 60.0;
-const WIDTH: usize = 2000;
-const HEIGHT: usize = 2000;
+const WIDTH: usize = 400;
+const HEIGHT: usize = 400;
 
 #[macroquad::main(conf)]
 async fn main() -> Result<(), Box<dyn Error>> {
     macroquad::rand::srand(macroquad::miniquad::date::now() as u64);
 
     let frame_time: Duration = Duration::from_secs_f64(1.0 / (TARGET_FPS + 1.0));
-    let mut radius: usize = 200;
+    let mut radius: usize = 20;
 
     let mut simulation = Simulation::new(WIDTH, HEIGHT);
 

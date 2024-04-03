@@ -1,20 +1,10 @@
 use std::vec;
-
 use macroquad::prelude::*;
 use rustc_hash::FxHashMap;
 
 use crate::{Plugin, PluginResult};
 
 pub struct Empty;
-
-pub(crate) struct Vec2u {
-    pub x: usize,
-    pub y: usize,
-}
-
-pub(crate) fn vec2u(x: usize, y: usize) -> Vec2u {
-    Vec2u { x, y }
-}
 
 impl Plugin for Empty {
     fn register(&mut self) -> PluginResult {
@@ -65,7 +55,10 @@ impl PartialEq<u8> for Particle {
 
 impl From<usize> for Particle {
     fn from(id: usize) -> Self {
-        Particle { id: id as u8, clock: false }
+        Particle {
+            id: id as u8,
+            clock: false,
+        }
     }
 }
 
@@ -95,28 +88,65 @@ impl PluginData {
     }
 }
 
+pub(crate) struct OrderScheme {
+    order_x: std::ops::Range<usize>,
+    order_y: std::ops::Range<usize>,
+}
+
+impl OrderScheme {
+    pub fn new(order_x: std::ops::Range<usize>, order_y: std::ops::Range<usize>) -> OrderScheme {
+        OrderScheme {
+            order_x: order_x,
+            order_y: order_y,
+        }
+    }
+}
+
+struct OrderSchemes {
+    ltr_ttb: OrderScheme,
+    ltr_btt: OrderScheme,
+    rtl_ttb: OrderScheme,
+    rtl_btt: OrderScheme,
+    current: usize,
+}
+
+impl OrderSchemes {
+    pub fn new(width: usize, height: usize) -> OrderSchemes {
+        OrderSchemes {
+            ltr_ttb: OrderScheme::new(0..width, 0..height),
+            ltr_btt: OrderScheme::new(0..width,  height..0),
+            rtl_ttb: OrderScheme::new(width..0, 0..height),
+            rtl_btt: OrderScheme::new(width..0, height..0),
+            current: 0,
+        }
+    }
+
+    pub fn get_ciclying(&mut self) -> &OrderScheme {
+        let scheme = match self.current {
+            0 => &self.ltr_ttb,
+            1 => &self.rtl_btt,
+            2 => &self.ltr_btt,
+            3 => &self.rtl_ttb,
+            _ => &self.ltr_ttb,
+        };
+
+        self.current = (self.current + 1) % 4;
+        scheme
+    }
+}
+
 pub struct Simulation {
     simulation_state: SimulationState,
     plugin_data: PluginData,
-    positions: Vec<Vec2u>,
-    frames: usize,
+    order_scheme: OrderSchemes,
 }
 
 impl Simulation {
     pub fn new(width: usize, height: usize) -> Simulation {
-        let mut positions = Vec::with_capacity(width * height);
-        for y in 0..height {
-            for x in 0..width {
-                positions.push(vec2u(x,y));
-            }
-        }
-        // positions.shuffle();
-
         Simulation {
             simulation_state: SimulationState::new(width, height),
             plugin_data: PluginData::new(),
-            positions: positions,
-            frames: 0,
+            order_scheme: OrderSchemes::new(width, height),
         }
     }
 
@@ -142,15 +172,7 @@ impl Simulation {
 
     pub fn update(&mut self) -> () {
         self.simulation_state
-            .update(&mut self.plugin_data.plugins, &self.positions);
-
-        // self.frames += 1;
-
-        // if self.frames >= 60 {
-        //     self.frames = 0;
-        //     self.positions.shuffle();
-        // }
-
+            .update(&mut self.plugin_data.plugins, &self.order_scheme.ltr_btt);
     }
 
     pub fn draw(&mut self) -> () {
@@ -285,8 +307,11 @@ impl SimulationState {
         particle.id = particle.id.min((self.particle_definitions.len() - 1) as u8);
         self.particles[y][x] = particle;
         self.particles[y][x].clock = !self.clock;
-        self.image
-            .set_pixel(x as u32, y as u32, *self.get_particle_color(particle.id as usize));
+        self.image.set_pixel(
+            x as u32,
+            y as u32,
+            *self.get_particle_color(particle.id as usize),
+        );
     }
 
     pub fn get(&self, x: i32, y: i32) -> Particle {
@@ -323,25 +348,24 @@ impl SimulationState {
 
     pub(crate) fn update(
         &mut self,
-        plugins: &mut Vec<Box<dyn Plugin>>,
-        positions: &Vec<Vec2u>,
+        plugins: &mut Vec<Box<dyn Plugin>>, order_scheme: &OrderScheme,
     ) -> () {
         self.clock = !self.clock;
 
-        positions.iter().for_each(|x| {
-            let (x, y) = (x.x, x.y);
+        for y in order_scheme.order_y.clone() {
+            for x in order_scheme.order_x.clone() {
+                self.current_x = x;
+                self.current_y = y;
+                let current_particle = &self.particles[y][x];
+                let particle_id = self.particles[y][x]; // Not using getter here to avoid the if check that will never be true here
+                if particle_id == Particle::EMPTY || current_particle.clock != self.clock {
+                    continue;
+                }
 
-            self.current_x = x;
-            self.current_y = y;
-            let current_particle = &self.particles[y][x];
-            let particle_id = self.particles[y][x]; // Not using getter here to avoid the if check that will never be true here
-            if particle_id == Particle::EMPTY || current_particle.clock != self.clock {
-                return;
+                let plugin = &mut plugins[particle_id.id as usize];
+                plugin.update(self.particles[y][x], self);
             }
-
-            let plugin = &mut plugins[particle_id.id as usize];
-            plugin.update(self.particles[y][x], self);
-        });
+        }
 
         // Post update
         for plugin in plugins.iter_mut() {
