@@ -1,6 +1,5 @@
-use app_core::Plugin;
+use app_core::{ParticleApi, Plugin};
 
-#[derive(Debug)]
 struct Water;
 
 impl Plugin for Water {
@@ -8,15 +7,11 @@ impl Plugin for Water {
         app_core::PluginResult {
             name: String::from("Water"),
             color: 0x00FFFF,
-            update_func: |state, x, y| {
-                if y > 0 {
-                    if state.get_particle_id(x, y - 1) == 0 {
-                        state.set_particle(x, y, 0);
-                        state.set_particle(x, y - 1, 2);
-                    }
-                }
-            },
         }
+    }
+
+    fn update(&self, _cell: app_core::api::Particle, _api: &mut ParticleApi) {
+        
     }
 }
 
