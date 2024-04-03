@@ -13,7 +13,7 @@ impl Plugin for Sand {
     }
 
     fn update(&self, cell: Particle, api: &mut ParticleApi) {
-        let dir = api.random_sign();
+        let dir = api.gen_range(-1,1);
 
         let down_direction = -1;
         // if self.count != 0 {

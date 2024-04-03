@@ -1,7 +1,6 @@
 use std::vec;
 use macroquad::prelude::*;
 use rustc_hash::FxHashMap;
-
 use crate::{Plugin, PluginResult};
 
 pub struct Empty;
@@ -88,13 +87,44 @@ impl PluginData {
     }
 }
 
+#[derive(Copy, Clone)]
+pub(crate) struct CustomRange {
+    current: isize,
+    end: isize,
+    step: isize,
+}
+
+impl CustomRange {
+    pub fn new(start: isize, end: isize, step: isize) -> CustomRange {
+        CustomRange {
+            current: start,
+            end,
+            step,
+        }
+    }
+}
+
+impl Iterator for CustomRange {
+    type Item = isize;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if (self.step > 0 && self.current < self.end) || (self.step < 0 && self.current > self.end) {
+            let result = self.current;
+            self.current += self.step;
+            Some(result)
+        } else {
+            None
+        }
+    }
+}
+
 pub(crate) struct OrderScheme {
-    order_x: std::ops::Range<usize>,
-    order_y: std::ops::Range<usize>,
+    order_x: CustomRange,
+    order_y: CustomRange,
 }
 
 impl OrderScheme {
-    pub fn new(order_x: std::ops::Range<usize>, order_y: std::ops::Range<usize>) -> OrderScheme {
+    pub fn new(order_x: CustomRange, order_y: CustomRange) -> OrderScheme {
         OrderScheme {
             order_x: order_x,
             order_y: order_y,
@@ -112,11 +142,12 @@ struct OrderSchemes {
 
 impl OrderSchemes {
     pub fn new(width: usize, height: usize) -> OrderSchemes {
-        OrderSchemes {
-            ltr_ttb: OrderScheme::new(0..width, 0..height),
-            ltr_btt: OrderScheme::new(0..width,  height..0),
-            rtl_ttb: OrderScheme::new(width..0, 0..height),
-            rtl_btt: OrderScheme::new(width..0, height..0),
+        OrderSchemes
+        {
+            ltr_ttb: OrderScheme::new(CustomRange::new(0, width as isize, 1), CustomRange::new(0, height as isize, 1)),
+            ltr_btt: OrderScheme::new(CustomRange::new(0, width as isize, 1), CustomRange::new((height - 1) as isize, -1, -1)),
+            rtl_ttb: OrderScheme::new(CustomRange::new((width - 1) as isize, -1, -1), CustomRange::new(0, height as isize, 1)),
+            rtl_btt: OrderScheme::new(CustomRange::new((width - 1) as isize, -1, -1), CustomRange::new((height - 1) as isize, -1, -1)),
             current: 0,
         }
     }
@@ -124,9 +155,9 @@ impl OrderSchemes {
     pub fn get_ciclying(&mut self) -> &OrderScheme {
         let scheme = match self.current {
             0 => &self.ltr_ttb,
-            1 => &self.rtl_btt,
-            2 => &self.ltr_btt,
-            3 => &self.rtl_ttb,
+            1 => &self.rtl_ttb,
+            2 => &self.rtl_btt,
+            3 => &self.ltr_btt,
             _ => &self.ltr_ttb,
         };
 
@@ -172,7 +203,7 @@ impl Simulation {
 
     pub fn update(&mut self) -> () {
         self.simulation_state
-            .update(&mut self.plugin_data.plugins, &self.order_scheme.ltr_btt);
+            .update(&mut self.plugin_data.plugins, &self.order_scheme.get_ciclying());
     }
 
     pub fn draw(&mut self) -> () {
@@ -352,8 +383,11 @@ impl SimulationState {
     ) -> () {
         self.clock = !self.clock;
 
-        for y in order_scheme.order_y.clone() {
-            for x in order_scheme.order_x.clone() {
+        for y in order_scheme.order_y {
+            for x in order_scheme.order_x {
+                let x = x as usize;
+                let y = y as usize;
+                
                 self.current_x = x;
                 self.current_y = y;
                 let current_particle = &self.particles[y][x];
@@ -373,8 +407,9 @@ impl SimulationState {
         }
     }
 
+    /// Range, min and max are inclusive
     pub fn gen_range(&self, min: i32, max: i32) -> i32 {
-        rand::gen_range(min, max)
+        rand::gen_range(min-1, max+1)
     }
 
     pub fn random_sign(&self) -> i32 {
