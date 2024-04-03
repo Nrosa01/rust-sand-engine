@@ -1,6 +1,6 @@
 #![windows_subsystem = "windows"]
 
-use app_core::{api::GameState, Plugin};
+use app_core::{api::Simulation};
 use macroquad::prelude::*;
 use std::error::Error;
 use std::thread::sleep;
@@ -23,9 +23,8 @@ const HEIGHT: usize = 400;
 async fn main() -> Result<(), Box<dyn Error>> {
     let frame_time: Duration = Duration::from_secs_f64(1.0 / (TARGET_FPS + 1.0));
     let mut radius: usize = 20;
-
-    let mut game_state = GameState::new(WIDTH, HEIGHT);
-    let mut plugins = Vec::new(); // I need to keep the libraries open, so they won't be unloaded when going out of scope in the loop below
+    
+    let mut simulation = Simulation::new(WIDTH, HEIGHT);
 
     let mut selected_plugin = 1;
 
@@ -41,19 +40,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         if path.is_file() {
             let file_name = path.file_name().unwrap().to_str().unwrap();
             if file_name.ends_with(".dll") {
-                let plugin_lib = unsafe { libloading::Library::new(&file_name) };
-                if let Ok(plugin_lib) = plugin_lib {
-                    let plugin_loader: Result<
-                        libloading::Symbol<fn() -> Box<dyn Plugin>>,
-                        libloading::Error,
-                    > = unsafe { plugin_lib.get(b"plugin") };
-                    if let Ok(plugin_loader) = plugin_loader {
-                        let mut plugin = plugin_loader();
-                        game_state.add_particle_definition(plugin.register().into());
-                        print!("Loaded plugin: {}", file_name);
-                        plugins.push(plugin_lib);
-                    }
-                }
+                simulation.add_plugin_from(path.to_str().unwrap());
             }
         }
     }
@@ -63,13 +50,13 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
         if is_key_pressed(KeyCode::Right) {
             selected_plugin += 1;
-            if selected_plugin >= game_state.get_particle_definitions().len() {
+            if selected_plugin >= simulation.get_plugin_count() {
                 selected_plugin = 0;
             }
         }
         if is_key_pressed(KeyCode::Left) {
             if selected_plugin == 0 {
-                selected_plugin = game_state.get_particle_definitions().len() - 1;
+                selected_plugin = simulation.get_plugin_count() - 1;
             } else {
                 selected_plugin -= 1;
             }
@@ -94,14 +81,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
             let (mouse_x, mouse_y) = mouse_position();
 
             // Calcula el factor de escala para convertir las coordenadas del mouse a las coordenadas de la textura
-            let scale_x = game_state.width as f32 / screen_width();
-            let scale_y = game_state.height as f32 / screen_height();
+            let scale_x = simulation.get_width() as f32 / screen_width();
+            let scale_y = simulation.get_height() as f32 / screen_height();
 
             // Aplica el factor de escala a las coordenadas del mouse
             let scaled_mouse_x = (mouse_x * scale_x).floor();
             let scaled_mouse_y = (mouse_y * scale_y).floor();
 
-            let radius = (radius as  f32 / screen_ratio_to_texture) as i32;
+            let radius = (radius as f32 / screen_ratio_to_texture) as i32;
 
             for x in -radius..radius {
                 for y in -radius..radius {
@@ -111,31 +98,24 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     let distance_squared =
                         (pos_x - scaled_mouse_x).powi(2) + (pos_y - scaled_mouse_y).powi(2);
                     if distance_squared <= radius.pow(2) as f32 {
-                        game_state.set_particle(
-                            pos_x as usize,
-                            pos_y as usize,
-                            selected_plugin,
-                        );
-
-                        // Hacky way to update particles that has just been added, ill fix this later
-                        game_state.particles[pos_y as usize][pos_x as usize].clock = !game_state.particles[pos_y as usize][pos_x as usize].clock;
+                        simulation.set_particle(pos_x as usize, pos_y as usize, selected_plugin.into());
                     }
                 }
             }
         }
 
-        game_state.update();
+        simulation.update();
 
         // Clear the screen
         clear_background(BLACK);
 
-        game_state.draw();
+        simulation.draw();
 
         // Draw the selected particle
         draw_text(
             &format!(
                 "Selected particle: {}",
-                game_state.get_particle_definitions()[selected_plugin].name
+                simulation.get_particle_name(selected_plugin)
             ),
             10.0,
             screen_height() - 30.0,
