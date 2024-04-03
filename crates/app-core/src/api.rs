@@ -20,7 +20,7 @@ impl Plugin for Empty {
 
 #[derive(Clone, Debug, Copy)]
 pub struct Particle {
-    pub id: usize,
+    pub id: u8,
     pub clock: bool,
 }
 
@@ -31,7 +31,7 @@ impl Particle {
     };
 
     pub(crate) const INVALID: Particle = Particle {
-        id: usize::MAX,
+        id: u8::MAX,
         clock: false,
     };
 }
@@ -44,12 +44,27 @@ impl PartialEq for Particle {
 
 impl PartialEq<usize> for Particle {
     fn eq(&self, other: &usize) -> bool {
+        self.id == *other as u8
+    }
+}
+
+impl PartialEq<u8> for Particle {
+    fn eq(&self, other: &u8) -> bool {
         self.id == *other
     }
 }
 
 impl From<usize> for Particle {
     fn from(id: usize) -> Self {
+        Particle {
+            id: id as u8,
+            clock: false,
+        }
+    }
+}
+
+impl From<u8> for Particle {
+    fn from(id: u8) -> Self {
         Particle { id, clock: false }
     }
 }
@@ -119,7 +134,7 @@ impl Simulation {
         if id >= self.get_plugin_count() {
             return Err(format!("Particle with id {} not found", id));
         }
-        
+
         Ok(&self.simulation_state.get_particle_name(id))
     }
 
@@ -127,7 +142,7 @@ impl Simulation {
         if id >= self.get_plugin_count() {
             return Err(format!("Particle with id {} not found", id));
         }
-        
+
         Ok(&self.simulation_state.get_particle_color(id))
     }
 
@@ -233,13 +248,13 @@ impl SimulationState {
         }
 
         let mut particle = particle;
-        particle.id = particle.id.min(self.particle_definitions.len() - 1);
+        particle.id = particle.id.min((self.particle_definitions.len() - 1) as u8);
         self.particles[y][x] = particle;
         self.particles[y][x].clock = !self.clock;
         self.image.set_pixel(
             x as u32,
             y as u32,
-            *self.get_particle_color(particle.id),
+            *self.get_particle_color(particle.id as usize),
         );
     }
 
@@ -267,7 +282,7 @@ impl SimulationState {
         self.image.set_pixel(
             local_x as u32,
             local_y as u32,
-            self.particle_definitions[particle.id].color,
+            self.particle_definitions[particle.id as usize].color,
         );
     }
 
@@ -282,11 +297,11 @@ impl SimulationState {
                 self.current_y = y;
                 let current_particle = &self.particles[y][x];
                 let particle_id = self.particles[y][x]; // Not using getter here to avoid the if check that will never be true here
-                if particle_id == 0 || current_particle.clock != self.clock {
+                if particle_id == Particle::EMPTY || current_particle.clock != self.clock {
                     continue;
                 }
 
-                let plugin = &mut plugins[particle_id.id];
+                let plugin = &mut plugins[particle_id.id as usize];
                 plugin.update(self.particles[y][x], self);
             }
         }
