@@ -275,6 +275,10 @@ impl SimulationState {
         }
     }
 
+    pub fn gen_range(&self, min: i32, max: i32) -> i32 {
+        rand::gen_range(min, max)
+    }
+
     pub(crate) fn draw(&mut self) -> () {
         self.texture.update(&self.image);
 

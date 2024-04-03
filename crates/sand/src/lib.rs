@@ -1,5 +1,4 @@
 use app_core::{api::Particle, ParticleApi, Plugin};
-use rand::Rng;
 
 struct Sand {
     count: i32,
@@ -14,7 +13,7 @@ impl Plugin for Sand {
     }
 
     fn update(&self, cell: Particle, api: &mut ParticleApi) {
-        let dir = (rand::thread_rng().gen_range(0..3) - 1) as i32;
+        let dir = api.gen_range(-1,1);
         // if self.count != 0 {
         //     return;
         // }
