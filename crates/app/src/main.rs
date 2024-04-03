@@ -21,6 +21,8 @@ const HEIGHT: usize = 400;
 
 #[macroquad::main(conf)]
 async fn main() -> Result<(), Box<dyn Error>> {
+    macroquad::rand::srand(macroquad::miniquad::date::now() as u64);
+
     let frame_time: Duration = Duration::from_secs_f64(1.0 / (TARGET_FPS + 1.0));
     let mut radius: usize = 20;
 
@@ -32,6 +34,20 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     print!("Screen ratio to texture: {}", screen_ratio_to_texture);
 
+    let platform = match std::env::consts::OS {
+        "windows" => "windows",
+        "linux" => "linux",
+        "macos" => "macos",
+        _ => "unknown",
+    };
+
+    let plugin_extension = match platform {
+        "windows" => "dll",
+        "linux" => "so",
+        "macos" => "dylib",
+        _ => "unknown",
+    };
+
     // I just search for plugins in the same directory as the executable and load them if they are valid
     for entry in std::fs::read_dir(std::env::current_exe()?.parent().unwrap())? {
         let entry = entry?;
@@ -39,7 +55,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         // Print the path
         if path.is_file() {
             let file_name = path.file_name().unwrap().to_str().unwrap();
-            if file_name.ends_with(".dll") {
+            if file_name.ends_with(plugin_extension) {
                 simulation.add_plugin_from(path.to_str().unwrap());
             }
         }

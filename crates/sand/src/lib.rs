@@ -13,18 +13,20 @@ impl Plugin for Sand {
     }
 
     fn update(&self, cell: Particle, api: &mut ParticleApi) {
-        let dir = api.gen_range(-1,1);
+        let dir = api.random_sign();
+
+        let down_direction = -1;
         // if self.count != 0 {
         //     return;
         // }
 
-        if api.get(0, -1) == Particle::EMPTY {
-            api.set(0, -1, cell);
+        if api.get(0, down_direction) == Particle::EMPTY {
+            api.set(0, down_direction, cell);
             api.set(0, 0, Particle::EMPTY);
-        } else if api.get(dir, -1) == Particle::EMPTY {
+        } else if api.get(dir, down_direction) == Particle::EMPTY {
             api.set(dir, -1, cell);
             api.set(0, 0, Particle::EMPTY);
-        } else if api.get(-dir, -1) == Particle::EMPTY {
+        } else if api.get(-dir, down_direction) == Particle::EMPTY {
             api.set(-dir, -1, cell);
             api.set(0, 0, Particle::EMPTY);
         }

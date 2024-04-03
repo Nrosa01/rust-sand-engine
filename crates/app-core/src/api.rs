@@ -303,6 +303,10 @@ impl SimulationState {
         rand::gen_range(min, max)
     }
 
+    pub fn random_sign(&self) -> i32 {
+        rand::gen_range(0, 2) * 2 - 1
+    }
+
     pub(crate) fn draw(&mut self) -> () {
         self.texture.update(&self.image);
 
