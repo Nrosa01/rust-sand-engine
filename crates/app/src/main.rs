@@ -64,13 +64,13 @@ async fn main() -> Result<(), Box<dyn Error>> {
     loop {
         let frame_start = Instant::now();
 
-        if is_key_pressed(KeyCode::Right) {
+        if is_key_pressed(KeyCode::Right) || is_key_pressed(KeyCode::D){
             selected_plugin += 1;
             if selected_plugin >= simulation.get_plugin_count() {
                 selected_plugin = 0;
             }
         }
-        if is_key_pressed(KeyCode::Left) {
+        if is_key_pressed(KeyCode::Left) || is_key_pressed(KeyCode::A) {
             if selected_plugin == 0 {
                 selected_plugin = simulation.get_plugin_count() - 1;
             } else {

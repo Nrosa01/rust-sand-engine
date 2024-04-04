@@ -1,11 +1,13 @@
 use app_core::{api::Particle, ParticleApi, Plugin};
 
-fn move_to(x: i32, y: i32, cell: Particle, api: &mut ParticleApi) {
-    api.set(x, y, cell);
-    api.set(0, 0, Particle::EMPTY);
-}
-
 struct Water;
+
+pub fn move_if_empty(api: &mut ParticleApi, x: i32, y: i32) -> bool {
+    if api.is_empty(x, y) {
+        return api.move_to(x, y);
+    }
+    false
+}
 
 impl Plugin for Water {
     fn register(&mut self) -> app_core::api::ParticleCommonData {
@@ -15,29 +17,19 @@ impl Plugin for Water {
         }
     }
 
-    fn update(&self, cell: Particle, api: &mut ParticleApi) {
+    fn update(&self, _: Particle, api: &mut ParticleApi) {
         let dir_x = api.gen_range(-1, 1);
         let dir_y = -1;
 
-        if api.get(0, dir_y) == Particle::EMPTY {
-            move_to(0, dir_y, cell, api);
-        } else if api.get(dir_x, dir_y) == Particle::EMPTY {
-            api.set(dir_x, dir_y, cell);
-            api.set(0, 0, Particle::EMPTY);
-        } else if api.get(-dir_x, dir_y) == Particle::EMPTY {
-            api.set(-dir_x, dir_y, cell);
-            api.set(0, 0, Particle::EMPTY);
-        } else if api.get(dir_x, 0) == Particle::EMPTY {
-            api.set(dir_x, 0, cell);
-            api.set(0, 0, Particle::EMPTY);
-        } else if api.get(-dir_x, 0) == Particle::EMPTY {
-            api.set(-dir_x, 0, cell);
-            api.set(0, 0, Particle::EMPTY);
-        }
+        let _ = move_if_empty(api, 0, dir_y) || 
+                move_if_empty(api, dir_x, dir_y) || 
+                move_if_empty(api, -dir_x, dir_y) || 
+                move_if_empty(api, dir_x, 0) || 
+                move_if_empty(api, -dir_x, 0);
     }
 }
 
-// #[no_mangle]
-// pub fn plugin() -> Box<dyn Plugin> {
-//     Box::new(Water)
-// }
+#[no_mangle]
+pub fn plugin() -> Vec<Box<dyn Plugin>> {
+    vec![Box::new(Water)]
+}

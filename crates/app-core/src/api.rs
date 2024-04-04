@@ -437,15 +437,16 @@ impl SimulationState {
         self.image.set_pixel(x as u32, y as u32, color);
     }
 
-    pub fn set(&mut self, x: i32, y: i32, particle: Particle) -> () {
+    pub fn set(&mut self, x: i32, y: i32, particle: Particle) -> bool {
         let local_x = (self.current_x as i32 - x) as usize;
         let local_y = (self.current_y as i32 - y) as usize;
 
         if !self.is_inside_at(local_x, local_y) {
-            return;
+            return false;
         }
 
         self.set_particle_at_unchecked(local_x, local_y, particle);
+        true
     }
 
     pub fn is_inside(&self, x: i32, y: i32) -> bool {
@@ -455,29 +456,67 @@ impl SimulationState {
         self.is_inside_at(local_x, local_y)
     }
 
-    pub fn move_to(&mut self, x: i32, y: i32, particle: Particle) -> () {
+    pub fn move_to(&mut self, x: i32, y: i32) -> bool {
         let local_x = (self.current_x as i32 - x) as usize;
         let local_y = (self.current_y as i32 - y) as usize;
 
         if !self.is_inside_at(local_x, local_y) {
-            return;
+            return false;
+        }
+        
+        let particle = self.particles[self.current_y][self.current_x];            
+        self.set_particle_at_unchecked(local_x, local_y, particle);
+        self.set_particle_at_unchecked(self.current_x, self.current_y, Particle::EMPTY);
+
+        self.current_x = local_x;
+        self.current_y = local_y;
+        true
+    }
+
+    pub fn move_to_using(&mut self, x: i32, y: i32, particle: Particle) -> bool {
+        let local_x = (self.current_x as i32 - x) as usize;
+        let local_y = (self.current_y as i32 - y) as usize;
+
+        if !self.is_inside_at(local_x, local_y) {
+            return false;
         }
 
         self.set_particle_at_unchecked(local_x, local_y, particle);
         self.set_particle_at_unchecked(self.current_x, self.current_y, Particle::EMPTY);
+
+        
+        self.current_x = local_x;
+        self.current_y = local_y;
+        true
     }
 
-    pub fn swap(&mut self, x: i32, y: i32, particle: Particle) -> () {
+    pub fn swap(&mut self, x: i32, y: i32) -> bool {
         let local_x = (self.current_x as i32 - x) as usize;
         let local_y = (self.current_y as i32 - y) as usize;
 
         if !self.is_inside_at(local_x, local_y) {
-            return;
+            return false;
         }
 
         let swap_particle = self.particles[local_y][local_x];
+        let particle = self.particles[self.current_y][self.current_x];
         self.set_particle_at_unchecked(self.current_x, self.current_y, swap_particle);
         self.set_particle_at_unchecked(local_x, local_y, particle);
+        true
+    }
+
+    pub fn swap_using(&mut self, x: i32, y: i32, particle: Particle) -> bool {
+        let local_x = (self.current_x as i32 - x) as usize;
+        let local_y = (self.current_y as i32 - y) as usize;
+
+        if !self.is_inside_at(local_x, local_y) {
+            return false;
+        }
+
+        let swap_particle = self.particles[local_y][local_x];
+        self.set_particle_at_unchecked(local_x, local_y, particle);
+        self.set_particle_at_unchecked(self.current_x, self.current_y, swap_particle);
+        true
     }
 
     pub fn is_particle_at(&self, x: i32, y: i32, particle_id: u8) -> bool {
@@ -530,6 +569,10 @@ impl SimulationState {
     /// Range, min and max are inclusive
     pub fn gen_range(&self, min: i32, max: i32) -> i32 {
         rand::gen_range(min - 1, max + 1)
+    }
+
+    pub fn is_empty(&self, x: i32, y: i32) -> bool {
+        self.get(x, y) == Particle::EMPTY
     }
 
     pub fn random_sign(&self) -> i32 {

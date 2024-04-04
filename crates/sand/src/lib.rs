@@ -10,6 +10,13 @@ impl Sand {
     }
 }
 
+pub fn swap_if_match(api: &mut ParticleApi, x: i32, y: i32, collision_targets: &[u8]) -> bool {
+    if api.is_any_particle_at(x, y, collision_targets) {
+        return api.swap(x, y);
+    }
+    false
+}
+
 impl Plugin for Sand {
     fn register(&mut self) -> app_core::api::ParticleCommonData {
         app_core::api::ParticleCommonData {
@@ -18,18 +25,13 @@ impl Plugin for Sand {
         }
     }
 
-    fn update(&self, cell: Particle, api: &mut ParticleApi) {
-        let dir = api.gen_range(-1, 1);
+    fn update(&self, _: Particle, api: &mut ParticleApi) {
+        let random_horizontal = api.gen_range(-1, 1);
+        let down = -1;
 
-        let down_direction = -1;
-
-        if api.is_any_particle_at(0, down_direction, &self.collision_targets) {
-            api.swap(0, down_direction, cell);
-        } else if api.is_any_particle_at(dir, down_direction, &self.collision_targets) {
-            api.swap(dir, down_direction, cell);
-        } else if api.is_any_particle_at(-dir, down_direction, &self.collision_targets) {
-            api.swap(-dir, down_direction, cell);
-        }
+        let _ = swap_if_match(api, 0, down, &self.collision_targets) || 
+                swap_if_match(api, random_horizontal, down, &self.collision_targets) || 
+                swap_if_match(api, -random_horizontal, down, &self.collision_targets);
     }
 
     fn post_update(&mut self, api: &ParticleApi) {
