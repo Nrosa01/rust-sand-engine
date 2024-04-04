@@ -22,7 +22,7 @@ impl Plugin for Sand {
         let dir = api.gen_range(-1, 1);
 
         let down_direction = -1;
-   
+
         if api.is_any_particle_at(0, down_direction, &self.collision_targets) {
             api.swap(0, down_direction, cell);
         } else if api.is_any_particle_at(dir, down_direction, &self.collision_targets) {
@@ -38,6 +38,6 @@ impl Plugin for Sand {
 }
 
 #[no_mangle]
-pub fn plugin() -> Box<dyn Plugin> {
-    Box::new(Sand::new())
+pub fn plugin() -> Vec<Box<dyn Plugin>> {
+    vec![Box::new(Sand::new())]
 }

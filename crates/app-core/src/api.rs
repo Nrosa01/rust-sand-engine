@@ -81,13 +81,13 @@ impl PartialEq<u8> for Particle {
 
 impl From<usize> for Particle {
     fn from(id: usize) -> Self {
-        Particle ::from_id(id as u8)
+        Particle::from_id(id as u8)
     }
 }
 
 impl From<u8> for Particle {
     fn from(id: u8) -> Self {
-        Particle ::from_id(id as u8)
+        Particle::from_id(id as u8)
     }
 }
 
@@ -100,6 +100,19 @@ pub struct ParticleCommonData {
 pub struct PluginData {
     pub(crate) plugins: Vec<Box<dyn Plugin>>,
     pub(crate) libraries: Vec<libloading::Library>,
+}
+
+impl Drop for PluginData {
+    fn drop(&mut self) {
+        // Drop first plugins, then libraries
+        for plugin in self.plugins.drain(..) {
+            drop(plugin);
+        }
+
+        for library in self.libraries.drain(..) {
+            drop(library);
+        }
+    }
 }
 
 impl PluginData {
@@ -208,6 +221,9 @@ pub struct Simulation {
     order_scheme: OrderSchemes,
 }
 
+type PluginLoader<'a> =
+    Result<libloading::Symbol<'a, fn() -> Vec<Box<dyn Plugin>>>, libloading::Error>;
+
 impl Simulation {
     pub fn new(width: usize, height: usize) -> Simulation {
         Simulation {
@@ -267,18 +283,29 @@ impl Simulation {
     pub fn add_plugin_from(&mut self, path: &str) -> () {
         let plugin_lib = unsafe { libloading::Library::new(path) };
         if let Ok(plugin_lib) = plugin_lib {
-            let plugin_loader: Result<
-                libloading::Symbol<fn() -> Box<dyn Plugin>>,
-                libloading::Error,
-            > = unsafe { plugin_lib.get(b"plugin") };
-            if let Ok(plugin_loader) = plugin_loader {
-                let mut plugin = plugin_loader();
-                self.simulation_state
-                    .add_particle_definition(plugin.register().into());
-                self.plugin_data.libraries.push(plugin_lib);
-                self.plugin_data.plugins.push(plugin);
+            let plugin_loader: PluginLoader = unsafe { plugin_lib.get(b"plugin") };
+
+            match plugin_loader {
+                Ok(plugin_loader) => {
+                    let mut plugins = plugin_loader();
+                    self.plugin_data.libraries.push(plugin_lib);
+
+                    for plugin in &mut plugins.drain(..) {
+                        self.add_plugin(plugin);
+                    }
+                }
+                Err(err) => {
+                    println!("Error loading plugin: {:?} because {}", path, err);
+                }
             }
         }
+    }
+
+    fn add_plugin(&mut self, plugin: Box<dyn Plugin>) -> () {
+        let mut plugin = plugin;
+        self.simulation_state
+            .add_particle_definition(plugin.register().into());
+        self.plugin_data.plugins.push(plugin);
     }
 
     pub fn set_particle(&mut self, x: usize, y: usize, particle: Particle) -> () {
@@ -318,13 +345,7 @@ impl SimulationState {
         }
 
         SimulationState {
-            particles: vec![
-                vec![
-                    Particle::new();
-                    width
-                ];
-                height
-            ],
+            particles: vec![vec![Particle::new(); width]; height],
             current_x: 0,
             current_y: 0,
             width,
@@ -352,7 +373,10 @@ impl SimulationState {
     ];
 
     pub fn id_from_name(&self, name: &str) -> u8 {
-        *self.particle_name_to_id.get(name).unwrap()
+        *self
+            .particle_name_to_id
+            .get(name)
+            .unwrap_or(&Particle::INVALID.id)
     }
 
     pub(crate) fn add_particle_definition(
@@ -380,43 +404,80 @@ impl SimulationState {
         &self.particle_definitions[id].color
     }
 
-    pub(crate) fn set_particle_at(&mut self, x: usize, y: usize, particle: Particle) -> () {
-        if !self.is_inside(x, y) {
-            return;
-        }
-
-        self.set(-(x as i32), -(y as i32), particle);
-    }
-
     pub fn get(&self, x: i32, y: i32) -> Particle {
         let local_x = (self.current_x as i32 - x) as usize;
         let local_y = (self.current_y as i32 - y) as usize;
 
-        if !self.is_inside(local_x, local_y) {
-            return Particle::INVALID; // TODO: Change this to return a particle with id max usize value
+        if !self.is_inside_at(local_x, local_y) {
+            return Particle::INVALID;
         }
 
         self.particles[local_y][local_x]
+    }
+
+    pub(crate) fn set_particle_at(&mut self, x: usize, y: usize, particle: Particle) -> () {
+        if !self.is_inside_at(x, y) {
+            return;
+        }
+
+        self.set_particle_at_unchecked(x, y, particle);
+    }
+
+    pub(crate) fn set_particle_at_unchecked(
+        &mut self,
+        x: usize,
+        y: usize,
+        particle: Particle,
+    ) -> () {
+        self.particles[y][x] = particle;
+        self.particles[y][x].clock = !self.clock;
+        let mut color = self.particle_definitions[particle.id as usize].color;
+        color.a = (particle.light as f32 * TO_NORMALIZED_COLOR) * 0.15 + 0.85; // I don't like magic numbers, but for now...
+                                                                               // print the light
+        self.image.set_pixel(x as u32, y as u32, color);
     }
 
     pub fn set(&mut self, x: i32, y: i32, particle: Particle) -> () {
         let local_x = (self.current_x as i32 - x) as usize;
         let local_y = (self.current_y as i32 - y) as usize;
 
-        if !self.is_inside(local_x, local_y) {
+        if !self.is_inside_at(local_x, local_y) {
             return;
         }
 
-        self.particles[local_y][local_x] = particle;
-        self.particles[local_y][local_x].clock = !self.clock;
-        let mut color = self.particle_definitions[particle.id as usize].color;
-        color.a = (particle.light as f32 * TO_NORMALIZED_COLOR) * 0.15 + 0.85; // I don't like magic numbers, but for now...
-        // print the light
-        self.image.set_pixel(
-            local_x as u32,
-            local_y as u32,
-            color,
-        );
+        self.set_particle_at_unchecked(local_x, local_y, particle);
+    }
+
+    pub fn is_inside(&self, x: i32, y: i32) -> bool {
+        let local_x = (self.current_x as i32 - x) as usize;
+        let local_y = (self.current_y as i32 - y) as usize;
+
+        self.is_inside_at(local_x, local_y)
+    }
+
+    pub fn move_to(&mut self, x: i32, y: i32, particle: Particle) -> () {
+        let local_x = (self.current_x as i32 - x) as usize;
+        let local_y = (self.current_y as i32 - y) as usize;
+
+        if !self.is_inside_at(local_x, local_y) {
+            return;
+        }
+
+        self.set_particle_at_unchecked(local_x, local_y, particle);
+        self.set_particle_at_unchecked(self.current_x, self.current_y, Particle::EMPTY);
+    }
+
+    pub fn swap(&mut self, x: i32, y: i32, particle: Particle) -> () {
+        let local_x = (self.current_x as i32 - x) as usize;
+        let local_y = (self.current_y as i32 - y) as usize;
+
+        if !self.is_inside_at(local_x, local_y) {
+            return;
+        }
+
+        let swap_particle = self.particles[local_y][local_x];
+        self.set_particle_at_unchecked(self.current_x, self.current_y, swap_particle);
+        self.set_particle_at_unchecked(local_x, local_y, particle);
     }
 
     pub fn is_particle_at(&self, x: i32, y: i32, particle_id: u8) -> bool {
@@ -428,19 +489,8 @@ impl SimulationState {
         particles.contains(&particle.id)
     }
 
-    pub fn is_inside(&self, x: usize, y: usize) -> bool {
+    pub(crate) fn is_inside_at(&self, x: usize, y: usize) -> bool {
         x < self.width && y < self.height
-    }
-
-    pub fn move_to(&mut self, x: i32, y: i32, particle: Particle) -> () {
-        self.set(x, y, particle);
-        self.set(0, 0, Particle::EMPTY);
-    }
-
-    pub fn swap(&mut self, x: i32, y: i32, particle: Particle) -> () {
-        let swap_particle = self.get(x, y);
-        self.set(0, 0, swap_particle);
-        self.set(x, y, particle);
     }
 
     pub(crate) fn update(

@@ -37,7 +37,7 @@ impl Plugin for Water {
     }
 }
 
-#[no_mangle]
-pub fn plugin() -> Box<dyn Plugin> {
-    Box::new(Water)
-}
+// #[no_mangle]
+// pub fn plugin() -> Box<dyn Plugin> {
+//     Box::new(Water)
+// }

@@ -32,8 +32,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let screen_ratio_to_texture = screen_width() / WIDTH as f32;
 
-    print!("Screen ratio to texture: {}", screen_ratio_to_texture);
-
     let platform = match std::env::consts::OS {
         "windows" => "windows",
         "linux" => "linux",
@@ -60,6 +58,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
             }
         }
     }
+
+    print!("Stack trace");
 
     loop {
         let frame_start = Instant::now();
