@@ -1,17 +1,18 @@
-use app_core::{api::Particle, ParticleApi, Plugin};
+use app_core::*;
+use app_core::api::*;
+use crate::*;
 
-struct Water;
+pub struct Water;
 
-pub fn move_if_empty(api: &mut ParticleApi, x: i32, y: i32) -> bool {
-    if api.is_empty(x, y) {
-        return api.move_to(x, y);
+impl Water {
+    pub fn new() -> Self {
+        Water
     }
-    false
 }
 
 impl Plugin for Water {
-    fn register(&mut self) -> app_core::api::ParticleCommonData {
-        app_core::api::ParticleCommonData {
+    fn register(&mut self) -> ParticleCommonData {
+        ParticleCommonData {
             name: String::from("Water"),
             color: app_core::Color::from_hex(0x00FFFF),
         }
@@ -27,9 +28,4 @@ impl Plugin for Water {
                 move_if_empty(api, dir_x, 0) || 
                 move_if_empty(api, -dir_x, 0);
     }
-}
-
-#[no_mangle]
-pub fn plugin() -> Vec<Box<dyn Plugin>> {
-    vec![Box::new(Water)]
 }
