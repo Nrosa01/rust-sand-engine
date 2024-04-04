@@ -3,8 +3,6 @@
 use app_core::api::Simulation;
 use macroquad::prelude::*;
 use std::error::Error;
-use std::thread::sleep;
-use std::time::{Duration, Instant};
 
 fn conf() -> Conf {
     Conf {
@@ -15,24 +13,20 @@ fn conf() -> Conf {
     }
 }
 
-const TARGET_FPS: f64 = 60.0;
-const WIDTH: usize = 2000;
-const HEIGHT: usize = 2000;
+const WIDTH: usize = 300;
+const HEIGHT: usize = 300;
 
 #[macroquad::main(conf)]
 async fn main() -> Result<(), Box<dyn Error>> {
     macroquad::rand::srand(macroquad::miniquad::date::now() as u64);
-
-    let frame_time: Duration = Duration::from_secs_f64(1.0 / (TARGET_FPS + 1.0));
-    let mut radius: usize = 200;
+    
+    let mut radius: usize = 40;
 
     let mut simulation = Simulation::new(WIDTH, HEIGHT);
 
     let mut selected_plugin = 1;
 
     let screen_ratio_to_texture = screen_width() / WIDTH as f32;
-
-    print!("Screen ratio to texture: {}", screen_ratio_to_texture);
 
     let platform = match std::env::consts::OS {
         "windows" => "windows",
@@ -62,15 +56,13 @@ async fn main() -> Result<(), Box<dyn Error>> {
     }
 
     loop {
-        let frame_start = Instant::now();
-
-        if is_key_pressed(KeyCode::Right) {
+        if is_key_pressed(KeyCode::Right) || is_key_pressed(KeyCode::D){
             selected_plugin += 1;
             if selected_plugin >= simulation.get_plugin_count() {
                 selected_plugin = 0;
             }
         }
-        if is_key_pressed(KeyCode::Left) {
+        if is_key_pressed(KeyCode::Left) || is_key_pressed(KeyCode::A) {
             if selected_plugin == 0 {
                 selected_plugin = simulation.get_plugin_count() - 1;
             } else {
@@ -123,7 +115,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         simulation.update();
 
         // Clear the screen
-        clear_background(BLACK);
+        clear_background(Color::from_hex(0x12212b));
 
         simulation.draw();
 
@@ -146,11 +138,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
         draw_circle_lines(mouse_x, mouse_y, radius as f32, 1.0, WHITE);
 
         next_frame().await;
-
-        let elapsed = frame_start.elapsed();
-        if elapsed < frame_time {
-            sleep(frame_time - elapsed);
-        }
     }
 
     Ok(())
