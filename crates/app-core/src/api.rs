@@ -4,6 +4,7 @@ use rustc_hash::FxHashMap;
 use std::vec;
 
 pub const TO_NORMALIZED_COLOR: f32 = 1.0 / 255.0;
+pub const TRANSPARENT: Color = Color{ r: 0.07, g: 0.13, b: 0.17, a: 1.0 };
 
 pub struct Empty;
 
@@ -11,7 +12,7 @@ impl Plugin for Empty {
     fn register(&mut self) -> ParticleCommonData {
         ParticleCommonData {
             name: String::from("Empty"),
-            color: BLACK,
+            color: TRANSPARENT,
         }
     }
 
@@ -294,9 +295,7 @@ impl Simulation {
                         self.add_plugin(plugin);
                     }
                 }
-                Err(err) => {
-                    println!("Error loading plugin: {:?} because {}", path, err);
-                }
+                Err(_) => {}
             }
         }
     }
@@ -333,7 +332,7 @@ pub struct SimulationState {
 
 impl SimulationState {
     pub fn new(width: usize, height: usize) -> SimulationState {
-        let image = Image::gen_image_color(width as u16, height as u16, BLACK);
+        let image = Image::gen_image_color(width as u16, height as u16, TRANSPARENT);
         let texture = Texture2D::from_image(&image);
         texture.set_filter(FilterMode::Nearest); // Set the filter mode to nearest to avoid blurring the pixels
 
@@ -351,8 +350,8 @@ impl SimulationState {
             width,
             height,
             particle_definitions: vec![ParticleCommonData {
-                name: String::from("empty"),
-                color: BLACK,
+                name: String::from("Empty"),
+                color: TRANSPARENT,
             }],
             image: image,
             texture: texture,
@@ -433,7 +432,7 @@ impl SimulationState {
         self.particles[y][x].clock = !self.clock;
         let mut color = self.particle_definitions[particle.id as usize].color;
         color.a = (particle.light as f32 * TO_NORMALIZED_COLOR) * 0.15 + 0.85; // I don't like magic numbers, but for now...
-                                                                               // print the light
+        
         self.image.set_pixel(x as u32, y as u32, color);
     }
 
