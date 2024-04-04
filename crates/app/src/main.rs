@@ -4,23 +4,27 @@ use app_core::api::Simulation;
 use macroquad::prelude::*;
 use std::error::Error;
 
+const WINDOW_WIDTH : i32 = 880;
+const WINDOW_HEIGHT : i32 = 800;
+
 fn conf() -> Conf {
     Conf {
         window_title: String::from("Pixel Flow"),
-        window_width: 880,
-        window_height: 800,
+        window_width: WINDOW_WIDTH,
+        window_height: WINDOW_HEIGHT,
         ..Default::default()
     }
 }
 
 const WIDTH: usize = 300;
 const HEIGHT: usize = 300;
+const SENSITIVITY: isize = WINDOW_WIDTH as isize / WIDTH  as isize * 5;
 
 #[macroquad::main(conf)]
 async fn main() -> Result<(), Box<dyn Error>> {
     macroquad::rand::srand(macroquad::miniquad::date::now() as u64);
     
-    let mut radius: usize = 40;
+    let mut radius: isize = 40;
 
     let mut simulation = Simulation::new(WIDTH, HEIGHT);
 
@@ -74,10 +78,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
         let mouse_wheel = mouse_wheel().1;
         // Draw both mouse wheelv alues
         if mouse_wheel != 0.0 {
-            let new_radius = radius as i32 + mouse_wheel as i32;
-            // ADD radius sign to the new_radius, so if new_radius is negative, it will substract -1, otherwise it will add 1
-            let sign = new_radius.signum();
-            radius = (radius as i32 + sign) as usize;
+            let sign = mouse_wheel.signum() as isize;
+            radius = radius + sign * SENSITIVITY;
         }
 
         // Break the loop if the user closes the window OR presses the escape key

@@ -65,7 +65,7 @@ impl SimulationState {
     pub fn id_from_name(&self, name: &str) -> u8 {
         *self
             .particle_name_to_id
-            .get(name)
+            .get(&name.to_lowercase())
             .unwrap_or(&Particle::INVALID.id)
     }
 
@@ -75,7 +75,7 @@ impl SimulationState {
     ) -> () {
         self.particle_definitions.push(particle_definition);
         self.particle_name_to_id.insert(
-            self.particle_definitions.last().unwrap().name.clone(),
+            self.particle_definitions.last().unwrap().name.to_lowercase().clone(),
             self.particle_definitions.len() as u8 - 1,
         );
 
@@ -130,7 +130,7 @@ impl SimulationState {
         self.particles[y][x] = particle;
         self.particles[y][x].clock = !self.clock;
         let mut color = self.particle_definitions[particle.id as usize].color;
-        color.a = (particle.light as f32 * TO_NORMALIZED_COLOR) * 0.15 + 0.85; // I don't like magic numbers, but for now...
+        color.a = particle.light as f32 * TO_NORMALIZED_COLOR;
         
         self.image.set_pixel(x as u32, y as u32, color);
     }
@@ -265,8 +265,8 @@ impl SimulationState {
     }
 
     /// Range, min and max are inclusive
-    pub fn gen_range(&self, min: i32, max: i32) -> i32 {
-        rand::gen_range(min - 1, max + 1)
+    pub fn gen_range(&self, min_inclusive: i32, max_inclusive: i32) -> i32 {
+        rand::gen_range(min_inclusive - 1, max_inclusive + 1)
     }
 
     pub fn is_empty(&self, x: i32, y: i32) -> bool {

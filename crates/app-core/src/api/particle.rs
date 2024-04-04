@@ -13,7 +13,7 @@ impl Particle {
         Particle {
             id: 0,
             clock: false,
-            light: rand::gen_range(-1, 256) as u8,
+            light: rand::gen_range(200, 256) as u8,
             extra: 0,
         }
     }
@@ -23,7 +23,7 @@ impl Particle {
         Particle {
             id,
             clock: false,
-            light: rand::gen_range(-1, 256) as u8,
+            light: rand::gen_range(200, 256) as u8,
             extra: 0,
         }
     }

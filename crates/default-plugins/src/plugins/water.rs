@@ -1,11 +1,13 @@
 use app_core::*;
 use crate::*;
 
-pub struct Water;
+pub struct Water{
+    collision_targets: [u8; 2]
+}
 
 impl Water {
     pub fn new() -> Self {
-        Water
+        Water  { collision_targets: [0,2] }
     }
 }
 
@@ -21,10 +23,14 @@ impl Plugin for Water {
         let dir_x = api.gen_range(-1, 1);
         let dir_y = -1;
 
-        let _ = move_if_empty(api, 0, dir_y) || 
-                move_if_empty(api, dir_x, dir_y) || 
-                move_if_empty(api, -dir_x, dir_y) || 
-                move_if_empty(api, dir_x, 0) || 
-                move_if_empty(api, -dir_x, 0);
+        let _ = swap_if_match(api, 0, dir_y, &self.collision_targets) || 
+                swap_if_match(api, dir_x, dir_y, &self.collision_targets) || 
+                swap_if_match(api, -dir_x, dir_y, &self.collision_targets) || 
+                swap_if_match(api, dir_x, 0, &self.collision_targets) || 
+                swap_if_match(api, -dir_x, 0, &self.collision_targets);
+    }
+
+    fn post_update(&mut self, api: &ParticleApi) {
+        self.collision_targets[1] = api.id_from_name("Dust");
     }
 }
