@@ -1,4 +1,4 @@
-use app_core::Plugin;
+use app_core::api::Plugin;
 pub mod plugins;
 use crate::plugins::*;
 
