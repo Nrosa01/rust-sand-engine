@@ -9,7 +9,7 @@ pub struct Particle {
 }
 
 impl Particle {
-    pub fn new() -> Particle {
+    pub(crate) fn new() -> Particle {
         Particle {
             id: 0,
             clock: false,
@@ -18,7 +18,7 @@ impl Particle {
         }
     }
 
-    pub fn from_id(id: u8) -> Particle {
+    fn from_id(id: u8) -> Particle {
         //print something
         Particle {
             id,

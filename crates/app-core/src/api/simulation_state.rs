@@ -122,23 +122,27 @@ impl SimulationState {
         self.particles[local_y][local_x]
     }
 
+    pub fn new_particle(&self, particle_id: u8) -> Particle {
+        let particle_definition = &self.particle_definitions[particle_id as usize];
+        let min_alpha = particle_definition.rand_alpha_min as i32;
+        let max_alpha = particle_definition.rand_alpha_max as i32;
+        let extra_min = particle_definition.rand_extra_min as i32;
+        let extra_max = particle_definition.rand_extra_max as i32;
+
+        Particle {
+            id: particle_id,
+            light: self.gen_range(min_alpha, max_alpha) as u8,
+            clock: !self.clock,
+            extra: self.gen_range(extra_min, extra_max) as u8,
+        }
+    }
+
     pub(crate) fn set_particle_at_by_id(&mut self, x: usize, y: usize, particle_id: u8) -> () {
         if !self.is_inside_at(x, y) {
             return;
         }
 
-        // Get Particle data and calc alpha
-        let min_alpha = self.particle_definitions[particle_id as usize].rand_alpha_min as i32;
-        let max_alpha = self.particle_definitions[particle_id as usize].rand_alpha_max as i32;
-
-        let particle = Particle {
-            id: particle_id,
-            light: self.gen_range(min_alpha, max_alpha) as u8,
-            clock: !self.clock,
-            extra: 0,
-        };
-
-        self.set_particle_at_unchecked(x, y, particle);
+        self.set_particle_at_unchecked(x, y, self.new_particle(particle_id));
     }
 
     // pub(crate) fn set_particle_at(&mut self, x: usize, y: usize, particle: Particle) -> () {
