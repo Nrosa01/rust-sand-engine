@@ -8,6 +8,11 @@ pub struct Vec2i {
     pub y: isize,
 }
 
+pub struct Vec2u {
+    pub x: usize,
+    pub y: usize,
+}
+
 pub struct SimulationState {
     particle_definitions: Vec<ParticleCommonData>,
     particles: Vec<Vec<Particle>>,
@@ -43,6 +48,10 @@ impl SimulationState {
             particle_definitions: vec![ParticleCommonData {
                 name: String::from("Empty"),
                 color: TRANSPARENT,
+                rand_alpha_min: 0,
+                rand_alpha_max: 0,
+                rand_extra_min: 0,
+                rand_extra_max: 0,
             }],
             image: image,
             texture: texture,
@@ -113,13 +122,32 @@ impl SimulationState {
         self.particles[local_y][local_x]
     }
 
-    pub(crate) fn set_particle_at(&mut self, x: usize, y: usize, particle: Particle) -> () {
+    pub(crate) fn set_particle_at_by_id(&mut self, x: usize, y: usize, particle_id: u8) -> () {
         if !self.is_inside_at(x, y) {
             return;
         }
 
+        // Get Particle data and calc alpha
+        let min_alpha = self.particle_definitions[particle_id as usize].rand_alpha_min as i32;
+        let max_alpha = self.particle_definitions[particle_id as usize].rand_alpha_max as i32;
+
+        let particle = Particle {
+            id: particle_id,
+            light: self.gen_range(min_alpha, max_alpha) as u8,
+            clock: !self.clock,
+            extra: 0,
+        };
+
         self.set_particle_at_unchecked(x, y, particle);
     }
+
+    // pub(crate) fn set_particle_at(&mut self, x: usize, y: usize, particle: Particle) -> () {
+    //     if !self.is_inside_at(x, y) {
+    //         return;
+    //     }
+
+    //     self.set_particle_at_unchecked(x, y, particle);
+    // }
 
     pub(crate) fn set_particle_at_unchecked(
         &mut self,

@@ -12,10 +12,11 @@ impl Steam {
 }
 
 impl Plugin for Steam {
-    fn register(&mut self) -> ParticleCommonData {
-        ParticleCommonData {
+    fn register(&mut self) -> PluginResult {
+        PluginResult {
             name: String::from("Steam"),
             color: app_core::Color::from_rgba(128,128,128,128),
+            ..Default::default()
         }
     }
 

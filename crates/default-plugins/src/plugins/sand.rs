@@ -12,10 +12,11 @@ impl Sand {
 }
 
 impl Plugin for Sand {
-    fn register(&mut self) -> ParticleCommonData {
-        ParticleCommonData {
+    fn register(&mut self) -> PluginResult {
+        PluginResult {
             name: String::from("Sand"),
             color: app_core::Color::from_hex(0xFFFF00),
+            ..Default::default()
         }
     }
 

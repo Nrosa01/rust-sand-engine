@@ -14,4 +14,5 @@ pub(crate) use crate::order_scheme::*;
 pub use macroquad::prelude::*;
 
 pub const TO_NORMALIZED_COLOR: f32 = 1.0 / 255.0;
+pub const FROM_NORMALIZED_TO_COLOR: f32 = 255.0;
 pub const TRANSPARENT: Color = Color{ r: 0.07, g: 0.13, b: 0.17, a: 1.0 };

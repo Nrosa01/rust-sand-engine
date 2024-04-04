@@ -84,6 +84,6 @@ impl Simulation {
     }
 
     pub fn set_particle(&mut self, x: usize, y: usize, particle: Particle) -> () {
-        self.simulation_state.set_particle_at(x, y, particle);
+        self.simulation_state.set_particle_at_by_id(x, y, particle.id);
     }
 }
