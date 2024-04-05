@@ -1,3 +1,4 @@
+use egui_macroquad::macroquad;
 use macroquad::prelude::*;
 use macroquad::rand;
 use crate::api::*;
@@ -314,12 +315,12 @@ impl SimulationState {
 
         // Draw the texture
         draw_texture_ex(
-            &self.texture,
+            self.texture,
             0.0,
             0.0,
             WHITE,
             DrawTextureParams {
-                dest_size: Some(vec2(screen_width(), screen_height())),
+                dest_size: Some(vec2(screen_width(), screen_height() - 100.0)),
                 ..Default::default()
             },
         );

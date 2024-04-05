@@ -10,5 +10,5 @@ crate-type = ["dylib"]
 
 [dependencies]
 libloading = "0.8.3"
-macroquad = "0.4.5"
+egui-macroquad = "0.15.0"
 rustc-hash = "1.1.0"

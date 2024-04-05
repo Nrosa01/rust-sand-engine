@@ -1,6 +1,7 @@
 // #![windows_subsystem = "windows"]
 
 use app_core::api::Simulation;
+use egui_macroquad::{egui, macroquad};
 use macroquad::prelude::*;
 use std::error::Error;
 
@@ -16,14 +17,13 @@ fn conf() -> Conf {
     }
 }
 
-const WIDTH: usize = 300;
-const HEIGHT: usize = 300;
+const WIDTH: usize = 2000;
+const HEIGHT: usize = 2000;
 const SENSITIVITY: isize = WINDOW_WIDTH as isize / WIDTH  as isize * 5;
 
 #[macroquad::main(conf)]
 async fn main() -> Result<(), Box<dyn Error>> {
     macroquad::rand::srand(macroquad::miniquad::date::now() as u64);
-    
     let mut radius: isize = 40;
 
     let mut simulation = Simulation::new(WIDTH, HEIGHT);
@@ -119,6 +119,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
         // Clear the screen
         clear_background(Color::from_hex(0x12212b));
 
+        egui_macroquad::ui(|egui_ctx| {
+            egui::Window::new("egui ❤ macroquad")
+                .show(egui_ctx, |ui| {
+                    ui.label("Test");
+                });
+                
+        });
+
         simulation.draw();
 
         // Draw the selected particle
@@ -139,6 +147,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
         let (mouse_x, mouse_y) = mouse_position();
         draw_circle_lines(mouse_x, mouse_y, radius as f32, 1.0, WHITE);
 
+
+        egui_macroquad::draw();
         next_frame().await;
     }
 
