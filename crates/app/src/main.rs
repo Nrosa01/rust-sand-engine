@@ -1,12 +1,12 @@
 // #![windows_subsystem = "windows"]
 
 use app_core::api::Simulation;
-use egui_macroquad::{egui, macroquad};
+use egui_macroquad::{egui::{self, Frame, Margin}, macroquad};
 use macroquad::prelude::*;
 use std::error::Error;
 
 const WINDOW_WIDTH : i32 = 880;
-const WINDOW_HEIGHT : i32 = 800;
+const WINDOW_HEIGHT : i32 = 900;
 
 fn conf() -> Conf {
     Conf {
@@ -17,8 +17,8 @@ fn conf() -> Conf {
     }
 }
 
-const WIDTH: usize = 2000;
-const HEIGHT: usize = 2000;
+const WIDTH: usize = 300;
+const HEIGHT: usize = 300;
 const SENSITIVITY: isize = WINDOW_WIDTH as isize / WIDTH  as isize * 5;
 
 #[macroquad::main(conf)]
@@ -120,11 +120,48 @@ async fn main() -> Result<(), Box<dyn Error>> {
         clear_background(Color::from_hex(0x12212b));
 
         egui_macroquad::ui(|egui_ctx| {
-            egui::Window::new("egui ❤ macroquad")
-                .show(egui_ctx, |ui| {
-                    ui.label("Test");
-                });
+           // Create top bar
+            egui::TopBottomPanel::top("top_panel").show(egui_ctx, |ui| {
                 
+                ui.horizontal(|ui| {
+                    ui.label("Selected particle:");
+                    ui.label(simulation.get_particle_name(selected_plugin).unwrap_or(&"None".to_string()));
+                });
+            });
+
+            // Create left panel
+          
+
+            // Taking the code about as reference, I will write how I want the UI
+            // It will be a topbottom panel with a height of 100.0 set to the bottom
+            // Inside the panel there will be a grid container with buttons for each particle, the current particle will be highlighted
+            // the container for the particles button should scroll on overflow
+            // The buttons will have the name of the particle
+
+            // Bottom panel
+
+            egui::TopBottomPanel::bottom("bottom_panel").exact_height(100.0).frame( Frame {
+                inner_margin: Margin { top: 10.0, bottom: 10.0, left: 10.0, right: 10.0 },
+               ..Default::default()
+            }).show(egui_ctx, |ui| {
+                egui::Grid::new("particles").striped(true).spacing([10.0, 10.0]).show(ui, |ui| {
+                    for i in 0..simulation.get_plugin_count() {
+                        let should_hightlight = i == selected_plugin;
+                        let none = "None".to_string();
+                        let name = simulation.get_particle_name(i).unwrap_or(&none);
+                        let button = ui.button(name);
+                        if should_hightlight {
+                            button.highlight();
+                        }
+                        else if button.clicked() {
+                            selected_plugin = i;
+                        }
+                    }
+                });
+               
+            });
+
+            
         });
 
         simulation.draw();
