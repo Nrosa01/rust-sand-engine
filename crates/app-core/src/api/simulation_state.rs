@@ -53,6 +53,7 @@ impl SimulationState {
                 rand_alpha_max: 0,
                 rand_extra_min: 0,
                 rand_extra_max: 0,
+                hide_in_ui: false,
             }],
             image: image,
             texture: texture,
@@ -94,6 +95,10 @@ impl SimulationState {
             "Added particle definition: {}",
             self.particle_definitions.last().unwrap().name
         );
+    }
+
+    pub(crate) fn get_particle_definitions(&self) -> &Vec<ParticleCommonData> {
+        &self.particle_definitions
     }
 
     pub(crate) fn get_particle_name(&self, id: usize) -> &String {
@@ -320,7 +325,7 @@ impl SimulationState {
             0.0,
             WHITE,
             DrawTextureParams {
-                dest_size: Some(vec2(screen_width(), screen_height() - 100.0)),
+                dest_size: Some(vec2(screen_width(), screen_height())),
                 ..Default::default()
             },
         );

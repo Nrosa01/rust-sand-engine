@@ -18,6 +18,10 @@ impl Simulation {
         }
     }
 
+    pub fn get_particle_definitions(&self) -> &Vec<ParticleCommonData> {
+        &self.simulation_state.get_particle_definitions()
+    }
+
     pub fn get_plugin_count(&self) -> usize {
         self.plugin_data.plugins.len()
     }
@@ -47,6 +51,14 @@ impl Simulation {
         }
 
         Ok(&self.simulation_state.get_particle_name(id))
+    }
+
+    pub fn get_particle_hide_in_ui(&self, id: usize) -> Result<bool, String> {
+        if id >= self.get_plugin_count() {
+            return Err(format!("Particle with id {} not found", id));
+        }
+
+        Ok(self.simulation_state.get_particle_definitions()[id].hide_in_ui)
     }
 
     pub fn get_particle_color(&self, id: usize) -> Result<&Color, String> {
