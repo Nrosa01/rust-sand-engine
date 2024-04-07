@@ -318,14 +318,19 @@ impl SimulationState {
     pub(crate) fn draw(&mut self) -> () {
         self.texture.update(&self.image);
 
+        let pos_x = (screen_width() / 2.0 - screen_height() / 2.0).max(0.);
+        let pos_y = (screen_height() / 2.0 - screen_width() / 2.0).max(0.);
+
+        let dest_size = screen_height().min(screen_width());
+
         // Draw the texture
         draw_texture_ex(
             self.texture,
-            0.0,
-            0.0,
+            pos_x,
+            pos_y,
             WHITE,
             DrawTextureParams {
-                dest_size: Some(vec2(screen_width(), screen_height())),
+                dest_size: Some(vec2(dest_size, dest_size)),
                 ..Default::default()
             },
         );
