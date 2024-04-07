@@ -11,6 +11,7 @@ pub use crate::plugin::*;
 pub(crate) use crate::custom_range::*;
 pub use crate::simulation::*;
 pub(crate) use crate::order_scheme::*;
+pub use egui_macroquad::macroquad;
 pub use macroquad::prelude::*;
 
 pub const TO_NORMALIZED_COLOR: f32 = 1.0 / 255.0;

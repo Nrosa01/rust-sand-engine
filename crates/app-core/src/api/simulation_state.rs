@@ -1,11 +1,12 @@
+use egui_macroquad::macroquad;
 use macroquad::prelude::*;
 use macroquad::rand;
 use crate::api::*;
 use rustc_hash::FxHashMap;
 
 pub struct Vec2i {
-    pub x: isize,
-    pub y: isize,
+    pub x: i32,
+    pub y: i32,
 }
 
 pub struct Vec2u {
@@ -52,6 +53,7 @@ impl SimulationState {
                 rand_alpha_max: 0,
                 rand_extra_min: 0,
                 rand_extra_max: 0,
+                hide_in_ui: false,
             }],
             image: image,
             texture: texture,
@@ -93,6 +95,10 @@ impl SimulationState {
             "Added particle definition: {}",
             self.particle_definitions.last().unwrap().name
         );
+    }
+
+    pub(crate) fn get_particle_definitions(&self) -> &Vec<ParticleCommonData> {
+        &self.particle_definitions
     }
 
     pub(crate) fn get_particle_name(&self, id: usize) -> &String {
@@ -314,7 +320,7 @@ impl SimulationState {
 
         // Draw the texture
         draw_texture_ex(
-            &self.texture,
+            self.texture,
             0.0,
             0.0,
             WHITE,

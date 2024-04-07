@@ -1,4 +1,4 @@
-use macroquad::rand;
+use egui_macroquad::macroquad::rand;
 
 #[derive(Clone, Debug, Copy)]
 pub struct Particle {

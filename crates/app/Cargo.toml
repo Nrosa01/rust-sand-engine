@@ -8,4 +8,4 @@ edition = "2021"
 [dependencies]
 libloading.workspace = true
 app-core.workspace = true
-macroquad = "0.4.5"
+egui-macroquad = "0.15.0"
