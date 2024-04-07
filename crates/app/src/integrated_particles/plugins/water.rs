@@ -1,5 +1,6 @@
 use app_core::*;
 use crate::*;
+use super::super::*;
 
 pub struct Water{
     collision_targets: [u8; 2]

@@ -11,8 +11,8 @@ pub use rock::*;
 pub mod lava;
 pub use lava::*;
 
-use app_core::Particle;
-pub use app_core::api::ParticleApi;
+use crate::app_core::Particle;
+pub use crate::app_core::api::ParticleApi;
 
 pub fn swap_if_match(api: &mut ParticleApi, x: i32, y: i32, collision_targets: &[u8]) -> bool {
     if api.is_any_particle_at(x, y, collision_targets) {

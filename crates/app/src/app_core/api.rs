@@ -5,12 +5,11 @@ pub mod simulation;
 pub mod order_scheme;
 pub mod custom_range;
 
-pub(crate) use crate::simulation_state::*;
-pub use crate::particle::*;
-pub use crate::plugin::*;
-pub(crate) use crate::custom_range::*;
-pub use crate::simulation::*;
-pub(crate) use crate::order_scheme::*;
+pub(crate) use simulation_state::*;
+pub use particle::*;
+pub use plugin::*;
+pub use simulation::*;
+pub(crate) use order_scheme::*;
 pub use egui_macroquad::macroquad;
 pub use macroquad::prelude::*;
 

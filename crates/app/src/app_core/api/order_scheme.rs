@@ -1,5 +1,5 @@
 
-use crate::api::CustomRange;
+use super::custom_range::CustomRange;
 
 pub(super) struct OrderScheme {
     pub(super) order_x: CustomRange,

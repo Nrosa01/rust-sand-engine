@@ -1,10 +1,13 @@
 // #![windows_subsystem = "windows"]
 
-use app_core::api::Simulation;
+pub mod integrated_particles;
+pub mod app_core;
+use crate::app_core::api::simulation::Simulation;
 use egui_macroquad::{
     egui::{self},
     macroquad,
 };
+use integrated_particles::plugin;
 use macroquad::prelude::*;
 use std::error::Error;
 
@@ -37,31 +40,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let screen_ratio_to_texture = screen_width() / WIDTH as f32;
 
-    let platform = match std::env::consts::OS {
-        "windows" => "windows",
-        "linux" => "linux",
-        "macos" => "macos",
-        _ => "unknown",
-    };
+    let plugins = plugin();
 
-    let plugin_extension = match platform {
-        "windows" => "dll",
-        "linux" => "so",
-        "macos" => "dylib",
-        _ => "unknown",
-    };
-
-    // I just search for plugins in the same directory as the executable and load them if they are valid
-    for entry in std::fs::read_dir(std::env::current_exe()?.parent().unwrap())? {
-        let entry = entry?;
-        let path = entry.path();
-        // Print the path
-        if path.is_file() {
-            let file_name = path.file_name().unwrap().to_str().unwrap();
-            if file_name.ends_with(plugin_extension) {
-                simulation.add_plugin_from(path.to_str().unwrap());
-            }
-        }
+    for plugin in plugins {
+        simulation.add_plugin(plugin);
     }
 
     let mut capture_mouse = false;

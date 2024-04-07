@@ -1,6 +1,6 @@
-use app_core::api::Plugin;
+use super::app_core::api::Plugin;
 pub mod plugins;
-use crate::plugins::*;
+use plugins::*;
 
 #[no_mangle]
 pub fn plugin() -> Vec<Box<dyn Plugin>> {

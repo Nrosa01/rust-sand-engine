@@ -1,4 +1,4 @@
-use app_core::*;
+use crate::app_core::*;
 
 pub struct Steam {
     rock_id: u8,
@@ -14,7 +14,7 @@ impl Plugin for Steam {
     fn register(&mut self) -> PluginResult {
         PluginResult {
             name: String::from("Steam"),
-            color: app_core::Color::from_rgba(128,128,128,128),
+            color: crate::app_core::Color::from_rgba(128,128,128,128),
             ..Default::default()
         }
     }

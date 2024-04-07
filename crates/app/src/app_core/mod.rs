@@ -1,3 +1,3 @@
 pub mod api;
-pub use crate::api::*;
+pub use api::*;
 pub use macroquad::color::Color;

@@ -1,7 +1,7 @@
 use egui_macroquad::macroquad;
 use macroquad::prelude::*;
 use macroquad::rand;
-use crate::api::*;
+use super::super::api::*;
 use rustc_hash::FxHashMap;
 
 pub struct Vec2i {
