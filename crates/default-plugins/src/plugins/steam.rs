@@ -1,13 +1,12 @@
 use app_core::*;
-use crate::*;
 
 pub struct Steam {
-    collision_targets: [u8; 1]
+    rock_id: u8,
 }
 
 impl Steam {
     pub fn new() -> Self {
-        Steam { collision_targets: [0]}
+        Steam { rock_id: 0 }
     }
 }
 
@@ -22,7 +21,7 @@ impl Plugin for Steam {
 
     fn update(&self, cell: Particle, api: &mut ParticleApi) {
         let random_horizontal = api.gen_range(-1, 1);
-        let down = 1;
+        let up = 1;
         
         let subtract = api.gen_range(-1, 0) as i8;
         
@@ -33,12 +32,18 @@ impl Plugin for Steam {
             {
                 let mut cell = cell;
                 cell.light = result;
-                let _ = swap_if_match_using(api, random_horizontal, down, &self.collision_targets, cell) || api.set(0, 0, cell);
+                let _  = (api.get(random_horizontal, up) != cell && api.get(random_horizontal, up) != self.rock_id) && 
+                          api.swap_using(random_horizontal, up, cell) ||
+                          api.set(0, 0, cell);
             },
             None => 
             {
                 api.set(0, 0, Particle::EMPTY);
             }
         }
+    }
+
+    fn post_update(&mut self, api: &ParticleApi) {
+        self.rock_id = api.id_from_name("Rock");
     }
 }

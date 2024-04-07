@@ -6,6 +6,10 @@ pub mod dust;
 pub use dust::*;
 pub mod steam;
 pub use steam::*;
+pub mod rock;
+pub use rock::*;
+pub mod lava;
+pub use lava::*;
 
 use app_core::Particle;
 pub use app_core::api::ParticleApi;
@@ -31,3 +35,9 @@ pub fn move_if_empty(api: &mut ParticleApi, x: i32, y: i32) -> bool {
     false
 }
 
+pub fn try_convert(api: &mut ParticleApi, x: i32, y: i32, target: u8, to: u8) -> bool {
+    if api.get(x, y) == target {
+        return api.set(x, y, api.new_particle(to));
+    }
+    false
+}

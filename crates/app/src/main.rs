@@ -16,6 +16,7 @@ fn conf() -> Conf {
         window_title: String::from("Pixel Flow"),
         window_width: WINDOW_WIDTH,
         window_height: WINDOW_HEIGHT,
+        window_resizable: false,
         ..Default::default()
     }
 }
@@ -157,7 +158,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             if hide_ui {
                 return;
             }
-            
+
             egui::Area::new(egui::Id::new("my_area"))
                 .default_pos(egui::pos2(32.0, 32.0))
                 .movable(true)

@@ -15,7 +15,7 @@ impl Plugin for Dust {
     fn register(&mut self) -> PluginResult {
         PluginResult {
             name: String::from("Dust"),
-            color: app_core::Color::from_rgba(128,128,128,128),
+            color: app_core::Color::from_rgba(108,108,100,128),
             ..Default::default()
         }
     }
