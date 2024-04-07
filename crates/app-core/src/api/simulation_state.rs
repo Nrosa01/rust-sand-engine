@@ -5,8 +5,8 @@ use crate::api::*;
 use rustc_hash::FxHashMap;
 
 pub struct Vec2i {
-    pub x: isize,
-    pub y: isize,
+    pub x: i32,
+    pub y: i32,
 }
 
 pub struct Vec2u {

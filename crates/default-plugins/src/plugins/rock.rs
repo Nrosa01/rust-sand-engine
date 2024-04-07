@@ -1,11 +1,11 @@
+use crate::*;
 use app_core::*;
 
-pub struct Rock {
-}
+pub struct Rock {}
 
 impl Rock {
     pub fn new() -> Self {
-        Rock { }
+        Rock {}
     }
 }
 
@@ -13,10 +13,45 @@ impl Plugin for Rock {
     fn register(&mut self) -> PluginResult {
         PluginResult {
             name: String::from("Rock"),
-            color: app_core::Color::from_rgba(123,133,145,255),
+            color: app_core::Color::from_rgba(123, 133, 145, 255),
             ..Default::default()
         }
     }
 
-    fn update(&self, _: Particle, _: &mut ParticleApi) {}
+    fn update(&self, cell: Particle, api: &mut ParticleApi) {
+        if cell.extra == 0 {
+            return;
+        }
+
+        let mut cell = cell;
+
+        let water_id = api.id_from_name("Water");
+
+        for neighbor in ParticleApi::NEIGHBORS {
+            // For each neighbour, is if type water, turn it into rock and set the extra to -1
+            // We do the same if the neighbour is the same type as the cell, thay way we can transfer the extra to the neighbour
+            let neighor_id = api.get(neighbor.x, neighbor.y).id;
+            if neighor_id== water_id || neighor_id == cell.id {
+                match cell.extra.checked_add_signed(-1) {
+                    Some(result) => {
+                        cell.extra = result;
+                    }
+                    None => {
+                        cell.extra = 0;
+                    }
+                }
+                api.set(neighbor.x, neighbor.y, cell);
+                api.set(0, 0, cell);
+            }
+            // If there is none to transfer the extra, this will decrease at random period.
+            // This way we can simulate the rock being hot even when not in touch with lava
+            else if api.gen_range(0, 100) < 10{
+                api.set(0, 0, cell);
+            }
+
+            if cell.extra == 0 {
+                return;
+            }
+        }
+    }
 }
