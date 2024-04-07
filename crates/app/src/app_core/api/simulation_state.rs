@@ -29,7 +29,7 @@ pub struct SimulationState {
 
 impl SimulationState {
     pub fn new(width: usize, height: usize) -> SimulationState {
-        let image = Image::gen_image_color(width as u16, height as u16, TRANSPARENT);
+        let image = Image::gen_image_color(width as u16, height as u16, Color::from_hex(0x12212b));
         let texture = Texture2D::from_image(&image);
         texture.set_filter(FilterMode::Nearest); // Set the filter mode to nearest to avoid blurring the pixels
 
@@ -48,7 +48,7 @@ impl SimulationState {
             height,
             particle_definitions: vec![ParticleCommonData {
                 name: String::from("Empty"),
-                color:TRANSPARENT,
+                color: Color::from_hex(0x12212b),
                 rand_alpha_min: 255,
                 rand_alpha_max: 255,
                 rand_extra_min: 0,
@@ -135,9 +135,15 @@ impl SimulationState {
         let extra_min = particle_definition.rand_extra_min as i32;
         let extra_max = particle_definition.rand_extra_max as i32;
 
+        let alpha = if min_alpha == max_alpha {
+            min_alpha
+        } else {
+            self.gen_range(min_alpha, max_alpha)
+        }; 
+
         Particle {
             id: particle_id,
-            light: self.gen_range(min_alpha, max_alpha) as u8,
+            light: alpha as u8,
             clock: !self.clock,
             extra: self.gen_range(extra_min, extra_max) as u8,
         }
@@ -150,14 +156,6 @@ impl SimulationState {
 
         self.set_particle_at_unchecked(x, y, self.new_particle(particle_id));
     }
-
-    // pub(crate) fn set_particle_at(&mut self, x: usize, y: usize, particle: Particle) -> () {
-    //     if !self.is_inside_at(x, y) {
-    //         return;
-    //     }
-
-    //     self.set_particle_at_unchecked(x, y, particle);
-    // }
 
     pub(crate) fn set_particle_at_unchecked(
         &mut self,
@@ -322,6 +320,15 @@ impl SimulationState {
         let pos_y = (screen_height() / 2.0 - screen_width() / 2.0).max(0.);
 
         let dest_size = screen_height().min(screen_width());
+
+        // Draw rect with transparent color
+        draw_rectangle(
+            pos_x,
+            pos_y,
+            dest_size,
+            dest_size,
+            Color::from_hex(0x12212b),
+        );
 
         // Draw the texture
         draw_texture_ex(

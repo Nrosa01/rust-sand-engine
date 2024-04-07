@@ -144,7 +144,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         simulation.update();
 
         // Clear the screen
-        clear_background(Color::from_hex(0x000000));
+        clear_background(BLACK);
 
         egui_macroquad::ui(|egui_ctx| {
             if hide_ui {
