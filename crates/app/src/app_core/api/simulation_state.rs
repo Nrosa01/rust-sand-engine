@@ -48,9 +48,9 @@ impl SimulationState {
             height,
             particle_definitions: vec![ParticleCommonData {
                 name: String::from("Empty"),
-                color: TRANSPARENT,
-                rand_alpha_min: 0,
-                rand_alpha_max: 0,
+                color:TRANSPARENT,
+                rand_alpha_min: 255,
+                rand_alpha_max: 255,
                 rand_extra_min: 0,
                 rand_extra_max: 0,
                 hide_in_ui: false,

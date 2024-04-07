@@ -1,7 +1,7 @@
 // #![windows_subsystem = "windows"]
 
-pub mod integrated_particles;
 pub mod app_core;
+pub mod integrated_particles;
 use crate::app_core::api::simulation::Simulation;
 use egui_macroquad::{
     egui::{self},
@@ -11,8 +11,8 @@ use integrated_particles::plugin;
 use macroquad::prelude::*;
 use std::error::Error;
 
-const WINDOW_WIDTH: i32 = 880;
-const WINDOW_HEIGHT: i32 = 800;
+const WINDOW_WIDTH: i32 = 1200;
+const WINDOW_HEIGHT: i32 = 600;
 
 fn conf() -> Conf {
     Conf {
@@ -27,6 +27,18 @@ fn conf() -> Conf {
 const WIDTH: usize = 300;
 const HEIGHT: usize = 300;
 const SENSITIVITY: isize = WINDOW_WIDTH as isize / WIDTH as isize * 5;
+
+// No sé compo explicar esto, imagina que tenemos una pantalla de 800*400
+// Esta función devuelve posiciones x e y entre 0 y 400 en el centro de la pantalla, las que se salen son negativas o mayores de 400
+// Si la pantalla es de 800*800, las posiciones x e y estarán entre 0 y 800 como siempre
+fn mouse_pos_to_square() -> (isize, isize) {
+    let (mouse_x, mouse_y) = mouse_position();
+    let min = screen_height().min(screen_width());
+    let x = (mouse_x - (screen_width() - min) / 2.0) / min * WIDTH as f32;
+    let y = (mouse_y - (screen_height() - min) / 2.0) / min * HEIGHT as f32;
+
+    (x as isize, y as isize)
+}
 
 #[macroquad::main(conf)]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -49,7 +61,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let mut capture_mouse = false;
 
     loop {
-        if is_key_pressed(KeyCode::Right) || is_key_pressed(KeyCode::D) || is_key_pressed(KeyCode::S) {
+        if is_key_pressed(KeyCode::Right)
+            || is_key_pressed(KeyCode::D)
+            || is_key_pressed(KeyCode::S)
+        {
             loop {
                 if selected_plugin == simulation.get_plugin_count() - 1 {
                     selected_plugin = 0;
@@ -70,7 +85,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
             hide_ui = !hide_ui;
         }
 
-        if is_key_pressed(KeyCode::Left) || is_key_pressed(KeyCode::A) || is_key_pressed(KeyCode::W) {
+        if is_key_pressed(KeyCode::Left) || is_key_pressed(KeyCode::A) || is_key_pressed(KeyCode::W)
+        {
             loop {
                 if selected_plugin == 0 {
                     selected_plugin = simulation.get_plugin_count() - 1;
@@ -101,32 +117,26 @@ async fn main() -> Result<(), Box<dyn Error>> {
         }
 
         if is_mouse_button_down(MouseButton::Left) && !capture_mouse {
-            let (mouse_x, mouse_y) = mouse_position();
+            let (mouse_x, mouse_y) = mouse_pos_to_square();
 
-            // Calcula el factor de escala para convertir las coordenadas del mouse a las coordenadas de la textura
-            let scale_x = simulation.get_width() as f32 / screen_width();
-            let scale_y = simulation.get_height() as f32 / screen_height();
-
-            // Aplica el factor de escala a las coordenadas del mouse
-            let scaled_mouse_x = (mouse_x * scale_x).floor();
-            let scaled_mouse_y = (mouse_y * scale_y).floor();
-
-            let radius = (radius as f32 / screen_ratio_to_texture) as i32;
+            let radius = (radius as f32 / screen_ratio_to_texture) as isize * 2;
 
             for x in -radius..radius {
                 for y in -radius..radius {
-                    let pos_x = scaled_mouse_x + x as f32;
-                    let pos_y = scaled_mouse_y + y as f32;
+                    let pos_x = mouse_x + x;
+                    let pos_y = mouse_y + y;
 
-                    let distance_squared =
-                        (pos_x - scaled_mouse_x).powi(2) + (pos_y - scaled_mouse_y).powi(2);
-                    if distance_squared <= radius.pow(2) as f32 {
-                        simulation.set_particle(
-                            pos_x as usize,
-                            pos_y as usize,
-                            selected_plugin.into(),
-                        );
+                    if pos_x < 0 || pos_y < 0 {
+                        continue;
                     }
+
+                    let distance = (x * x + y * y) as f32;
+
+                    if distance > radius as f32 * radius as f32 {
+                        continue;
+                    }
+
+                    simulation.set_particle(pos_x as usize, pos_y as usize, selected_plugin.into());
                 }
             }
         }
@@ -134,7 +144,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         simulation.update();
 
         // Clear the screen
-        clear_background(Color::from_hex(0x12212b));
+        clear_background(Color::from_hex(0x000000));
 
         egui_macroquad::ui(|egui_ctx| {
             if hide_ui {
@@ -167,22 +177,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
         });
 
         simulation.draw();
-
-        // Draw the selected particle
-        // draw_text(
-        //     &format!(
-        //         "Selected particle: {}",
-        //         simulation
-        //             .get_particle_name(selected_plugin)
-        //             .unwrap_or(&"None".to_string())
-        //     ),
-        //     10.0,
-        //     screen_height() - 30.0,
-        //     20.0,
-        //     WHITE,
-        // );
-
-        // draw_text(&format!("FPS: {}", get_fps()), 10.0, 30.0, 30.0, RED);
 
         // Draw circle line with radius at mouse position
         if !capture_mouse {
