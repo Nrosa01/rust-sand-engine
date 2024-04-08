@@ -1,11 +1,13 @@
 use crate::*;
 use app_core::*;
 
-pub struct Rock {}
+pub struct Rock {
+    water_id: u8,
+}
 
 impl Rock {
     pub fn new() -> Self {
-        Rock {}
+        Rock { water_id: 0 }
     }
 }
 
@@ -25,7 +27,7 @@ impl Plugin for Rock {
 
         let mut cell = cell;
 
-        let water_id = api.id_from_name("Water");
+        let water_id = self.water_id;
 
         for neighbor in ParticleApi::NEIGHBORS {
             // For each neighbour, is if type water, turn it into rock and set the extra to -1
@@ -53,5 +55,9 @@ impl Plugin for Rock {
                 return;
             }
         }
+    }
+
+    fn post_update(&mut self, api: &ParticleApi) {
+        self.water_id = api.id_from_name("Water");
     }
 }

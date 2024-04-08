@@ -1,20 +1,29 @@
 use crate::*;
 use app_core::*;
 
-pub struct Lava {}
+pub struct Lava 
+{
+    rock_id: u8,
+    water_id: u8,
+    steam_id: u8,
+}
 
 impl Lava {
     pub fn new() -> Self {
-        Lava {}
+        Lava {
+            rock_id: 0,
+            water_id: 0,
+            steam_id: 0,
+        }
     }
 
-    pub fn try_heat_rock(cell: Particle, api: &mut ParticleApi) -> bool {
+    pub fn try_heat_rock(&self, cell: Particle, api: &mut ParticleApi) -> bool {
         // Search for rock below, below left, and below right
         if cell.extra > 5 {
             return false;
         }
 
-        let rock_id = api.id_from_name("Rock");
+        let rock_id = self.rock_id;
 
         // Create tuple array to iterate over
         // I should expose Vec2 as tuples are less eficient somehow
@@ -58,19 +67,25 @@ impl Plugin for Lava {
             api,
             0,
             1,
-            api.id_from_name("Water"),
-            api.id_from_name("Steam"),
+            self.water_id,
+            self.steam_id,
         ) || try_convert(
             api,
             0,
             -1,
-            api.id_from_name("Water"),
-            api.id_from_name("Rock"),
-        ) || Lava::try_heat_rock(cell, api)
+            self.water_id,
+            self.rock_id,
+        )   || self.try_heat_rock(cell, api)
             || move_if_empty(api, 0, down)
             || move_if_empty(api, random_horizontal, down)
             || move_if_empty(api, -random_horizontal, down)
             || move_if_empty(api, random_horizontal, 0)
             || move_if_empty(api, -random_horizontal, 0);
+    }
+
+    fn post_update(&mut self, api: &ParticleApi) {
+        self.water_id = api.id_from_name("Water");
+        self.rock_id = api.id_from_name("Rock");
+        self.steam_id = api.id_from_name("Steam");
     }
 }

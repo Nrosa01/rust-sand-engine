@@ -1,2 +1,1 @@
-[target.'cfg(not(target_arch = "wasm"))'.build]
 rustflags = "-C prefer_dynamic"

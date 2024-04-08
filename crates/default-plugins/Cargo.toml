@@ -5,6 +5,3 @@ edition = "2021"
 
 [dependencies]
 app-core.workspace = true
-
-[lib]
-crate-type = ["cdylib", "lib"]
