@@ -6,3 +6,6 @@ edition = "2021"
 [dependencies]
 egui-macroquad = "0.15.0"
 rustc-hash = "1.1.0"
+
+[lib]
+crate-type = ["cdylib", "lib"]

@@ -1,5 +1,0 @@
-[target.'cfg(not(wasm))']
-crate-type = ["dylib"]
-
-[target.'cfg(wasm)']
-crate-type = ["rlib"]
