@@ -3,7 +3,7 @@ pub struct Particle {
     pub id: u8,
     pub light: u8,
     pub extra: u8,
-    pub clock: u8,
+    pub(crate) clock: u8,
 }
 
 impl Particle {
