@@ -12,5 +12,14 @@ opt-level = 2
 
 [profile.production]
 inherits = "release"
+opt-level = 3
 strip = "symbols"
+lto = true
 codegen-units = 1
+debug = false
+
+[profile.production.package."*"]
+opt-level = 3
+
+[profile.dev.package."*"]
+opt-level = 3

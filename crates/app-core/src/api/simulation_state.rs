@@ -24,7 +24,7 @@ pub struct SimulationState {
     clock: u8,
     image: Image,
     texture: Texture2D,
-    particle_name_to_id: FxHashMap<String, u8>,
+    particle_name_to_id: FxHashMap<String, u8>
 }
 
 impl SimulationState {
@@ -48,7 +48,7 @@ impl SimulationState {
             height,
             particle_definitions: vec![ParticleCommonData {
                 name: String::from("Empty"),
-                color: Color::from_hex(0x12212b),
+                color: [18,33,43,1],
                 rand_alpha_min: 0,
                 rand_alpha_max: 0,
                 rand_extra_min: 0,
@@ -105,7 +105,7 @@ impl SimulationState {
         &self.particle_definitions[id].name
     }
 
-    pub(crate) fn get_particle_color(&self, id: usize) -> &Color {
+    pub(crate) fn get_particle_color(&self, id: usize) -> &[u8; 4] {
         &self.particle_definitions[id].color
     }
 
@@ -151,26 +151,27 @@ impl SimulationState {
         self.set_particle_at_unchecked(x, y, self.new_particle(particle_id));
     }
 
-    // pub(crate) fn set_particle_at(&mut self, x: usize, y: usize, particle: Particle) -> () {
-    //     if !self.is_inside_at(x, y) {
-    //         return;
-    //     }
-
-    //     self.set_particle_at_unchecked(x, y, particle);
-    // }
-
     pub(crate) fn set_particle_at_unchecked(
         &mut self,
         x: usize,
         y: usize,
         particle: Particle,
     ) -> () {
-        self.particles[y][x] = particle;
+        self.particles[y][x].id = particle.id;
+        self.particles[y][x].light = particle.light;
+        self.particles[y][x].extra = particle.extra;
         self.particles[y][x].clock = !self.clock;
-        let mut color = self.particle_definitions[particle.id as usize].color;
-        color.a = particle.light as f32 * TO_NORMALIZED_COLOR;
+        let color = self.particle_definitions[particle.id as usize].color;
+
+        // This was better to read, but it uses unsafe code under the hood        
+        // self.image.get_image_data_mut()[y * self.width + x] = [255,255,255,255];
         
-        self.image.set_pixel(x as u32, y as u32, color);
+        // Wasm lto optimizes this better than the above
+        let start_index = (y * self.width + x) * 4;
+        self.image.bytes[start_index] = color[0];
+        self.image.bytes[start_index + 1] = color[1];
+        self.image.bytes[start_index + 2] = color[2];
+        self.image.bytes[start_index + 3] = particle.light;
     }
 
     pub fn set(&mut self, x: i32, y: i32, particle: Particle) -> bool {

@@ -61,32 +61,13 @@ impl Simulation {
         Ok(self.simulation_state.get_particle_definitions()[id].hide_in_ui)
     }
 
-    pub fn get_particle_color(&self, id: usize) -> Result<&Color, String> {
+    pub fn get_particle_color(&self, id: usize) -> Result<&[u8; 4], String> {
         if id >= self.get_plugin_count() {
             return Err(format!("Particle with id {} not found", id));
         }
 
         Ok(&self.simulation_state.get_particle_color(id))
     }
-
-    // pub fn add_plugin_from(&mut self, path: &str) -> () {
-    //     let plugin_lib = unsafe { libloading::Library::new(path) };
-    //     if let Ok(plugin_lib) = plugin_lib {
-    //         let plugin_loader: PluginLoader = unsafe { plugin_lib.get(b"plugin") };
-
-    //         match plugin_loader {
-    //             Ok(plugin_loader) => {
-    //                 let mut plugins = plugin_loader();
-    //                 self.plugin_data.libraries.push(plugin_lib);
-
-    //                 for plugin in &mut plugins.drain(..) {
-    //                     self.add_plugin(plugin);
-    //                 }
-    //             }
-    //             Err(_) => {}
-    //         }
-    //     }
-    // }
 
     pub fn add_plugin(&mut self, plugin: Box<dyn Plugin>) -> () {
         let mut plugin = plugin;

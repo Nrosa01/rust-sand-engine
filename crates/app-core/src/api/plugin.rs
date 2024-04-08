@@ -32,7 +32,10 @@ impl From<PluginResult> for ParticleCommonData {
     fn from(plugin_result: PluginResult) -> Self {
         ParticleCommonData {
             name: plugin_result.name,
-            color: plugin_result.color,
+            color: [(plugin_result.color.r * FROM_NORMALIZED_TO_COLOR) as u8,
+                    (plugin_result.color.g * FROM_NORMALIZED_TO_COLOR) as u8, 
+                    (plugin_result.color.b * FROM_NORMALIZED_TO_COLOR) as u8, 
+                    (plugin_result.color.a * FROM_NORMALIZED_TO_COLOR) as u8],
             rand_alpha_min: (plugin_result.alpha.x * FROM_NORMALIZED_TO_COLOR) as u8,
             rand_alpha_max: (plugin_result.alpha.y * FROM_NORMALIZED_TO_COLOR) as u8,
             rand_extra_min: (plugin_result.extra.x * FROM_NORMALIZED_TO_COLOR) as u8,
@@ -60,7 +63,7 @@ impl Plugin for Empty {
 #[derive(Debug)]
 pub struct ParticleCommonData {
     pub name: String,
-    pub color: Color,
+    pub color: [u8; 4],
     pub rand_alpha_min: u8,
     pub rand_alpha_max: u8,
     pub rand_extra_min: u8,
