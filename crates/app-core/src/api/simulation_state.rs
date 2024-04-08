@@ -29,7 +29,7 @@ pub struct SimulationState {
 
 impl SimulationState {
     pub fn new(width: usize, height: usize) -> SimulationState {
-        let image = Image::gen_image_color(width as u16, height as u16, TRANSPARENT);
+        let image = Image::gen_image_color(width as u16, height as u16, Color::from_hex(0x12212b));
         let texture = Texture2D::from_image(&image);
         texture.set_filter(FilterMode::Nearest); // Set the filter mode to nearest to avoid blurring the pixels
 
@@ -48,7 +48,7 @@ impl SimulationState {
             height,
             particle_definitions: vec![ParticleCommonData {
                 name: String::from("Empty"),
-                color: TRANSPARENT,
+                color: Color::from_hex(0x12212b),
                 rand_alpha_min: 0,
                 rand_alpha_max: 0,
                 rand_extra_min: 0,
@@ -318,14 +318,28 @@ impl SimulationState {
     pub(crate) fn draw(&mut self) -> () {
         self.texture.update(&self.image);
 
+        let pos_x = (screen_width() / 2.0 - screen_height() / 2.0).max(0.);
+        let pos_y = (screen_height() / 2.0 - screen_width() / 2.0).max(0.);
+
+        let dest_size = screen_height().min(screen_width());
+
+        // Draw rect with transparent color
+        draw_rectangle(
+            pos_x,
+            pos_y,
+            dest_size,
+            dest_size,
+            Color::from_hex(0x12212b),
+        );
+
         // Draw the texture
         draw_texture_ex(
             self.texture,
-            0.0,
-            0.0,
+            pos_x,
+            pos_y,
             WHITE,
             DrawTextureParams {
-                dest_size: Some(vec2(screen_width(), screen_height())),
+                dest_size: Some(vec2(dest_size, dest_size)),
                 ..Default::default()
             },
         );

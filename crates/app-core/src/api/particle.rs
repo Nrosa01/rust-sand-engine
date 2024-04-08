@@ -1,5 +1,3 @@
-use egui_macroquad::macroquad::rand;
-
 #[derive(Clone, Debug, Copy)]
 pub struct Particle {
     pub id: u8,
@@ -13,7 +11,7 @@ impl Particle {
         Particle {
             id: 0,
             clock: false,
-            light: rand::gen_range(200, 256) as u8,
+            light: 255,
             extra: 0,
         }
     }
@@ -23,7 +21,7 @@ impl Particle {
         Particle {
             id,
             clock: false,
-            light: rand::gen_range(200, 256) as u8,
+            light: 255,
             extra: 0,
         }
     }
@@ -31,14 +29,14 @@ impl Particle {
     pub const EMPTY: Particle = Particle {
         id: 0,
         clock: false,
-        light: 0,
+        light: 255,
         extra: 0,
     };
 
     pub(crate) const INVALID: Particle = Particle {
         id: u8::MAX,
         clock: false,
-        light: 0,
+        light: 255,
         extra: 0,
     };
 }
