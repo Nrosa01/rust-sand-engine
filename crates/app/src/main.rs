@@ -1,4 +1,5 @@
-// #![windows_subsystem = "windows"]
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")] // hide console window on Windows in release
+
 #[cfg(not(target_family = "wasm"))]
 mod dylib_loader;
 #[cfg(not(target_family = "wasm"))]
@@ -45,14 +46,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
         simulation.add_plugins(plugins);
     }
 
-    // #[cfg(target_family = "wasm")]
-    // {
-    //     use crate::default_plugins::*;
-    //     let plugins = default_plugins::plugin();
-    //     simulation.add_plugins(plugins);
-    // }
-
-    
+    #[cfg(target_family = "wasm")]
+    {
+        let plugins = default_plugins::plugin();
+        simulation.add_plugins(plugins);
+    }
 
     let mut radius: isize = 40;
     let mut hide_ui = false;

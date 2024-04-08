@@ -1,3 +1,2 @@
-
-
-
+# [build]
+# rustflags = "-C prefer_dynamic"
