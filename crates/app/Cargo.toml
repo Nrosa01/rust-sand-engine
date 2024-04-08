@@ -6,6 +6,12 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-libloading.workspace = true
+# default_plugins.workspace = true
 app-core.workspace = true
 egui-macroquad = "0.15.0"
+
+[target.'cfg(not(wasm))'.dependencies]
+libloading = "0.8.3"
+
+[target.'cfg(wasm)'.dependencies]
+default-plugins.workspace = true

@@ -1,4 +1,8 @@
 // #![windows_subsystem = "windows"]
+#[cfg(not(target_family = "wasm"))]
+mod dylib_loader;
+#[cfg(not(target_family = "wasm"))]
+use dylib_loader::DylibLoader;
 
 use app_core::api::Simulation;
 use egui_macroquad::{
@@ -28,41 +32,35 @@ const SENSITIVITY: isize = WINDOW_WIDTH as isize / WIDTH as isize * 5;
 #[macroquad::main(conf)]
 async fn main() -> Result<(), Box<dyn Error>> {
     macroquad::rand::srand(macroquad::miniquad::date::now() as u64);
+    let mut simulation = Simulation::new(WIDTH, HEIGHT);
+    
+    #[cfg(not(target_family = "wasm"))]
+    // We can't put this in the block because despite it being just a compile time check
+    // the variable will get dropped and the library will be unloaded and program will crash, thanks Rust
+    let mut loader = DylibLoader::new(); 
+    #[cfg(not(target_family = "wasm"))]
+    {
+        let plugin_path = std::env::current_exe()?.parent().unwrap().join(format!("default_plugins.{}", DylibLoader::extension()));
+        let plugins = loader.load(plugin_path.to_str().unwrap())?;
+        simulation.add_plugins(plugins);
+    }
+
+    // #[cfg(target_family = "wasm")]
+    // {
+    //     use crate::default_plugins::*;
+    //     let plugins = default_plugins::plugin();
+    //     simulation.add_plugins(plugins);
+    // }
+
+    
+
     let mut radius: isize = 40;
     let mut hide_ui = false;
 
-    let mut simulation = Simulation::new(WIDTH, HEIGHT);
 
     let mut selected_plugin = 1;
 
     let screen_ratio_to_texture = screen_width() / WIDTH as f32;
-
-    let platform = match std::env::consts::OS {
-        "windows" => "windows",
-        "linux" => "linux",
-        "macos" => "macos",
-        _ => "unknown",
-    };
-
-    let plugin_extension = match platform {
-        "windows" => "dll",
-        "linux" => "so",
-        "macos" => "dylib",
-        _ => "unknown",
-    };
-
-    // I just search for plugins in the same directory as the executable and load them if they are valid
-    for entry in std::fs::read_dir(std::env::current_exe()?.parent().unwrap())? {
-        let entry = entry?;
-        let path = entry.path();
-        // Print the path
-        if path.is_file() {
-            let file_name = path.file_name().unwrap().to_str().unwrap();
-            if file_name.ends_with(plugin_extension) {
-                simulation.add_plugin_from(path.to_str().unwrap());
-            }
-        }
-    }
 
     let mut capture_mouse = false;
 

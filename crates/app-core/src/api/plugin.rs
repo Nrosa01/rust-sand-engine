@@ -70,7 +70,7 @@ pub struct ParticleCommonData {
 
 pub struct PluginData {
     pub(crate) plugins: Vec<Box<dyn Plugin>>,
-    pub(crate) libraries: Vec<libloading::Library>,
+    // pub(crate) libraries: Vec<libloading::Library>,
 }
 
 impl Drop for PluginData {
@@ -80,16 +80,16 @@ impl Drop for PluginData {
             drop(plugin);
         }
 
-        for library in self.libraries.drain(..) {
-            drop(library);
-        }
+        // for library in self.libraries.drain(..) {
+        //     drop(library);
+        // }
     }
 }
 
 impl PluginData {
     pub fn new() -> PluginData {
         PluginData {
-            libraries: Vec::new(),
+            // libraries: Vec::new(),
             plugins: vec![Box::new(Empty)],
         }
     }

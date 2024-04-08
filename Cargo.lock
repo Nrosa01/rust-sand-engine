@@ -41,6 +41,7 @@ name = "app"
 version = "0.1.0"
 dependencies = [
  "app-core",
+ "default-plugins",
  "egui-macroquad",
  "libloading",
 ]
@@ -50,7 +51,6 @@ name = "app-core"
 version = "0.1.0"
 dependencies = [
  "egui-macroquad",
- "libloading",
  "rustc-hash",
 ]
 
