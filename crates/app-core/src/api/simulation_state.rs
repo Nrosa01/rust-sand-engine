@@ -21,7 +21,7 @@ pub struct SimulationState {
     current_y: usize,
     width: usize,
     height: usize,
-    clock: bool,
+    clock: u8,
     image: Image,
     texture: Texture2D,
     particle_name_to_id: FxHashMap<String, u8>,
@@ -57,7 +57,7 @@ impl SimulationState {
             }],
             image: image,
             texture: texture,
-            clock: false,
+            clock: 0,
             particle_name_to_id: FxHashMap::default(),
         }
     }
@@ -283,12 +283,11 @@ impl SimulationState {
                 self.current_x = x;
                 self.current_y = y;
                 let current_particle = &self.particles[y][x];
-                let particle_id = self.particles[y][x]; // Not using getter here to avoid the if check that will never be true here
-                if particle_id == Particle::EMPTY || current_particle.clock != self.clock {
+                if current_particle.id == Particle::EMPTY.id || current_particle.clock != self.clock {
                     continue;
                 }
 
-                let plugin = &mut plugins[particle_id.id as usize];
+                let plugin = &mut plugins[current_particle.id as usize];
                 plugin.update(self.particles[y][x], self);
             }
         }
