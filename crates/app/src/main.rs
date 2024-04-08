@@ -13,7 +13,7 @@ use egui_macroquad::{
 use macroquad::prelude::*;
 use std::error::Error;
 
-const WINDOW_WIDTH: i32 = 880;
+const WINDOW_WIDTH: i32 = 800;
 const WINDOW_HEIGHT: i32 = 800;
 
 fn conf() -> Conf {
@@ -26,16 +26,16 @@ fn conf() -> Conf {
     }
 }
 
-const WIDTH: usize = 300;
-const HEIGHT: usize = 300;
-const SENSITIVITY: isize = WINDOW_WIDTH as isize / WIDTH as isize * 5;
+const SIM_WIDTH: usize = 300;
+const SIM_HEIGHT: usize = 300;
+const SENSITIVITY: isize = WINDOW_WIDTH as isize / SIM_WIDTH as isize * 5;
 
 // I'm just mapping the mouse position to the texture coordinates
 fn mouse_pos_to_square() -> (isize, isize) {
     let (mouse_x, mouse_y) = mouse_position();
     let min = screen_height().min(screen_width());
-    let x = (mouse_x - (screen_width() - min) / 2.0) / min * WIDTH as f32;
-    let y = (mouse_y - (screen_height() - min) / 2.0) / min * HEIGHT as f32;
+    let x = (mouse_x - (screen_width() - min) / 2.0) / min * SIM_WIDTH as f32;
+    let y = (mouse_y - (screen_height() - min) / 2.0) / min * SIM_HEIGHT as f32;
 
     (x as isize, y as isize)
 }
@@ -47,7 +47,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     #[cfg(not(target_family = "wasm"))]
     let mut loader = DylibLoader::new(); 
     
-    let mut simulation = Simulation::new(WIDTH, HEIGHT);
+    let mut simulation = Simulation::new(SIM_WIDTH, SIM_HEIGHT);
 
     #[cfg(not(target_family = "wasm"))]
     {
@@ -67,8 +67,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
 
     let mut selected_plugin = 1;
-
-    let screen_ratio_to_texture = screen_width() / WIDTH as f32;
 
     let mut capture_mouse = false;
 
@@ -130,8 +128,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
         if is_mouse_button_down(MouseButton::Left) && !capture_mouse {
             let (mouse_x, mouse_y) = mouse_pos_to_square();
+            let screen_ratio_to_texture = screen_height().min(screen_width()) / (SIM_WIDTH.min(SIM_HEIGHT)) as f32;
 
-            let radius = (radius as f32 / screen_ratio_to_texture) as isize * 2;
+            let radius = (radius as f32 / screen_ratio_to_texture) as isize;
 
             for x in -radius..radius {
                 for y in -radius..radius {
