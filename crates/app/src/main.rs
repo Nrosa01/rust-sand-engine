@@ -33,12 +33,12 @@ const SENSITIVITY: isize = WINDOW_WIDTH as isize / WIDTH as isize * 5;
 #[macroquad::main(conf)]
 async fn main() -> Result<(), Box<dyn Error>> {
     macroquad::rand::srand(macroquad::miniquad::date::now() as u64);
-    let mut simulation = Simulation::new(WIDTH, HEIGHT);
     
     #[cfg(not(target_family = "wasm"))]
-    // We can't put this in the block because despite it being just a compile time check
-    // the variable will get dropped and the library will be unloaded and program will crash, thanks Rust
     let mut loader = DylibLoader::new(); 
+    
+    let mut simulation = Simulation::new(WIDTH, HEIGHT);
+
     #[cfg(not(target_family = "wasm"))]
     {
         let plugin_path = std::env::current_exe()?.parent().unwrap().join(format!("default_plugins.{}", DylibLoader::extension()));
