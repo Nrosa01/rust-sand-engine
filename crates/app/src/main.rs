@@ -1,4 +1,9 @@
-// #![windows_subsystem = "windows"]
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")] // hide console window on Windows in release
+
+#[cfg(not(target_family = "wasm"))]
+mod dylib_loader;
+#[cfg(not(target_family = "wasm"))]
+use dylib_loader::DylibLoader;
 
 use app_core::api::Simulation;
 use egui_macroquad::{
@@ -8,7 +13,7 @@ use egui_macroquad::{
 use macroquad::prelude::*;
 use std::error::Error;
 
-const WINDOW_WIDTH: i32 = 880;
+const WINDOW_WIDTH: i32 = 800;
 const WINDOW_HEIGHT: i32 = 800;
 
 fn conf() -> Conf {
@@ -21,48 +26,47 @@ fn conf() -> Conf {
     }
 }
 
-const WIDTH: usize = 300;
-const HEIGHT: usize = 300;
-const SENSITIVITY: isize = WINDOW_WIDTH as isize / WIDTH as isize * 5;
+const SIM_WIDTH: usize = 300;
+const SIM_HEIGHT: usize = 300;
+const SENSITIVITY: isize = WINDOW_WIDTH as isize / SIM_WIDTH as isize * 5;
+
+// I'm just mapping the mouse position to the texture coordinates
+fn mouse_pos_to_square() -> (isize, isize) {
+    let (mouse_x, mouse_y) = mouse_position();
+    let min = screen_height().min(screen_width());
+    let x = (mouse_x - (screen_width() - min) / 2.0) / min * SIM_WIDTH as f32;
+    let y = (mouse_y - (screen_height() - min) / 2.0) / min * SIM_HEIGHT as f32;
+
+    (x as isize, y as isize)
+}
 
 #[macroquad::main(conf)]
 async fn main() -> Result<(), Box<dyn Error>> {
     macroquad::rand::srand(macroquad::miniquad::date::now() as u64);
+    
+    #[cfg(not(target_family = "wasm"))]
+    let mut loader = DylibLoader::new(); 
+    
+    let mut simulation = Simulation::new(SIM_WIDTH, SIM_HEIGHT);
+
+    #[cfg(not(target_family = "wasm"))]
+    {
+        let plugin_path = std::env::current_exe()?.parent().unwrap().join(format!("default_plugins.{}", DylibLoader::extension()));
+        let plugins = loader.load(plugin_path.to_str().unwrap())?;
+        simulation.add_plugins(plugins);
+    }
+
+    #[cfg(target_family = "wasm")]
+    {
+        let plugins = default_plugins::plugin();
+        simulation.add_plugins(plugins);
+    }
+
     let mut radius: isize = 40;
     let mut hide_ui = false;
 
-    let mut simulation = Simulation::new(WIDTH, HEIGHT);
 
     let mut selected_plugin = 1;
-
-    let screen_ratio_to_texture = screen_width() / WIDTH as f32;
-
-    let platform = match std::env::consts::OS {
-        "windows" => "windows",
-        "linux" => "linux",
-        "macos" => "macos",
-        _ => "unknown",
-    };
-
-    let plugin_extension = match platform {
-        "windows" => "dll",
-        "linux" => "so",
-        "macos" => "dylib",
-        _ => "unknown",
-    };
-
-    // I just search for plugins in the same directory as the executable and load them if they are valid
-    for entry in std::fs::read_dir(std::env::current_exe()?.parent().unwrap())? {
-        let entry = entry?;
-        let path = entry.path();
-        // Print the path
-        if path.is_file() {
-            let file_name = path.file_name().unwrap().to_str().unwrap();
-            if file_name.ends_with(plugin_extension) {
-                simulation.add_plugin_from(path.to_str().unwrap());
-            }
-        }
-    }
 
     let mut capture_mouse = false;
 
@@ -111,6 +115,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
         if mouse_wheel != 0.0 {
             let sign = mouse_wheel.signum() as isize;
             radius = radius + sign * SENSITIVITY;
+
+            if radius < 10 {
+                radius = 10;
+            }
         }
 
         // Break the loop if the user closes the window OR presses the escape key
@@ -119,40 +127,36 @@ async fn main() -> Result<(), Box<dyn Error>> {
         }
 
         if is_mouse_button_down(MouseButton::Left) && !capture_mouse {
-            let (mouse_x, mouse_y) = mouse_position();
+            let (mouse_x, mouse_y) = mouse_pos_to_square();
+            let screen_ratio_to_texture = screen_height().min(screen_width()) / (SIM_WIDTH.min(SIM_HEIGHT)) as f32;
 
-            // Calcula el factor de escala para convertir las coordenadas del mouse a las coordenadas de la textura
-            let scale_x = simulation.get_width() as f32 / screen_width();
-            let scale_y = simulation.get_height() as f32 / screen_height();
-
-            // Aplica el factor de escala a las coordenadas del mouse
-            let scaled_mouse_x = (mouse_x * scale_x).floor();
-            let scaled_mouse_y = (mouse_y * scale_y).floor();
-
-            let radius = (radius as f32 / screen_ratio_to_texture) as i32;
+            let radius = (radius as f32 / screen_ratio_to_texture) as isize;
 
             for x in -radius..radius {
                 for y in -radius..radius {
-                    let pos_x = scaled_mouse_x + x as f32;
-                    let pos_y = scaled_mouse_y + y as f32;
+                    let pos_x = mouse_x + x;
+                    let pos_y = mouse_y + y;
 
-                    let distance_squared =
-                        (pos_x - scaled_mouse_x).powi(2) + (pos_y - scaled_mouse_y).powi(2);
-                    if distance_squared <= radius.pow(2) as f32 {
-                        simulation.set_particle(
-                            pos_x as usize,
-                            pos_y as usize,
-                            selected_plugin.into(),
-                        );
+                    if pos_x < 0 || pos_y < 0 {
+                        continue;
                     }
+
+                    let distance = (x * x + y * y) as f32;
+
+                    if distance > radius as f32 * radius as f32 {
+                        continue;
+                    }
+
+                    simulation.set_particle(pos_x as usize, pos_y as usize, selected_plugin.into());
                 }
             }
         }
 
+
         simulation.update();
 
         // Clear the screen
-        clear_background(Color::from_hex(0x12212b));
+        clear_background(BLACK);
 
         egui_macroquad::ui(|egui_ctx| {
             if hide_ui {

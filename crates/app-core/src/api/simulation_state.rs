@@ -21,15 +21,15 @@ pub struct SimulationState {
     current_y: usize,
     width: usize,
     height: usize,
-    clock: bool,
+    clock: u8,
     image: Image,
     texture: Texture2D,
-    particle_name_to_id: FxHashMap<String, u8>,
+    particle_name_to_id: FxHashMap<String, u8>
 }
 
 impl SimulationState {
     pub fn new(width: usize, height: usize) -> SimulationState {
-        let image = Image::gen_image_color(width as u16, height as u16, TRANSPARENT);
+        let image = Image::gen_image_color(width as u16, height as u16, Color::from_hex(0x12212b));
         let texture = Texture2D::from_image(&image);
         texture.set_filter(FilterMode::Nearest); // Set the filter mode to nearest to avoid blurring the pixels
 
@@ -48,7 +48,7 @@ impl SimulationState {
             height,
             particle_definitions: vec![ParticleCommonData {
                 name: String::from("Empty"),
-                color: TRANSPARENT,
+                color: [18,33,43,1],
                 rand_alpha_min: 0,
                 rand_alpha_max: 0,
                 rand_extra_min: 0,
@@ -57,7 +57,7 @@ impl SimulationState {
             }],
             image: image,
             texture: texture,
-            clock: false,
+            clock: 0,
             particle_name_to_id: FxHashMap::default(),
         }
     }
@@ -105,7 +105,7 @@ impl SimulationState {
         &self.particle_definitions[id].name
     }
 
-    pub(crate) fn get_particle_color(&self, id: usize) -> &Color {
+    pub(crate) fn get_particle_color(&self, id: usize) -> &[u8; 4] {
         &self.particle_definitions[id].color
     }
 
@@ -151,26 +151,27 @@ impl SimulationState {
         self.set_particle_at_unchecked(x, y, self.new_particle(particle_id));
     }
 
-    // pub(crate) fn set_particle_at(&mut self, x: usize, y: usize, particle: Particle) -> () {
-    //     if !self.is_inside_at(x, y) {
-    //         return;
-    //     }
-
-    //     self.set_particle_at_unchecked(x, y, particle);
-    // }
-
     pub(crate) fn set_particle_at_unchecked(
         &mut self,
         x: usize,
         y: usize,
         particle: Particle,
     ) -> () {
-        self.particles[y][x] = particle;
+        self.particles[y][x].id = particle.id;
+        self.particles[y][x].light = particle.light;
+        self.particles[y][x].extra = particle.extra;
         self.particles[y][x].clock = !self.clock;
-        let mut color = self.particle_definitions[particle.id as usize].color;
-        color.a = particle.light as f32 * TO_NORMALIZED_COLOR;
+        let color = self.particle_definitions[particle.id as usize].color;
+
+        // This was better to read, but it uses unsafe code under the hood        
+        // self.image.get_image_data_mut()[y * self.width + x] = [255,255,255,255];
         
-        self.image.set_pixel(x as u32, y as u32, color);
+        // Wasm lto optimizes this better than the above
+        let start_index = (y * self.width + x) * 4;
+        self.image.bytes[start_index] = color[0];
+        self.image.bytes[start_index + 1] = color[1];
+        self.image.bytes[start_index + 2] = color[2];
+        self.image.bytes[start_index + 3] = particle.light;
     }
 
     pub fn set(&mut self, x: i32, y: i32, particle: Particle) -> bool {
@@ -283,12 +284,11 @@ impl SimulationState {
                 self.current_x = x;
                 self.current_y = y;
                 let current_particle = &self.particles[y][x];
-                let particle_id = self.particles[y][x]; // Not using getter here to avoid the if check that will never be true here
-                if particle_id == Particle::EMPTY || current_particle.clock != self.clock {
+                if current_particle.id == Particle::EMPTY.id || current_particle.clock != self.clock {
                     continue;
                 }
 
-                let plugin = &mut plugins[particle_id.id as usize];
+                let plugin = &mut plugins[current_particle.id as usize];
                 plugin.update(self.particles[y][x], self);
             }
         }
@@ -318,14 +318,28 @@ impl SimulationState {
     pub(crate) fn draw(&mut self) -> () {
         self.texture.update(&self.image);
 
+        let pos_x = (screen_width() / 2.0 - screen_height() / 2.0).max(0.);
+        let pos_y = (screen_height() / 2.0 - screen_width() / 2.0).max(0.);
+
+        let dest_size = screen_height().min(screen_width());
+
+        // Draw rect with transparent color
+        draw_rectangle(
+            pos_x,
+            pos_y,
+            dest_size,
+            dest_size,
+            Color::from_hex(0x12212b),
+        );
+
         // Draw the texture
         draw_texture_ex(
             self.texture,
-            0.0,
-            0.0,
+            pos_x,
+            pos_y,
             WHITE,
             DrawTextureParams {
-                dest_size: Some(vec2(screen_width(), screen_height())),
+                dest_size: Some(vec2(dest_size, dest_size)),
                 ..Default::default()
             },
         );
