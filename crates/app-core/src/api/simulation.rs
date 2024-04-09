@@ -1,4 +1,5 @@
 use crate::api::*;
+use alloc::{boxed::Box, string::{String, ToString}, vec::Vec};
 
 pub struct Simulation {
     simulation_state: SimulationState,
@@ -47,7 +48,7 @@ impl Simulation {
 
     pub fn get_particle_name(&self, id: usize) -> Result<&String, String> {
         if id >= self.get_plugin_count() {
-            return Err(format!("Particle with id {} not found", id));
+            return Err("Particle with id ".to_string() + &id.to_string() + " not found");
         }
 
         Ok(&self.simulation_state.get_particle_name(id))
@@ -55,7 +56,7 @@ impl Simulation {
 
     pub fn get_particle_hide_in_ui(&self, id: usize) -> Result<bool, String> {
         if id >= self.get_plugin_count() {
-            return Err(format!("Particle with id {} not found", id));
+            return Err("Particle with id ".to_string() + &id.to_string() + " not found");
         }
 
         Ok(self.simulation_state.get_particle_definitions()[id].hide_in_ui)
@@ -63,7 +64,7 @@ impl Simulation {
 
     pub fn get_particle_color(&self, id: usize) -> Result<&[u8; 4], String> {
         if id >= self.get_plugin_count() {
-            return Err(format!("Particle with id {} not found", id));
+            return Err("Particle with id ".to_string() + &id.to_string() + " not found");
         }
 
         Ok(&self.simulation_state.get_particle_color(id))

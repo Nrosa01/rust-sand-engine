@@ -1,4 +1,6 @@
 use std::vec;
+use alloc::{boxed::Box, string::String, vec::Vec};
+
 use crate::api::*;
 
 pub type ParticleApi = crate::api::SimulationState;

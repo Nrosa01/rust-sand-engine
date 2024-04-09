@@ -4,6 +4,10 @@ use macroquad::rand;
 use crate::api::*;
 use rustc_hash::FxHashMap;
 
+use std::println;
+use std::vec;
+use alloc::{boxed::Box, string::String, vec::Vec};
+
 pub struct Vec2i {
     pub x: i32,
     pub y: i32,
