@@ -315,6 +315,14 @@ impl SimulationState {
         rand::gen_range(0, 2) * 2 - 1
     }
 
+    pub fn clear(&mut self) -> () {
+        for y in 0..self.height {
+            for x in 0..self.width {
+                self.set_particle_at_unchecked(x, y, Particle::EMPTY);
+            }
+        }
+    }
+
     pub(crate) fn draw(&mut self) -> () {
         self.texture.update(&self.image);
 

@@ -82,6 +82,10 @@ impl Simulation {
         }
     }
 
+    pub fn clear(&mut self) -> () {
+        self.simulation_state.clear();
+    }
+
     pub fn set_particle(&mut self, x: usize, y: usize, particle: Particle) -> () {
         self.simulation_state.set_particle_at_by_id(x, y, particle.id);
     }
