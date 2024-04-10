@@ -1,5 +1,4 @@
 use std::vec;
-use alloc::{boxed::Box, string::String, vec::Vec};
 
 use crate::api::*;
 
@@ -22,7 +21,7 @@ impl Default for PluginResult {
     fn default() -> Self {
         PluginResult {
             name: String::from("Empty"),
-            color: TRANSPARENT,
+            color: Color::NOT_BLACK,
             alpha: Vec2 { x: 0.9, y: 1.0 },
             extra: Vec2 { x: 0.0, y: 0.0 },
             hidden_in_ui: false,
@@ -34,10 +33,7 @@ impl From<PluginResult> for ParticleCommonData {
     fn from(plugin_result: PluginResult) -> Self {
         ParticleCommonData {
             name: plugin_result.name,
-            color: [(plugin_result.color.r * FROM_NORMALIZED_TO_COLOR) as u8,
-                    (plugin_result.color.g * FROM_NORMALIZED_TO_COLOR) as u8, 
-                    (plugin_result.color.b * FROM_NORMALIZED_TO_COLOR) as u8, 
-                    (plugin_result.color.a * FROM_NORMALIZED_TO_COLOR) as u8],
+            color: plugin_result.color.into(),
             rand_alpha_min: (plugin_result.alpha.x * FROM_NORMALIZED_TO_COLOR) as u8,
             rand_alpha_max: (plugin_result.alpha.y * FROM_NORMALIZED_TO_COLOR) as u8,
             rand_extra_min: (plugin_result.extra.x * FROM_NORMALIZED_TO_COLOR) as u8,
@@ -54,7 +50,7 @@ impl Plugin for Empty {
     fn register(&mut self) -> PluginResult {
         PluginResult {
             name: String::from("Empty"),
-            color: TRANSPARENT,
+            color: Color::NOT_BLACK,
             ..Default::default()
         }
     }

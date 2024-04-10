@@ -1,5 +1,4 @@
 use crate::api::*;
-use alloc::{boxed::Box, string::{String, ToString}, vec::Vec};
 
 pub struct Simulation {
     simulation_state: SimulationState,
@@ -42,8 +41,12 @@ impl Simulation {
         );
     }
 
-    pub fn draw(&mut self) -> () {
-        self.simulation_state.draw();
+    // pub fn draw(&mut self) -> () {
+    //     self.simulation_state.draw();
+    // }
+
+    pub fn get_buffer(&self) -> &[u8] {
+        self.simulation_state.get_buffer()
     }
 
     pub fn get_particle_name(&self, id: usize) -> Result<&String, String> {

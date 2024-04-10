@@ -1,12 +1,8 @@
-use egui_macroquad::macroquad;
-use macroquad::prelude::*;
-use macroquad::rand;
 use crate::api::*;
 use rustc_hash::FxHashMap;
 
 use std::println;
 use std::vec;
-use alloc::{boxed::Box, string::String, vec::Vec};
 
 pub struct Vec2i {
     pub x: i32,
@@ -26,23 +22,22 @@ pub struct SimulationState {
     width: usize,
     height: usize,
     clock: u8,
-    image: Image,
-    texture: Texture2D,
-    particle_name_to_id: FxHashMap<String, u8>
+    color_buffer: Vec<u8>,
+    particle_name_to_id: FxHashMap<String, u8>,
 }
 
 impl SimulationState {
     pub fn new(width: usize, height: usize) -> SimulationState {
-        let image = Image::gen_image_color(width as u16, height as u16, Color::from_hex(0x12212b));
-        let texture = Texture2D::from_image(&image);
-        texture.set_filter(FilterMode::Nearest); // Set the filter mode to nearest to avoid blurring the pixels
+        #[rustfmt::skip]
+        let not_black_color = [Color::NOT_BLACK.r, Color::NOT_BLACK.g, Color::NOT_BLACK.b, Color::NOT_BLACK.a];
+        #[rustfmt::skip]
+        let mut color_buffer = vec![not_black_color; width * height];
 
-        let mut positions = Vec::with_capacity(width * height);
-        for y in 0..height {
-            for x in 0..width {
-                positions.push((x, y));
-            }
+        let mut color_buffer = vec![0; width * height * 4];
+        for (i, color) in color_buffer.chunks_mut(4).enumerate() {
+            color.copy_from_slice(&not_black_color);
         }
+
 
         SimulationState {
             particles: vec![vec![Particle::new(); width]; height],
@@ -52,15 +47,14 @@ impl SimulationState {
             height,
             particle_definitions: vec![ParticleCommonData {
                 name: String::from("Empty"),
-                color: [18,33,43,1],
+                color: [18, 33, 43, 1],
                 rand_alpha_min: 0,
                 rand_alpha_max: 0,
                 rand_extra_min: 0,
                 rand_extra_max: 0,
                 hide_in_ui: false,
             }],
-            image: image,
-            texture: texture,
+            color_buffer,
             clock: 0,
             particle_name_to_id: FxHashMap::default(),
         }
@@ -90,7 +84,12 @@ impl SimulationState {
     ) -> () {
         self.particle_definitions.push(particle_definition);
         self.particle_name_to_id.insert(
-            self.particle_definitions.last().unwrap().name.to_lowercase().clone(),
+            self.particle_definitions
+                .last()
+                .unwrap()
+                .name
+                .to_lowercase()
+                .clone(),
             self.particle_definitions.len() as u8 - 1,
         );
 
@@ -119,6 +118,10 @@ impl SimulationState {
 
     pub fn height(&self) -> usize {
         self.height
+    }
+
+    pub fn get_buffer(&self) -> &[u8] {
+        &self.color_buffer
     }
 
     pub fn get(&self, x: i32, y: i32) -> Particle {
@@ -167,15 +170,15 @@ impl SimulationState {
         self.particles[y][x].clock = !self.clock;
         let color = self.particle_definitions[particle.id as usize].color;
 
-        // This was better to read, but it uses unsafe code under the hood        
+        // This was better to read, but it uses unsafe code under the hood
         // self.image.get_image_data_mut()[y * self.width + x] = [255,255,255,255];
-        
+
         // Wasm lto optimizes this better than the above
         let start_index = (y * self.width + x) * 4;
-        self.image.bytes[start_index] = color[0];
-        self.image.bytes[start_index + 1] = color[1];
-        self.image.bytes[start_index + 2] = color[2];
-        self.image.bytes[start_index + 3] = particle.light;
+        self.color_buffer[start_index] = color[0];
+        self.color_buffer[start_index + 1] = color[1];
+        self.color_buffer[start_index + 2] = color[2];
+        self.color_buffer[start_index + 3] = particle.light;
     }
 
     pub fn set(&mut self, x: i32, y: i32, particle: Particle) -> bool {
@@ -204,8 +207,8 @@ impl SimulationState {
         if !self.is_inside_at(local_x, local_y) {
             return false;
         }
-        
-        let particle = self.particles[self.current_y][self.current_x];            
+
+        let particle = self.particles[self.current_y][self.current_x];
         self.set_particle_at_unchecked(local_x, local_y, particle);
         self.set_particle_at_unchecked(self.current_x, self.current_y, Particle::EMPTY);
 
@@ -225,7 +228,6 @@ impl SimulationState {
         self.set_particle_at_unchecked(local_x, local_y, particle);
         self.set_particle_at_unchecked(self.current_x, self.current_y, Particle::EMPTY);
 
-        
         self.current_x = local_x;
         self.current_y = local_y;
         true
@@ -288,7 +290,8 @@ impl SimulationState {
                 self.current_x = x;
                 self.current_y = y;
                 let current_particle = &self.particles[y][x];
-                if current_particle.id == Particle::EMPTY.id || current_particle.clock != self.clock {
+                if current_particle.id == Particle::EMPTY.id || current_particle.clock != self.clock
+                {
                     continue;
                 }
 
@@ -308,7 +311,7 @@ impl SimulationState {
 
     /// Range, min and max are inclusive
     pub fn gen_range(&self, min_inclusive: i32, max_inclusive: i32) -> i32 {
-        rand::gen_range(min_inclusive - 1, max_inclusive + 1)
+        fastrand::i32(min_inclusive..=max_inclusive)
     }
 
     pub fn is_empty(&self, x: i32, y: i32) -> bool {
@@ -316,7 +319,7 @@ impl SimulationState {
     }
 
     pub fn random_sign(&self) -> i32 {
-        rand::gen_range(0, 2) * 2 - 1
+        fastrand::i32(0..2) * 2 - 1
     }
 
     pub fn clear(&mut self) -> () {
@@ -327,33 +330,33 @@ impl SimulationState {
         }
     }
 
-    pub(crate) fn draw(&mut self) -> () {
-        self.texture.update(&self.image);
+    // pub(crate) fn draw(&mut self) -> () {
+    //     self.texture.update(&self.image);
 
-        let pos_x = (screen_width() / 2.0 - screen_height() / 2.0).max(0.);
-        let pos_y = (screen_height() / 2.0 - screen_width() / 2.0).max(0.);
+    //     let pos_x = (screen_width() / 2.0 - screen_height() / 2.0).max(0.);
+    //     let pos_y = (screen_height() / 2.0 - screen_width() / 2.0).max(0.);
 
-        let dest_size = screen_height().min(screen_width());
+    //     let dest_size = screen_height().min(screen_width());
 
-        // Draw rect with transparent color
-        draw_rectangle(
-            pos_x,
-            pos_y,
-            dest_size,
-            dest_size,
-            Color::from_hex(0x12212b),
-        );
+    //     // Draw rect with transparent color
+    //     draw_rectangle(
+    //         pos_x,
+    //         pos_y,
+    //         dest_size,
+    //         dest_size,
+    //         Color::from_hex(0x12212b),
+    //     );
 
-        // Draw the texture
-        draw_texture_ex(
-            self.texture,
-            pos_x,
-            pos_y,
-            WHITE,
-            DrawTextureParams {
-                dest_size: Some(vec2(dest_size, dest_size)),
-                ..Default::default()
-            },
-        );
-    }
+    //     // Draw the texture
+    //     draw_texture_ex(
+    //         self.texture,
+    //         pos_x,
+    //         pos_y,
+    //         WHITE,
+    //         DrawTextureParams {
+    //             dest_size: Some(vec2(dest_size, dest_size)),
+    //             ..Default::default()
+    //         },
+    //     );
+    // }
 }
