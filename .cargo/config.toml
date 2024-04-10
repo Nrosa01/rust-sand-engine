@@ -1,1 +1,2 @@
-rustflags = "-C prefer_dynamic"
+[build]
+rustflags = ["-C", "prefer_dynamic"]

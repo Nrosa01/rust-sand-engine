@@ -6,10 +6,9 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-# default_plugins.workspace = true
-default-plugins.workspace = true
 app-core.workspace = true
-egui-macroquad = "0.15.0"
+macroquad = { git = 'https://github.com/Nrosa01/macroquad.git', branch = 'update-from-bytes' }
 
 [target.'cfg(not(wasm))'.dependencies]
+default-plugins.workspace = true
 libloading = "0.8.3"
