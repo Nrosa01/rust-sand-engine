@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 app-core.workspace = true
-macroquad = { git = 'https://github.com/Nrosa01/macroquad.git', branch = 'update-from-bytes' }
+egui-macroquad = { version = "0.15.0", default-features = false }
 
 [target.'cfg(not(wasm))'.dependencies]
 default-plugins.workspace = true

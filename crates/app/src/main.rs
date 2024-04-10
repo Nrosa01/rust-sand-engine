@@ -7,10 +7,10 @@ use dylib_loader::DylibLoader;
 
 
 use app_core::api::Simulation;
-// use egui_macroquad::{
-//     egui,
-//     macroquad,
-// };
+use egui_macroquad::{
+    egui,
+    macroquad,
+};
 use macroquad::prelude::*;
 use std::error::Error;
 
@@ -43,8 +43,9 @@ fn mouse_pos_to_square() -> (isize, isize) {
 }
 
 pub fn draw_simulation(texture: &Texture2D, bytes: &[u8]) {
-
-    texture.update_from_bytes(SIM_WIDTH as u32, SIM_HEIGHT as u32, bytes);
+    let raw = texture.raw_miniquad_texture_handle();
+    let ctx = unsafe { get_internal_gl().quad_context };
+    raw.update(ctx, bytes);
 
     let pos_x = (screen_width() / 2.0 - screen_height() / 2.0).max(0.);
     let pos_y = (screen_height() / 2.0 - screen_width() / 2.0).max(0.);
@@ -62,7 +63,7 @@ pub fn draw_simulation(texture: &Texture2D, bytes: &[u8]) {
 
     // Draw the texture
     draw_texture_ex(
-        texture,
+        *texture,
         pos_x,
         pos_y,
         WHITE,
@@ -195,35 +196,35 @@ async fn main() -> Result<(), Box<dyn Error>> {
         // Clear the screen
         clear_background(BLACK);
 
-        // macroquad_egui::ui(|egui_ctx| {
-        //     if hide_ui {
-        //         return;
-        //     }
+        egui_macroquad::ui(|egui_ctx| {
+            if hide_ui {
+                return;
+            }
 
-        //     egui::Area::new(egui::Id::new("my_area"))
-        //         .default_pos(egui::pos2(32.0, 32.0))
-        //         .movable(true)
-        //         .show(egui_ctx, |ui| {
-        //             ui.label(format!("FPS: {}", get_fps()));
-        //             for i in 0..simulation.get_plugin_count() {
-        //                 let plugin = &simulation.get_particle_definitions()[i];
-        //                 if plugin.hide_in_ui {
-        //                     continue;
-        //                 }
+            egui::Area::new(egui::Id::new("my_area"))
+                .default_pos(egui::pos2(32.0, 32.0))
+                .movable(true)
+                .show(egui_ctx, |ui| {
+                    ui.label(format!("FPS: {}", get_fps()));
+                    for i in 0..simulation.get_plugin_count() {
+                        let plugin = &simulation.get_particle_definitions()[i];
+                        if plugin.hide_in_ui {
+                            continue;
+                        }
 
-        //                 let should_hightlight = i == selected_plugin;
-        //                 let name = &plugin.name;
-        //                 let button = ui.button(name);
-        //                 if should_hightlight {
-        //                     button.highlight();
-        //                 } else if button.clicked() {
-        //                     selected_plugin = i;
-        //                 }
-        //             }
-        //         });
+                        let should_hightlight = i == selected_plugin;
+                        let name = &plugin.name;
+                        let button = ui.button(name);
+                        if should_hightlight {
+                            button.highlight();
+                        } else if button.clicked() {
+                            selected_plugin = i;
+                        }
+                    }
+                });
 
-        //     capture_mouse = egui_ctx.wants_pointer_input();
-        // });
+            capture_mouse = egui_ctx.wants_pointer_input();
+        });
 
         // simulation.draw();
         draw_simulation(&texture, simulation.get_buffer());
@@ -233,7 +234,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             draw_circle_lines(mouse_x, mouse_y, radius as f32, 1.0, WHITE);
         }
 
-        // egui_macroquad::draw();
+        egui_macroquad::draw();
         next_frame().await;
     }
 
