@@ -30,11 +30,9 @@ impl SimulationState {
     pub fn new(width: usize, height: usize) -> SimulationState {
         #[rustfmt::skip]
         let not_black_color = [Color::NOT_BLACK.r, Color::NOT_BLACK.g, Color::NOT_BLACK.b, Color::NOT_BLACK.a];
-        #[rustfmt::skip]
-        let mut color_buffer = vec![not_black_color; width * height];
 
         let mut color_buffer = vec![0; width * height * 4];
-        for (i, color) in color_buffer.chunks_mut(4).enumerate() {
+        for (_, color) in color_buffer.chunks_mut(4).enumerate() {
             color.copy_from_slice(&not_black_color);
         }
 

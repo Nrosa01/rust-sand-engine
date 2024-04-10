@@ -8,7 +8,7 @@ use dylib_loader::DylibLoader;
 
 use app_core::api::Simulation;
 use egui_macroquad::{
-    egui::{self},
+    egui,
     macroquad,
 };
 use macroquad::prelude::*;
@@ -42,37 +42,35 @@ fn mouse_pos_to_square() -> (isize, isize) {
 }
 
 pub fn draw_simulation(texture: &Texture2D, bytes: &[u8]) {
-    // texture.update(&self.image);
 
-    // let mini_tex = texture.raw_miniquad_texture_handle();
+    let mini_tex = texture.raw_miniquad_texture_handle();
 
-    // mini_tex.update(ctx, &bytes);
 
-    // let pos_x = (screen_width() / 2.0 - screen_height() / 2.0).max(0.);
-    // let pos_y = (screen_height() / 2.0 - screen_width() / 2.0).max(0.);
+    let pos_x = (screen_width() / 2.0 - screen_height() / 2.0).max(0.);
+    let pos_y = (screen_height() / 2.0 - screen_width() / 2.0).max(0.);
 
-    // let dest_size = screen_height().min(screen_width());
+    let dest_size = screen_height().min(screen_width());
 
-    // // Draw rect with transparent color
-    // draw_rectangle(
-    //     pos_x,
-    //     pos_y,
-    //     dest_size,
-    //     dest_size,
-    //     Color::from_hex(0x12212b),
-    // );
+    // Draw rect with transparent color
+    draw_rectangle(
+        pos_x,
+        pos_y,
+        dest_size,
+        dest_size,
+        Color::from_hex(0x12212b),
+    );
 
-    // // Draw the texture
-    // draw_texture_ex(
-    //     texture,
-    //     pos_x,
-    //     pos_y,
-    //     WHITE,
-    //     DrawTextureParams {
-    //         dest_size: Some(vec2(dest_size, dest_size)),
-    //         ..Default::default()
-    //     },
-    // );
+    // Draw the texture
+    draw_texture_ex(
+        Texture2D::from_rgba8(SIM_WIDTH as u16, SIM_HEIGHT as u16, &bytes),
+        pos_x,
+        pos_y,
+        WHITE,
+        DrawTextureParams {
+            dest_size: Some(vec2(dest_size, dest_size)),
+            ..Default::default()
+        },
+    );
 }
 
 
