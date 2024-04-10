@@ -41,13 +41,17 @@ impl Simulation {
         );
     }
 
-    pub fn draw(&mut self) -> () {
-        self.simulation_state.draw();
+    // pub fn draw(&mut self) -> () {
+    //     self.simulation_state.draw();
+    // }
+
+    pub fn get_buffer(&self) -> &[u8] {
+        self.simulation_state.get_buffer()
     }
 
     pub fn get_particle_name(&self, id: usize) -> Result<&String, String> {
         if id >= self.get_plugin_count() {
-            return Err(format!("Particle with id {} not found", id));
+            return Err("Particle with id ".to_string() + &id.to_string() + " not found");
         }
 
         Ok(&self.simulation_state.get_particle_name(id))
@@ -55,7 +59,7 @@ impl Simulation {
 
     pub fn get_particle_hide_in_ui(&self, id: usize) -> Result<bool, String> {
         if id >= self.get_plugin_count() {
-            return Err(format!("Particle with id {} not found", id));
+            return Err("Particle with id ".to_string() + &id.to_string() + " not found");
         }
 
         Ok(self.simulation_state.get_particle_definitions()[id].hide_in_ui)
@@ -63,7 +67,7 @@ impl Simulation {
 
     pub fn get_particle_color(&self, id: usize) -> Result<&[u8; 4], String> {
         if id >= self.get_plugin_count() {
-            return Err(format!("Particle with id {} not found", id));
+            return Err("Particle with id ".to_string() + &id.to_string() + " not found");
         }
 
         Ok(&self.simulation_state.get_particle_color(id))
