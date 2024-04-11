@@ -49,8 +49,8 @@ impl OrderSchemes {
     pub(super) fn get_ciclying(&mut self) -> &OrderScheme {
         let scheme = match self.current {
             0 => &self.ltr_ttb,
-            1 => &self.rtl_ttb,
-            2 => &self.rtl_btt,
+            1 => &self.rtl_btt,
+            2 => &self.rtl_ttb,
             3 => &self.ltr_btt,
             _ => &self.ltr_ttb,
         };
