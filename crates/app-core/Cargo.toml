@@ -8,4 +8,4 @@ fastrand = "2.0.2"
 rustc-hash = "1.1.0"
 
 [lib]
-crate-type = ["dylib"]
+crate-type = ["lib", "dylib"]

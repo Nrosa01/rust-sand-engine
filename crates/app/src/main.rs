@@ -5,14 +5,53 @@ mod dylib_loader;
 #[cfg(not(target_family = "wasm"))]
 use dylib_loader::DylibLoader;
 
-
 use app_core::api::Simulation;
-use egui_macroquad::{
-    egui,
-    macroquad,
-};
+use egui_macroquad::{egui, macroquad};
 use macroquad::prelude::*;
 use std::error::Error;
+
+// #[cfg(target_family = "wasm")]
+// use std::collections::HashMap;
+// #[cfg(target_family = "wasm")]
+// use wasm_bindgen::prelude::*;
+
+#[cfg(target_family = "wasm")]
+#[no_mangle]
+pub extern "C" fn receive_json_plugin(data: sapp_jsutils::JsObject) -> sapp_jsutils::JsObject {
+    use sapp_jsutils::JsObject;
+
+    miniquad::debug!("Function called");
+    
+    if data.is_nil(){
+        return JsObject::string("Data was nil");
+    }
+
+    let mut buffer = String::new();
+    data.to_string(&mut buffer);
+    let data= json::parse(&buffer);
+    match data {
+        Ok(data) => {
+            println!("{:?}", data);
+            debug!("Received data: {:?}", data);
+            return JsObject::string(&buffer.clone());
+
+        }
+        Err(e) => {
+            println!("{:?}", e);
+            debug!("Received data: {:?}", e);
+            let error_string = e.to_string();
+            return JsObject::string(&error_string)
+        }
+    }
+}
+
+#[cfg(target_family = "wasm")]
+#[no_mangle]
+pub extern "C" fn test() {
+
+    debug!("Received data call form js");
+    
+}
 
 
 const WINDOW_WIDTH: i32 = 800;
@@ -74,9 +113,9 @@ pub fn draw_simulation(texture: &Texture2D, bytes: &[u8]) {
     );
 }
 
-
 #[macroquad::main(conf)]
 async fn main() -> Result<(), Box<dyn Error>> {
+    print!("Hello, world!");
     macroquad::rand::srand(macroquad::miniquad::date::now() as u64);
     
     #[cfg(not(target_family = "wasm"))]
@@ -103,13 +142,15 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let mut radius: isize = 40;
     let mut hide_ui = false;
 
-
     let mut selected_plugin = 1;
 
     let mut capture_mouse = false;
 
     loop {
-        if is_key_pressed(KeyCode::Right) || is_key_pressed(KeyCode::D) || is_key_pressed(KeyCode::S) {
+        if is_key_pressed(KeyCode::Right)
+            || is_key_pressed(KeyCode::D)
+            || is_key_pressed(KeyCode::S)
+        {
             loop {
                 if selected_plugin == simulation.get_plugin_count() - 1 {
                     selected_plugin = 0;
@@ -126,11 +167,18 @@ async fn main() -> Result<(), Box<dyn Error>> {
             }
         }
 
+        if is_key_pressed(KeyCode::P) {
+            let data = load_string("data.json").await.unwrap();
+            let json = json::parse(&data).unwrap();
+            println!("{:?}", json::stringify(json));
+        }
+
         if is_key_pressed(KeyCode::H) {
             hide_ui = !hide_ui;
         }
 
-        if is_key_pressed(KeyCode::Left) || is_key_pressed(KeyCode::A) || is_key_pressed(KeyCode::W) {
+        if is_key_pressed(KeyCode::Left) || is_key_pressed(KeyCode::A) || is_key_pressed(KeyCode::W)
+        {
             loop {
                 if selected_plugin == 0 {
                     selected_plugin = simulation.get_plugin_count() - 1;
@@ -166,7 +214,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
         if is_mouse_button_down(MouseButton::Left) && !capture_mouse {
             let (mouse_x, mouse_y) = mouse_pos_to_square();
-            let screen_ratio_to_texture = screen_height().min(screen_width()) / (SIM_WIDTH.min(SIM_HEIGHT)) as f32;
+            let screen_ratio_to_texture =
+                screen_height().min(screen_width()) / (SIM_WIDTH.min(SIM_HEIGHT)) as f32;
 
             let radius = (radius as f32 / screen_ratio_to_texture) as isize;
 
@@ -189,7 +238,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 }
             }
         }
-
 
         simulation.update();
 
