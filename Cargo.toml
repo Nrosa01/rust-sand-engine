@@ -4,6 +4,7 @@ members = ["crates/*"]
 
 [workspace.dependencies]
 app-core = { path = "crates/app-core", version = "*" }
+js-plugin = { path = "crates/js-plugin", version = "*" }
 default-plugins = { path = "crates/default-plugins", version = "*" }
 
 [profile.release]

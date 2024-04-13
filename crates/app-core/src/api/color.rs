@@ -57,3 +57,14 @@ impl From<Color> for [u8; 4] {
         [color.r, color.g, color.b, color.a]
     }
 }
+
+impl From<[u8; 4]> for Color {
+    fn from(color: [u8; 4]) -> Color {
+        Color {
+            r: color[0],
+            g: color[1],
+            b: color[2],
+            a: color[3],
+        }
+    }
+}

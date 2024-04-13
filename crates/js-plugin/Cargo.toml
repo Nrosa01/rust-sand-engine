@@ -1,0 +1,11 @@
+[package]
+name = "js-plugin"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+app-core.workspace = true
+json = "0.12.4"
+
+[lib]
+crate-type = ["lib"]

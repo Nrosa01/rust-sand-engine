@@ -7,8 +7,10 @@ edition = "2021"
 
 [dependencies]
 app-core.workspace = true
+js-plugin.workspace = true
 egui-macroquad = { version = "0.15.0", default-features = false }
-json = "0.12.4"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
 sapp-jsutils = "0.1.5"
 
 [target.'cfg(not(wasm))'.dependencies]

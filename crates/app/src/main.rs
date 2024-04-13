@@ -7,52 +7,33 @@ use dylib_loader::DylibLoader;
 
 use app_core::api::Simulation;
 use egui_macroquad::{egui, macroquad};
+use js_plugin::plugins::JSPlugin;
 use macroquad::prelude::*;
 use std::error::Error;
 
-// #[cfg(target_family = "wasm")]
-// use std::collections::HashMap;
-// #[cfg(target_family = "wasm")]
-// use wasm_bindgen::prelude::*;
+mod commands;
+use commands::*;
 
 #[cfg(target_family = "wasm")]
 #[no_mangle]
-pub extern "C" fn receive_json_plugin(data: sapp_jsutils::JsObject) -> sapp_jsutils::JsObject {
-    use sapp_jsutils::JsObject;
-
+pub extern "C" fn receive_json_plugin(data: sapp_jsutils::JsObject) {
     miniquad::debug!("Function called");
-    
-    if data.is_nil(){
-        return JsObject::string("Data was nil");
+
+    if data.is_nil() {
+        return;
     }
 
     let mut buffer = String::new();
     data.to_string(&mut buffer);
-    let data= json::parse(&buffer);
-    match data {
-        Ok(data) => {
-            println!("{:?}", data);
-            debug!("Received data: {:?}", data);
-            return JsObject::string(&buffer.clone());
 
-        }
-        Err(e) => {
-            println!("{:?}", e);
-            debug!("Received data: {:?}", e);
-            let error_string = e.to_string();
-            return JsObject::string(&error_string)
-        }
-    }
+    push_command(Command::NewPlugin(buffer));
 }
 
 #[cfg(target_family = "wasm")]
 #[no_mangle]
 pub extern "C" fn test() {
-
     debug!("Received data call form js");
-    
 }
-
 
 const WINDOW_WIDTH: i32 = 800;
 const WINDOW_HEIGHT: i32 = 800;
@@ -117,18 +98,25 @@ pub fn draw_simulation(texture: &Texture2D, bytes: &[u8]) {
 async fn main() -> Result<(), Box<dyn Error>> {
     print!("Hello, world!");
     macroquad::rand::srand(macroquad::miniquad::date::now() as u64);
-    
+
     #[cfg(not(target_family = "wasm"))]
-    let mut loader = DylibLoader::new(); 
-    
+    let mut loader = DylibLoader::new();
+
     let mut simulation = Simulation::new(SIM_WIDTH, SIM_HEIGHT);
 
-    let texture = Texture2D::from_rgba8(SIM_WIDTH as u16, SIM_HEIGHT as u16, &simulation.get_buffer());
+    let texture = Texture2D::from_rgba8(
+        SIM_WIDTH as u16,
+        SIM_HEIGHT as u16,
+        &simulation.get_buffer(),
+    );
     texture.set_filter(FilterMode::Nearest);
 
     #[cfg(not(target_family = "wasm"))]
     {
-        let plugin_path = std::env::current_exe()?.parent().unwrap().join(format!("default_plugins.{}", DylibLoader::extension()));
+        let plugin_path = std::env::current_exe()?
+            .parent()
+            .unwrap()
+            .join(format!("default_plugins.{}", DylibLoader::extension()));
         let plugins = loader.load(plugin_path.to_str().unwrap())?;
         simulation.add_plugins(plugins);
     }
@@ -147,6 +135,28 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let mut capture_mouse = false;
 
     loop {
+        let mut command = pop_command();
+
+        while let Some(c) = command {
+            match c {
+                Command::NewPlugin(json) => {
+                    let plugin = JSPlugin::new(json);
+                    match plugin {
+                        Ok(plugin) => {
+                            simulation.add_plugin(Box::new(plugin));
+                        }
+                        Err(error) => {
+                            println!("Error loading plugin: {}", error);
+                        }
+                    }
+                }
+                Command::CanvasSize(_) => todo!(),
+                Command::Clear => todo!(),
+            }
+
+            command = pop_command();
+        }
+
         if is_key_pressed(KeyCode::Right)
             || is_key_pressed(KeyCode::D)
             || is_key_pressed(KeyCode::S)
@@ -169,8 +179,15 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
         if is_key_pressed(KeyCode::P) {
             let data = load_string("data.json").await.unwrap();
-            let json = json::parse(&data).unwrap();
-            println!("{:?}", json::stringify(json));
+            let plugin = JSPlugin::new(data);
+            match plugin{
+                Ok(plugin) => {
+                    simulation.add_plugin(Box::new(plugin));
+                },
+                Err(error) => {
+                    println!("Error loading plugin: {}", error);
+                }
+            }
         }
 
         if is_key_pressed(KeyCode::H) {

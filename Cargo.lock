@@ -43,7 +43,7 @@ dependencies = [
  "app-core",
  "default-plugins",
  "egui-macroquad",
- "json",
+ "js-plugin",
  "libloading",
  "sapp-jsutils",
 ]
@@ -332,6 +332,14 @@ dependencies = [
  "color_quant",
  "num-traits",
  "png",
+]
+
+[[package]]
+name = "js-plugin"
+version = "0.1.0"
+dependencies = [
+ "app-core",
+ "json",
 ]
 
 [[package]]
