@@ -1,5 +1,6 @@
 use std::collections::VecDeque;
 
+#[allow(unused)]
 pub enum Command {
     NewPlugin(String),
     CanvasSize(u32),
@@ -14,6 +15,7 @@ pub fn pop_command() -> Option<Command> {
     }
 }
 
+#[allow(unused)]
 pub fn push_command(command: Command) {
     unsafe {
         COMMANDS.push_back(command);
