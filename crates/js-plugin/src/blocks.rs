@@ -11,6 +11,9 @@ type NumberLiteral = usize;
 // Once we get this working, we are going to transform de json and substitute
 // The particles names with an index that will be indexed into an array that has the particle IDs.
 
+
+// TODO: Update self x and self y in swap function on ParticleApi
+
 // Taken from Sandspiel Studio
 #[derive(Debug,Serialize,Deserialize, Clone)]
 #[serde(tag = "block", content = "data", rename_all = "camelCase")]

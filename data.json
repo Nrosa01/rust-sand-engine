@@ -2,12 +2,24 @@
   "name": "TestParticle",
   "version": "1.0.0",
   "color": [204, 198, 159],
-  "alpha": [0.95, 1],
+  "alpha": [0.9, 1],
   "update": [
     {
-      "block": "swap",
+      "block": "if",
       "data": {
-        "direction": [1, 0]
+        "condition": {
+          "block": "ifDirectionIsType",
+          "data": {
+            "direction": [0, -1],
+            "type": 0
+          }
+        },
+        "result": {
+          "block": "swap",
+          "data": {
+            "direction": [0, -1]
+          }
+        }
       }
     },
     {
@@ -16,14 +28,32 @@
         "condition": {
           "block": "ifDirectionIsType",
           "data": {
-            "direction": [0, 1],
+            "direction": [-1, -1],
             "type": 0
           }
         },
         "result": {
           "block": "swap",
           "data": {
-            "direction": [0, 1]
+            "direction": [-1, -1]
+          }
+        }
+      }
+    },
+    {
+      "block": "if",
+      "data": {
+        "condition": {
+          "block": "ifDirectionIsType",
+          "data": {
+            "direction": [1, -1],
+            "type": 0
+          }
+        },
+        "result": {
+          "block": "swap",
+          "data": {
+            "direction": [1, -1]
           }
         }
       }
