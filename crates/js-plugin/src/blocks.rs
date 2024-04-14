@@ -1,3 +1,4 @@
+use app_core::{Particle, ParticleApi};
 use serde::{Deserialize, Serialize};
 
 // type Action = Box<dyn Fn(Particle, &mut ParticleApi)>;
@@ -11,7 +12,7 @@ type NumberLiteral = usize;
 // The particles names with an index that will be indexed into an array that has the particle IDs.
 
 // Taken from Sandspiel Studio
-#[derive(Debug,Serialize,Deserialize)]
+#[derive(Debug,Serialize,Deserialize, Clone)]
 #[serde(tag = "block", content = "data", rename_all = "camelCase")]
 pub enum Blocks {
     Particle { r#type: ParticleType }, // Particle type
@@ -32,4 +33,71 @@ pub enum Blocks {
     CompareLessThan { block1: Box<Blocks>, block2: Box<Blocks> }, // Compares two blocks
     Direction { direction: Direction }, // Returns a direction
     Boolean { value: bool },       // Returns a boolean value
+}
+
+// Implement from Block into Function
+impl Blocks {
+    #[allow(unused)]
+    pub fn to_func(&self) -> Box<dyn Fn(Particle, &mut ParticleApi) -> bool> {
+        let block = self.clone();
+        match block {
+            Blocks::Particle { r#type } => Box::new(move |particle, api| {
+                true
+            }),
+            Blocks::Swap { direction } => Box::new(move |particle, api| {
+                api.swap(direction[0], direction[1])
+            }),
+            Blocks::CopyTo { direction } => Box::new(move |particle, api| {
+                api.set(direction[0], direction[1], particle)
+            }),
+            Blocks::ChangeInto { direction, r#type } => Box::new(move |particle, api| {
+                api.set(direction[0], direction[1], api.new_particle(r#type))
+            }),
+            Blocks::IfDirectionIsType { direction, r#type } => Box::new(move |particle, api| {
+                api.get(direction[0], direction[1]).id == r#type
+            }),
+            Blocks::Not { block } => Box::new(move |particle, api| {
+                !(block.to_func())(particle, api)
+            }),
+            Blocks::And { block1, block2 } => Box::new(move |particle, api| {
+                (block1.to_func())(particle, api) && (block2.to_func())(particle, api)
+            }),
+            Blocks::Or { block1, block2 } => Box::new(move |particle, api| {
+                (block1.to_func())(particle, api) || (block2.to_func())(particle, api)
+            }),
+            Blocks::Touching { r#type } => Box::new(move |particle, api| {
+                true
+            }),
+            Blocks::NumberOfXTouching { r#type } => Box::new(move |particle, api| {
+                true
+            }),
+            Blocks::TypeOf { direction } => Box::new(move |particle, api| {
+                true
+            }),
+            Blocks::If { condition, result } => Box::new(move |particle, api| {
+                if (condition.to_func())(particle, api) {
+                    return (result.to_func())(particle, api)
+                }
+                true
+            }),
+            Blocks::OneInXChance { chance } => Box::new(move |particle, api| {
+                true
+            }),
+            Blocks::CompareIs { block1, block2 } => Box::new(move |particle, api| {
+                true
+            }),
+            Blocks::CompareBiggerThan { block1, block2 } => Box::new(move |particle, api| {
+                true
+            }),
+            Blocks::CompareLessThan { block1, block2 } => Box::new(move |particle, api| {
+                true
+            }),
+            Blocks::Direction { direction } => Box::new(move |particle, api| {
+                true
+            }),
+            Blocks::Boolean { value } => Box::new(move |particle, api| {
+                true
+            }),
+        }
+    }
 }

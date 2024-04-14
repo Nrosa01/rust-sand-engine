@@ -96,7 +96,7 @@ pub fn to_plugin_result(json: &JsonValue) -> Result<PluginResult, String>
     })
 }
 
-pub fn build_update_func(json: &JsonValue) -> Result<Box<dyn Fn(Particle, &mut ParticleApi)>, String>
+pub fn build_update_func(json: &JsonValue) -> Result<Box<dyn Fn(Particle, &mut ParticleApi) -> bool>, String>
 {   
     let update_str = json["update"].to_string();
     let serde_json = serde_json::from_str(&update_str).unwrap();
@@ -106,11 +106,16 @@ pub fn build_update_func(json: &JsonValue) -> Result<Box<dyn Fn(Particle, &mut P
 
     // For testing we will print blocks
     println!("Using serde_json:");
-    for block in blocks
+    for block in &blocks
     {
         println!("{:?}", block);
     }
 
+    let func_vec = blocks.iter().map(|block| block.to_func()).collect::<Vec<_>>();
+
     // For testing we will just return an empty function
-    Ok(Box::new(|_, _| {}))
+    Ok(Box::new(move |particle, api| {
+        func_vec.iter().all(|func| func(particle, api));
+        return true;
+    }))
 }
