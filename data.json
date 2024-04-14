@@ -1,6 +1,33 @@
 {
-    "name": "TestParticle",
-    "version": "1.0.0",
-    "color": [204, 198, 159],
-    "alpha": [0.95, 1]
+  "name": "TestParticle",
+  "version": "1.0.0",
+  "color": [204, 198, 159],
+  "alpha": [0.95, 1],
+  "update": [
+    {
+      "block": "swap",
+      "data": {
+        "direction": [1, 0]
+      }
+    },
+    {
+        "block": "if",
+        "data":{
+            "condition":
+            {
+                "block": "IfDirectionIsType",
+                "data": {
+                    "direction": [0, 1],
+                    "type": 0
+                }
+            },
+            "result": {
+                "block": "swap",
+                "data": {
+                  "direction": [0, 1]
+                }
+            }
+        }
+    }
+  ]
 }
