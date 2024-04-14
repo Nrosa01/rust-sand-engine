@@ -6,6 +6,8 @@ edition = "2021"
 [dependencies]
 app-core.workspace = true
 json = "0.12.4"
+serde_json = "*"
+serde = {version = "1.0.197", features = ["derive"]}
 
 [lib]
 crate-type = ["lib"]
