@@ -179,15 +179,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
         if is_key_pressed(KeyCode::P) {
             let data = load_string("data.json").await.unwrap();
-            let plugin = JSPlugin::new(data);
-            match plugin{
-                Ok(plugin) => {
-                    simulation.add_plugin(Box::new(plugin));
-                },
-                Err(error) => {
-                    println!("Error loading plugin: {}", error);
-                }
-            }
+            push_command(Command::NewPlugin(data));
         }
 
         if is_key_pressed(KeyCode::H) {

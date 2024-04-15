@@ -21,21 +21,17 @@ impl JSPlugin
         {
             Ok(json) => 
             {
-                let plugin_data = to_plugin_result(&json);
-                let update = build_update_func(&json).unwrap();
+                let plugin_data = to_plugin_result(&json)?;
+                let update_func = build_update_func(&json)?;
 
-                if let Ok(plugin_data) = plugin_data
-                {
-                    return Ok(JSPlugin
+              
+                Ok(
+                    JSPlugin
                     {
-                        update: update,
+                        update: update_func,
                         plugin_data: plugin_data,
-                    });
-                }
-                else
-                {
-                    return Err("Error parsing plugin data".to_string());
-                }
+                    }
+                )
             },
             Err(error) => 
             {
