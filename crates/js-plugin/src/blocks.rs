@@ -19,18 +19,18 @@ type NumberLiteral = usize;
 pub enum Numbers {
     ParticleType(ParticleType),
     Number(NumberLiteral),
-    NumberOfXTouching,
+    NumberOfXTouching(ParticleType),
     TypeOf(Direction),
 }
 
 impl Numbers {
-    pub fn to_number(&self, _: &JSPlugin, particle: Particle, api: &mut ParticleApi) -> usize {
+    pub fn to_number(&self, _: &JSPlugin, _: Particle, api: &mut ParticleApi) -> usize {
         match self {
             Numbers::ParticleType(particle_type) => *particle_type as usize,
             Numbers::Number(number) => *number,
-            Numbers::NumberOfXTouching => ParticleApi::NEIGHBORS
+            Numbers::NumberOfXTouching(particle_type) => ParticleApi::NEIGHBORS
                 .iter()
-                .filter(|dir| api.get_type(dir.x, dir.y) == particle.id)
+                .filter(|dir| api.get_type(dir.x, dir.y) == *particle_type)
                 .count(),
             Numbers::TypeOf(direction) => api.get_type(direction[0], direction[1]) as usize,
         }

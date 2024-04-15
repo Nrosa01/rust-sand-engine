@@ -87,7 +87,7 @@ pub fn to_plugin_result(json: &JsonValue) -> Result<PluginResult, String> {
 }
 
 #[rustfmt::skip]
-pub fn build_update_func(json: &JsonValue, ) -> Result<Box<dyn Fn(&JSPlugin, Particle, &mut ParticleApi) -> bool>, String>
+pub fn build_update_func(json: &JsonValue, ) -> Result<Box<dyn Fn(&JSPlugin, Particle, &mut ParticleApi)>, String>
 {
     let update_str = json["update"].to_string();
     let blocks: Vec<Blocks> = serde_json::from_str(&update_str).map_err(|err| err.to_string())?;
@@ -99,6 +99,5 @@ pub fn build_update_func(json: &JsonValue, ) -> Result<Box<dyn Fn(&JSPlugin, Par
 
     Ok(Box::new(move |plugin, particle, api| {
         func_vec.iter().all(|func| func(plugin, particle, api));
-        return true;
     }))
 }
