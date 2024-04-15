@@ -60,6 +60,7 @@ pub enum Blocks {
     CopyTo { direction: Direction },
     ChangeInto { direction: Direction, r#type: ParticleType },
     IfDirectionIsType { direction: Direction, r#type: ParticleType }, // If particle at direction is of type X
+    IfDirectionIsAnyType { direction: Direction, types: Vec<ParticleType> }, // If particle at direction is of type X
     Not { block: Condition }, // Negates a block result, it's inverting a boolean
     And { block1: Condition, block2: Condition }, // Logical AND
     Or { block1: Condition, block2: Condition }, // Logical OR
@@ -91,6 +92,12 @@ impl Blocks {
             Blocks::IfDirectionIsType { direction, r#type } => {
                 Box::new(move |plugin, particle, api| {
                     api.get(direction[0], direction[1]).id == r#type
+                })
+            }
+            Blocks::IfDirectionIsAnyType { direction, types } => 
+            {
+                Box::new(move |plugin, particle, api| {
+                    api.is_any_particle_at(direction[0], direction[1], &types)
                 })
             }
             Blocks::Not { block } => {
@@ -192,6 +199,10 @@ impl Blocks {
             Blocks::IfDirectionIsType { direction, r#type } => Blocks::IfDirectionIsType {
                 direction: *direction,
                 r#type: *r#type,
+            },
+            Blocks::IfDirectionIsAnyType { direction, types } => Blocks::IfDirectionIsAnyType {
+                direction: *direction,
+                types: types.clone(),
             },
             Blocks::Not { block } => Blocks::Not {
                 block: Box::new(block.optimize(api)),
