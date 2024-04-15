@@ -49,7 +49,7 @@ impl Plugin for JSPlugin
         (self.update)(self, particle, api);
     }
     
-    fn register(&mut self) -> app_core::PluginResult {
+    fn register(&mut self, _: &ParticleApi) -> app_core::PluginResult {
         PluginResult{
             name: self.plugin_data.name.clone(),
             color: self.plugin_data.color,

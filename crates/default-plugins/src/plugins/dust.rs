@@ -12,7 +12,7 @@ impl Dust {
 }
 
 impl Plugin for Dust {
-    fn register(&mut self) -> PluginResult {
+    fn register(&mut self, _: &ParticleApi) -> PluginResult {
         PluginResult {
             name: String::from("Dust"),
             color: app_core::Color::from_rgba(108,108,100,128),

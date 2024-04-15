@@ -20,7 +20,8 @@ impl Water {
 }
 
 impl Plugin for Water {
-    fn register(&mut self) -> PluginResult {
+    fn register(&mut self, api: &ParticleApi) -> PluginResult {
+        self.on_plugin_changed(api);
         PluginResult {
             name: String::from("Water"),
             color: app_core::Color::from_hex(0x00FFFF),
@@ -43,7 +44,7 @@ impl Plugin for Water {
                 // This is because you can't directly modify an existing particle, you have to set a new one in its place
     }
 
-    fn post_update(&mut self, api: &ParticleApi) {
+    fn on_plugin_changed(&mut self, api: &ParticleApi) {
         self.collision_targets[1] = api.id_from_name("Dust");
     }
 }

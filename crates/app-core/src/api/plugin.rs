@@ -4,9 +4,11 @@ use crate::api::*;
 
 pub type ParticleApi = crate::api::SimulationState;
 pub trait Plugin {
-    fn register(&mut self) -> PluginResult;
+    fn register(&mut self, api: &ParticleApi) -> PluginResult;
     fn update(&self, cell: Particle, api: &mut ParticleApi);
-    fn post_update(&mut self, _: &ParticleApi) {}
+    // Called when the simulation adds or remove a new Plugin
+    // So particles can cache the id of other particles
+    fn on_plugin_changed(&mut self, _: &ParticleApi) {}
 }
 
 pub struct PluginResult {
@@ -43,11 +45,10 @@ impl From<PluginResult> for ParticleCommonData {
     }
 }
 
-
 pub struct Empty;
 
 impl Plugin for Empty {
-    fn register(&mut self) -> PluginResult {
+    fn register(&mut self, _: &SimulationState) -> PluginResult {
         PluginResult {
             name: String::from("Empty"),
             color: Color::NOT_BLACK,
@@ -74,6 +75,14 @@ pub struct PluginData {
     // pub(crate) libraries: Vec<libloading::Library>,
 }
 
+impl PluginData {
+    pub fn notify(&mut self, api: &ParticleApi) {
+        for i in 0..self.plugins.len() {
+            self.plugins[i].on_plugin_changed(api);
+        }
+    }
+}
+
 impl Drop for PluginData {
     fn drop(&mut self) {
         // Drop first plugins, then libraries
@@ -95,5 +104,3 @@ impl PluginData {
         }
     }
 }
-
-

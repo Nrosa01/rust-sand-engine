@@ -318,11 +318,6 @@ impl SimulationState {
             }
         }
 
-        // Post update
-        for plugin in plugins.iter_mut() {
-            plugin.post_update(self);
-        }
-
         self.current_x = 0;
         self.current_y = 0;
     }

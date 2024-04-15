@@ -11,7 +11,8 @@ impl Steam {
 }
 
 impl Plugin for Steam {
-    fn register(&mut self) -> PluginResult {
+    fn register(&mut self, api: &ParticleApi) -> PluginResult {
+        self.on_plugin_changed(api);
         PluginResult {
             name: String::from("Steam"),
             color: app_core::Color::from_rgba(128,128,128,128),
@@ -43,7 +44,7 @@ impl Plugin for Steam {
         }
     }
 
-    fn post_update(&mut self, api: &ParticleApi) {
+    fn on_plugin_changed(&mut self, api: &ParticleApi) {
         self.rock_id = api.id_from_name("Rock");
     }
 }

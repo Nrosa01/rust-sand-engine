@@ -73,11 +73,16 @@ impl Simulation {
         Ok(&self.simulation_state.get_particle_color(id))
     }
 
+    pub fn notify_plugins_of_change(&self) -> () {
+        
+    }
+
     pub fn add_plugin(&mut self, plugin: Box<dyn Plugin>) -> () {
         let mut plugin = plugin;
         self.simulation_state
-            .add_particle_definition(plugin.register().into());
+            .add_particle_definition(plugin.register(&self.simulation_state).into());
         self.plugin_data.plugins.push(plugin);
+        self.plugin_data.notify(&self.simulation_state);
     }
 
     pub fn add_plugins(&mut self, plugins: Vec<Box<dyn Plugin>>) -> () {
@@ -91,6 +96,7 @@ impl Simulation {
     }
 
     pub fn set_particle(&mut self, x: usize, y: usize, particle: Particle) -> () {
-        self.simulation_state.set_particle_at_by_id(x, y, particle.id);
+        self.simulation_state
+            .set_particle_at_by_id(x, y, particle.id);
     }
 }

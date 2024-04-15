@@ -12,7 +12,8 @@ impl Sand {
 }
 
 impl Plugin for Sand {
-    fn register(&mut self) -> PluginResult {
+    fn register(&mut self, api: &ParticleApi) -> PluginResult {
+        self.on_plugin_changed(api);
         PluginResult {
             name: String::from("Sand"),
             color: app_core::Color::from_hex(0xFFFF00),
@@ -29,7 +30,7 @@ impl Plugin for Sand {
                 swap_if_match(api, -random_horizontal, down, &self.collision_targets);
     }
 
-    fn post_update(&mut self, api: &ParticleApi) {
+    fn on_plugin_changed(&mut self, api: &ParticleApi) {
         self.collision_targets[1] = api.id_from_name("Water");
     }
 }

@@ -12,7 +12,8 @@ impl Rock {
 }
 
 impl Plugin for Rock {
-    fn register(&mut self) -> PluginResult {
+    fn register(&mut self, api: &ParticleApi) -> PluginResult {
+        self.on_plugin_changed(api);
         PluginResult {
             name: String::from("Rock"),
             color: app_core::Color::from_rgba(123, 133, 145, 255),
@@ -57,7 +58,7 @@ impl Plugin for Rock {
         }
     }
 
-    fn post_update(&mut self, api: &ParticleApi) {
+    fn on_plugin_changed(&mut self, api: &ParticleApi) {
         self.water_id = api.id_from_name("Water");
     }
 }
