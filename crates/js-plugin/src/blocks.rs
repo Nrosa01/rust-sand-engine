@@ -21,8 +21,10 @@ pub enum Numbers {
     Number(NumberLiteral),
     NumberOfXTouching(ParticleType),
     TypeOf(Direction),
+    ParticleIdFromName(String),
 }
 
+#[rustfmt::skip]
 impl Numbers {
     pub fn to_number(&self, _: &JSPlugin, _: Particle, api: &mut ParticleApi) -> usize {
         match self {
@@ -33,8 +35,20 @@ impl Numbers {
                 .filter(|dir| api.get_type(dir.x, dir.y) == *particle_type)
                 .count(),
             Numbers::TypeOf(direction) => api.get_type(direction[0], direction[1]) as usize,
+            Numbers::ParticleIdFromName(name) => { api.id_from_name(name) as usize },
         }
     }
+
+    pub fn optimize(&self, api: &ParticleApi) -> Self
+    {
+        match self {
+            Numbers::ParticleType(particle_type) => Numbers::ParticleType(*particle_type),
+            Numbers::Number(number) => Numbers::Number(*number),
+            Numbers::NumberOfXTouching(particle_type) => Numbers::NumberOfXTouching(*particle_type),
+            Numbers::TypeOf(direction) => Numbers::TypeOf(*direction),
+            Numbers::ParticleIdFromName(name) => Numbers::ParticleType(api.id_from_name(&name))
+        }
+    }   
 }
 
 // Taken from Sandspiel Studio
@@ -103,7 +117,6 @@ impl Blocks {
                 // We bake the functions here so they don't have to get built every time this block is called
                 let condition = condition.to_func();
                 let result = result.to_func();
-
                 // "Baking" so we only call r#else if there is an else
                 // I could also create an empty function with let r#else = r#else.unwrap_or_else(|| Box::new(|_, _, _| true));
                 // And I could return a single lamnbda instead of this but....
@@ -161,6 +174,63 @@ impl Blocks {
             Blocks::IsEmpty { direction } => {
                 Box::new(move |plugin, particle, api| api.is_empty(direction[0], direction[1]))
             }
+        }
+    }
+
+    pub fn optimize(&self, api: &ParticleApi) -> Self {
+        match self {
+            Blocks::Swap { direction } => Blocks::Swap {
+                direction: *direction,
+            },
+            Blocks::CopyTo { direction } => Blocks::CopyTo {
+                direction: *direction,
+            },
+            Blocks::ChangeInto { direction, r#type } => Blocks::ChangeInto {
+                direction: *direction,
+                r#type: *r#type,
+            },
+            Blocks::IfDirectionIsType { direction, r#type } => Blocks::IfDirectionIsType {
+                direction: *direction,
+                r#type: *r#type,
+            },
+            Blocks::Not { block } => Blocks::Not {
+                block: Box::new(block.optimize(api)),
+            },
+            Blocks::And { block1, block2 } => Blocks::And {
+                block1: Box::new(block1.optimize(api)),
+                block2: Box::new(block2.optimize(api)),
+            },
+            Blocks::Or { block1, block2 } => Blocks::Or {
+                block1: Box::new(block1.optimize(api)),
+                block2: Box::new(block2.optimize(api)),
+            },
+            Blocks::Touching { r#type } => Blocks::Touching { r#type: *r#type },
+            Blocks::If {
+                condition,
+                result,
+                r#else,
+            } => Blocks::If {
+                condition: Box::new(condition.optimize(api)),
+                result: Box::new(result.optimize(api)),
+                r#else: r#else.as_ref().map(|block| Box::new(block.optimize(api))),
+            },
+            Blocks::OneInXChance { chance } => Blocks::OneInXChance { chance: *chance },
+            Blocks::IsEmpty { direction } => Blocks::IsEmpty {
+                direction: *direction,
+            },
+            Blocks::CompareIs { block1, block2 } => Blocks::CompareIs {
+                block1: block1.optimize(api),
+                block2: block2.optimize(api),
+            },
+            Blocks::CompareBiggerThan { block1, block2 } => Blocks::CompareBiggerThan {
+                block1: block1.optimize(api),
+                block2: block2.optimize(api),
+            },
+            Blocks::CompareLessThan { block1, block2 } => Blocks::CompareLessThan {
+                block1: block1.optimize(api),
+                block2: block2.optimize(api),
+            },
+            Blocks::Boolean { value } => Blocks::Boolean { value: *value },
         }
     }
 }
