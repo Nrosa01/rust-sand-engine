@@ -7,53 +7,27 @@
     {
       "block": "if",
       "data": {
-        "condition": {
-          "block": "ifDirectionIsType",
+        "condition": { "block": "isEmpty", "data": { "direction": [0, -1] } },
+        "result": { "block": "swap", "data": { "direction": [0, -1] } },
+        "else": {
+          "block": "if",
           "data": {
-            "direction": [0, -1],
-            "type": 0
-          }
-        },
-        "result": {
-          "block": "swap",
-          "data": {
-            "direction": [0, -1]
-          }
-        }
-      }
-    },
-    {
-      "block": "if",
-      "data": {
-        "condition": {
-          "block": "ifDirectionIsType",
-          "data": {
-            "direction": [-1, -1],
-            "type": 0
-          }
-        },
-        "result": {
-          "block": "swap",
-          "data": {
-            "direction": [-1, -1]
-          }
-        }
-      }
-    },
-    {
-      "block": "if",
-      "data": {
-        "condition": {
-          "block": "ifDirectionIsType",
-          "data": {
-            "direction": [1, -1],
-            "type": 0
-          }
-        },
-        "result": {
-          "block": "swap",
-          "data": {
-            "direction": [1, -1]
+            "condition": {
+              "block": "isEmpty",
+              "data": { "direction": [-1, -1] }
+            },
+            "result": { "block": "swap", "data": { "direction": [-1, -1] } },
+            "else": {
+              "block": "if",
+              "data": {
+                "condition": {
+                  "block": "isEmpty",
+                  "data": { "direction": [1, -1] }
+                },
+                "result": { "block": "swap", "data": { "direction": [1, -1] } },
+                "else": null
+              }
+            }
           }
         }
       }

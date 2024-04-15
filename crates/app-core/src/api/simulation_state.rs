@@ -257,6 +257,9 @@ impl SimulationState {
         let particle = self.particles[self.current_y][self.current_x];
         self.set_particle_at_unchecked(self.current_x, self.current_y, swap_particle);
         self.set_particle_at_unchecked(local_x, local_y, particle);
+
+        self.current_x = local_x;
+        self.current_y = local_y;
         true
     }
 
@@ -271,6 +274,9 @@ impl SimulationState {
         let swap_particle = self.particles[local_y][local_x];
         self.set_particle_at_unchecked(local_x, local_y, particle);
         self.set_particle_at_unchecked(self.current_x, self.current_y, swap_particle);
+
+        self.current_x = local_x;
+        self.current_y = local_y;
         true
     }
 
