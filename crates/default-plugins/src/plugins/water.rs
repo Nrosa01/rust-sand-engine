@@ -20,8 +20,7 @@ impl Water {
 }
 
 impl Plugin for Water {
-    fn register(&mut self, api: &ParticleApi) -> PluginResult {
-        self.on_plugin_changed(api);
+fn register(&mut self) -> PluginResult {
         PluginResult {
             name: String::from("Water"),
             color: app_core::Color::from_hex(0x00FFFF),

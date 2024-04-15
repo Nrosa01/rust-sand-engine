@@ -12,8 +12,7 @@ impl Sand {
 }
 
 impl Plugin for Sand {
-    fn register(&mut self, api: &ParticleApi) -> PluginResult {
-        self.on_plugin_changed(api);
+    fn register(&mut self) -> PluginResult {
         PluginResult {
             name: String::from("Sand"),
             color: app_core::Color::from_hex(0xFFFF00),

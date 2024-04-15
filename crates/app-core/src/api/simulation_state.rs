@@ -36,26 +36,29 @@ impl SimulationState {
             color.copy_from_slice(&not_black_color);
         }
 
-
-        SimulationState {
+        let mut state = SimulationState {
             particles: vec![vec![Particle::new(); width]; height],
             current_x: 0,
             current_y: 0,
             width,
             height,
-            particle_definitions: vec![ParticleCommonData {
-                name: String::from("Empty"),
-                color: [18, 33, 43, 1],
-                rand_alpha_min: 0,
-                rand_alpha_max: 0,
-                rand_extra_min: 0,
-                rand_extra_max: 0,
-                hide_in_ui: false,
-            }],
+            particle_definitions: Vec::new(),
             color_buffer,
             clock: 0,
             particle_name_to_id: FxHashMap::default(),
-        }
+        };
+
+        state.add_particle_definition(ParticleCommonData {
+            name: String::from("Empty"),
+            color: [18, 33, 43, 1],
+            rand_alpha_min: 0,
+            rand_alpha_max: 0,
+            rand_extra_min: 0,
+            rand_extra_max: 0,
+            hide_in_ui: false,
+        });
+
+        state
     }
 
     pub const NEIGHBORS: [Vec2i; 8] = [

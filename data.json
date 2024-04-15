@@ -7,22 +7,25 @@
     {
       "block": "if",
       "data": {
-        "condition": { "block": "isEmpty", "data": { "direction": [0, -1] } },
+        "condition": {
+          "block": "ifDirectionIsAnyType",
+          "data": { "direction": [0, -1], "types": ["empty", "water"] }
+        },
         "result": { "block": "swap", "data": { "direction": [0, -1] } },
         "else": {
           "block": "if",
           "data": {
             "condition": {
-              "block": "isEmpty",
-              "data": { "direction": [-1, -1] }
+              "block": "ifDirectionIsAnyType",
+              "data": { "direction": [-1, -1], "types": ["empty", "water"] }
             },
             "result": { "block": "swap", "data": { "direction": [-1, -1] } },
             "else": {
               "block": "if",
               "data": {
                 "condition": {
-                  "block": "isEmpty",
-                  "data": { "direction": [1, -1] }
+                  "block": "ifDirectionIsAnyType",
+                  "data": { "direction": [1, -1], "types": ["empty", "water"] }
                 },
                 "result": { "block": "swap", "data": { "direction": [1, -1] } },
                 "else": null

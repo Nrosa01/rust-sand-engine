@@ -80,7 +80,7 @@ impl Simulation {
     pub fn add_plugin(&mut self, plugin: Box<dyn Plugin>) -> () {
         let mut plugin = plugin;
         self.simulation_state
-            .add_particle_definition(plugin.register(&self.simulation_state).into());
+            .add_particle_definition(plugin.register().into());
         self.plugin_data.plugins.push(plugin);
         self.plugin_data.notify(&self.simulation_state);
     }

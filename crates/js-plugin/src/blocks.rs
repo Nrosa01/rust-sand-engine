@@ -36,7 +36,7 @@ impl NumbersRuntime {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(tag = "particle", rename_all = "camelCase")]
+#[serde(untagged, rename_all = "camelCase")]
 pub enum NumberConstants {
     ParticleType(ParticleType),
     ParticleIdFromName(String),

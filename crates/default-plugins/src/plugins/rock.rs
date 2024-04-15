@@ -12,8 +12,7 @@ impl Rock {
 }
 
 impl Plugin for Rock {
-    fn register(&mut self, api: &ParticleApi) -> PluginResult {
-        self.on_plugin_changed(api);
+fn register(&mut self) -> PluginResult {
         PluginResult {
             name: String::from("Rock"),
             color: app_core::Color::from_rgba(123, 133, 145, 255),

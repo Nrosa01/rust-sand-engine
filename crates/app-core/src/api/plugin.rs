@@ -4,7 +4,7 @@ use crate::api::*;
 
 pub type ParticleApi = crate::api::SimulationState;
 pub trait Plugin {
-    fn register(&mut self, api: &ParticleApi) -> PluginResult;
+    fn register(&mut self) -> PluginResult;
     fn update(&self, cell: Particle, api: &mut ParticleApi);
     // Called when the simulation adds or remove a new Plugin
     // So particles can cache the id of other particles
@@ -48,7 +48,7 @@ impl From<PluginResult> for ParticleCommonData {
 pub struct Empty;
 
 impl Plugin for Empty {
-    fn register(&mut self, _: &SimulationState) -> PluginResult {
+    fn register(&mut self) -> PluginResult {
         PluginResult {
             name: String::from("Empty"),
             color: Color::NOT_BLACK,
