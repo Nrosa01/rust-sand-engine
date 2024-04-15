@@ -69,6 +69,20 @@ impl SimulationState {
         Vec2i { x: -1, y: -1 },
     ];
 
+    pub const NEIGHBORS_CROSS: [Vec2i; 4] = [
+        Vec2i { x: 0, y: -1 },
+        Vec2i { x: 1, y: 0 },
+        Vec2i { x: 0, y: 1 },
+        Vec2i { x: -1, y: 0 },
+    ];
+
+    pub const NEIGHBORS_DIAGONAL: [Vec2i; 4] = [
+        Vec2i { x: 1, y: -1 },
+        Vec2i { x: 1, y: 1 },
+        Vec2i { x: -1, y: 1 },
+        Vec2i { x: -1, y: -1 },
+    ];
+
     pub fn id_from_name(&self, name: &str) -> u8 {
         *self
             .particle_name_to_id
@@ -320,6 +334,10 @@ impl SimulationState {
         fastrand::i32(0..2) * 2 - 1
     }
 
+    pub fn get_type(&self, x: i32, y: i32) -> u8 {
+        self.get(x, y).id
+    }
+
     pub fn clear(&mut self) -> () {
         for y in 0..self.height {
             for x in 0..self.width {
@@ -327,34 +345,4 @@ impl SimulationState {
             }
         }
     }
-
-    // pub(crate) fn draw(&mut self) -> () {
-    //     self.texture.update(&self.image);
-
-    //     let pos_x = (screen_width() / 2.0 - screen_height() / 2.0).max(0.);
-    //     let pos_y = (screen_height() / 2.0 - screen_width() / 2.0).max(0.);
-
-    //     let dest_size = screen_height().min(screen_width());
-
-    //     // Draw rect with transparent color
-    //     draw_rectangle(
-    //         pos_x,
-    //         pos_y,
-    //         dest_size,
-    //         dest_size,
-    //         Color::from_hex(0x12212b),
-    //     );
-
-    //     // Draw the texture
-    //     draw_texture_ex(
-    //         self.texture,
-    //         pos_x,
-    //         pos_y,
-    //         WHITE,
-    //         DrawTextureParams {
-    //             dest_size: Some(vec2(dest_size, dest_size)),
-    //             ..Default::default()
-    //         },
-    //     );
-    // }
 }

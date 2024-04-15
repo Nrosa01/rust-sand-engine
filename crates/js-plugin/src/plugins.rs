@@ -7,7 +7,7 @@ use crate::json_converter::to_plugin_result;
 
 pub struct JSPlugin
 {
-    update:Box<dyn Fn(Particle, &mut ParticleApi) -> bool>,
+    update:Box<dyn Fn(&JSPlugin, Particle, &mut ParticleApi) -> bool>,
     plugin_data: PluginResult,
 }
 
@@ -50,7 +50,7 @@ impl Plugin for JSPlugin
 {
     fn update(&self, particle: Particle, api: &mut ParticleApi)
     {
-        (self.update)(particle, api);
+        (self.update)(self, particle, api);
     }
     
     fn register(&mut self) -> app_core::PluginResult {

@@ -1,7 +1,7 @@
 use app_core::{Particle, ParticleApi, PluginResult, Vec2};
 use json::JsonValue;
 
-use crate::blocks::Blocks;
+use crate::{blocks::Blocks, plugins::JSPlugin};
 
 fn get_color(json: &JsonValue) -> [u8; 4]
 {
@@ -96,7 +96,7 @@ pub fn to_plugin_result(json: &JsonValue) -> Result<PluginResult, String>
     })
 }
 
-pub fn build_update_func(json: &JsonValue) -> Result<Box<dyn Fn(Particle, &mut ParticleApi) -> bool>, String>
+pub fn build_update_func(json: &JsonValue) -> Result<Box<dyn Fn(&JSPlugin, Particle, &mut ParticleApi) -> bool>, String>
 {   
     let update_str = json["update"].to_string();
     let serde_json = serde_json::from_str(&update_str).unwrap();
@@ -114,8 +114,8 @@ pub fn build_update_func(json: &JsonValue) -> Result<Box<dyn Fn(Particle, &mut P
     let func_vec = blocks.iter().map(|block| block.to_func()).collect::<Vec<_>>();
 
     // For testing we will just return an empty function
-    Ok(Box::new(move |particle, api| {
-        func_vec.iter().all(|func| func(particle, api));
+    Ok(Box::new(move |plugin, particle, api| {
+        func_vec.iter().all(|func| func(plugin, particle, api));
         return true;
     }))
 }
