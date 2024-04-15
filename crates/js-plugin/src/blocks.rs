@@ -16,39 +16,42 @@ type NumberLiteral = usize;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(tag = "number", rename_all = "camelCase")]
-pub enum Numbers {
-    ParticleType(ParticleType),
-    Number(NumberLiteral),
+pub enum NumbersRuntime {
     NumberOfXTouching(ParticleType),
     TypeOf(Direction),
-    ParticleIdFromName(String),
 }
 
 #[rustfmt::skip]
-impl Numbers {
+// Enum that holds values that cannot be precomputed
+impl NumbersRuntime {
     pub fn to_number(&self, _: &JSPlugin, _: Particle, api: &mut ParticleApi) -> usize {
         match self {
-            Numbers::ParticleType(particle_type) => *particle_type as usize,
-            Numbers::Number(number) => *number,
-            Numbers::NumberOfXTouching(particle_type) => ParticleApi::NEIGHBORS
+            NumbersRuntime::NumberOfXTouching(particle_type) => ParticleApi::NEIGHBORS
                 .iter()
                 .filter(|dir| api.get_type(dir.x, dir.y) == *particle_type)
                 .count(),
-            Numbers::TypeOf(direction) => api.get_type(direction[0], direction[1]) as usize,
-            Numbers::ParticleIdFromName(name) => { api.id_from_name(name) as usize },
+            NumbersRuntime::TypeOf(direction) => api.get_type(direction[0], direction[1]) as usize,
         }
     }
+}
 
-    pub fn optimize(&self, api: &ParticleApi) -> Self
-    {
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(tag = "particle", rename_all = "camelCase")]
+pub enum NumberConstants {
+    ParticleType(ParticleType),
+    ParticleIdFromName(String),
+    Number(NumberLiteral),
+}
+
+#[rustfmt::skip]
+impl NumberConstants {
+    pub fn to_particle(&self, api: &ParticleApi) -> usize {
         match self {
-            Numbers::ParticleType(particle_type) => Numbers::ParticleType(*particle_type),
-            Numbers::Number(number) => Numbers::Number(*number),
-            Numbers::NumberOfXTouching(particle_type) => Numbers::NumberOfXTouching(*particle_type),
-            Numbers::TypeOf(direction) => Numbers::TypeOf(*direction),
-            Numbers::ParticleIdFromName(name) => Numbers::ParticleType(api.id_from_name(&name))
+            NumberConstants::ParticleType(particle_type) => *particle_type as usize,
+            NumberConstants::ParticleIdFromName(name) => api.id_from_name(&name) as usize,
+            NumberConstants::Number(number) => *number,	
         }
-    }   
+    } 
 }
 
 // Taken from Sandspiel Studio
@@ -58,26 +61,32 @@ impl Numbers {
 pub enum Blocks {
     Swap { direction: Direction },
     CopyTo { direction: Direction },
-    ChangeInto { direction: Direction, r#type: ParticleType },
-    IfDirectionIsType { direction: Direction, r#type: ParticleType }, // If particle at direction is of type X
-    IfDirectionIsAnyType { direction: Direction, types: Vec<ParticleType> }, // If particle at direction is of type X
+    ChangeInto { direction: Direction, r#type: NumberConstants },
+    IfDirectionIsType { direction: Direction, r#type: NumberConstants }, // If particle at direction is of type X
+    IfDirectionIsAnyType { direction: Direction, types: Vec<NumberConstants> }, // If particle at direction is of type X
     Not { block: Condition }, // Negates a block result, it's inverting a boolean
     And { block1: Condition, block2: Condition }, // Logical AND
     Or { block1: Condition, block2: Condition }, // Logical OR
-    Touching { r#type: ParticleType }, // Looks neighbour to see if it's of type X
+    Touching { r#type: NumberConstants }, // Looks neighbour to see if it's of type X
     If { condition: Condition, result: Action, r#else: Option<Action>}, // If block, if true, execute action
     OneInXChance { chance: NumberLiteral }, // Returns true one in a X chance, for example, if X is 3, it will return true 1/3 of the time
     IsEmpty { direction: Direction }, // Checks if a direction is empty
-    CompareIs { block1: Numbers, block2: Numbers }, // Compares two blocks
-    CompareBiggerThan { block1: Numbers, block2: Numbers }, // Compares two blocks
-    CompareLessThan { block1: Numbers, block2: Numbers }, // Compares two blocks
+
+    // Here I should have more variants, as I could compare a constant number with a runtime one, or runtime with constant, constant with constnat...
+    // This part can be greatly optimized.
+    CompareIs { block1: NumbersRuntime, block2: NumbersRuntime }, // Compares two blocks
+    CompareBiggerThan { block1: NumbersRuntime, block2: NumbersRuntime }, // Compares two blocks
+    CompareLessThan { block1: NumbersRuntime, block2: NumbersRuntime }, // Compares two blocks
     Boolean { value: bool }, // Returns a boolean value
 }
 
 // Implement from Block into Function
 impl Blocks {
     #[allow(unused)]
-    pub fn to_func(&self) -> Box<dyn Fn(&JSPlugin, Particle, &mut ParticleApi) -> bool> {
+    pub fn to_func(
+        &self,
+        api: &ParticleApi,
+    ) -> Box<dyn Fn(&JSPlugin, Particle, &mut ParticleApi) -> bool> {
         let block = self.clone();
         match block {
             Blocks::Swap { direction } => {
@@ -86,51 +95,75 @@ impl Blocks {
             Blocks::CopyTo { direction } => {
                 Box::new(move |plugin, particle, api| api.set(direction[0], direction[1], particle))
             }
-            Blocks::ChangeInto { direction, r#type } => Box::new(move |plugin, particle, api| {
-                api.set(direction[0], direction[1], api.new_particle(r#type))
-            }),
-            Blocks::IfDirectionIsType { direction, r#type } => {
+            Blocks::ChangeInto { direction, r#type } => {
+                let particle_id = r#type.to_particle(api) as u8;
+
                 Box::new(move |plugin, particle, api| {
-                    api.get(direction[0], direction[1]).id == r#type
+                    api.set(direction[0], direction[1], api.new_particle(particle_id))
                 })
             }
-            Blocks::IfDirectionIsAnyType { direction, types } => 
-            {
+            Blocks::IfDirectionIsType { direction, r#type } => {
+                let particle_id = r#type.to_particle(api) as u8;
+
+                Box::new(move |plugin, particle, api| {
+                    api.get(direction[0], direction[1]).id == particle_id
+                })
+            }
+            Blocks::IfDirectionIsAnyType { direction, types } => {
+                let types = types
+                    .iter()
+                    .map(|particle| particle.to_particle(api) as u8)
+                    .collect::<Vec<_>>();
+
                 Box::new(move |plugin, particle, api| {
                     api.is_any_particle_at(direction[0], direction[1], &types)
                 })
             }
             Blocks::Not { block } => {
-                Box::new(move |plugin, particle, api| !(block.to_func())(plugin, particle, api))
+                let func = block.to_func(api);
+
+                Box::new(move |plugin, particle, api| !func(plugin, particle, api))
             }
-            Blocks::And { block1, block2 } => Box::new(move |plugin, particle, api| {
-                (block1.to_func())(plugin, particle, api)
-                    && (block2.to_func())(plugin, particle, api)
-            }),
-            Blocks::Or { block1, block2 } => Box::new(move |plugin, particle, api| {
-                (block1.to_func())(plugin, particle, api)
-                    || (block2.to_func())(plugin, particle, api)
-            }),
-            Blocks::Touching { r#type } => Box::new(move |plugin, particle, api| {
-                ParticleApi::NEIGHBORS
-                    .iter()
-                    .any(|(direction)| api.get_type(direction.x, direction.y) == r#type)
-            }),
+            Blocks::And { block1, block2 } => {
+                let func1 = block1.to_func(api);
+                let func2 = block2.to_func(api);
+
+                Box::new(move |plugin, particle, api| {
+                    func1(plugin, particle, api) && func2(plugin, particle, api)
+                })
+            }
+            Blocks::Or { block1, block2 } => {
+                let func1 = block1.to_func(api);
+                let func2 = block2.to_func(api);
+
+                Box::new(move |plugin, particle, api| {
+                    func1(plugin, particle, api) || func2(plugin, particle, api)
+                })
+            }
+            Blocks::Touching { r#type } => {
+                let r#type = r#type.to_particle(api) as u8;
+                
+                Box::new(move |plugin, particle, api| {
+                    ParticleApi::NEIGHBORS
+                        .iter()
+                        .any(|(direction)| api.get_type(direction.x, direction.y) == r#type)
+                })
+            }
             Blocks::If {
                 condition,
                 result,
                 r#else,
             } => {
                 // We bake the functions here so they don't have to get built every time this block is called
-                let condition = condition.to_func();
-                let result = result.to_func();
+                let condition = condition.to_func(api);
+                let result = result.to_func(api);
                 // "Baking" so we only call r#else if there is an else
                 // I could also create an empty function with let r#else = r#else.unwrap_or_else(|| Box::new(|_, _, _| true));
                 // And I could return a single lamnbda instead of this but....
                 // These funcs might get called a lot, this is hotpath so I prefer to optimize as much as possible
                 match r#else {
                     Some(r#else) => {
-                        let r#else = r#else.to_func();
+                        let r#else = r#else.to_func(api);
                         Box::new(move |plugin, particle, api| {
                             return if condition(plugin, particle, api) {
                                 result(plugin, particle, api)
@@ -181,67 +214,6 @@ impl Blocks {
             Blocks::IsEmpty { direction } => {
                 Box::new(move |plugin, particle, api| api.is_empty(direction[0], direction[1]))
             }
-        }
-    }
-
-    pub fn optimize(&self, api: &ParticleApi) -> Self {
-        match self {
-            Blocks::Swap { direction } => Blocks::Swap {
-                direction: *direction,
-            },
-            Blocks::CopyTo { direction } => Blocks::CopyTo {
-                direction: *direction,
-            },
-            Blocks::ChangeInto { direction, r#type } => Blocks::ChangeInto {
-                direction: *direction,
-                r#type: *r#type,
-            },
-            Blocks::IfDirectionIsType { direction, r#type } => Blocks::IfDirectionIsType {
-                direction: *direction,
-                r#type: *r#type,
-            },
-            Blocks::IfDirectionIsAnyType { direction, types } => Blocks::IfDirectionIsAnyType {
-                direction: *direction,
-                types: types.clone(),
-            },
-            Blocks::Not { block } => Blocks::Not {
-                block: Box::new(block.optimize(api)),
-            },
-            Blocks::And { block1, block2 } => Blocks::And {
-                block1: Box::new(block1.optimize(api)),
-                block2: Box::new(block2.optimize(api)),
-            },
-            Blocks::Or { block1, block2 } => Blocks::Or {
-                block1: Box::new(block1.optimize(api)),
-                block2: Box::new(block2.optimize(api)),
-            },
-            Blocks::Touching { r#type } => Blocks::Touching { r#type: *r#type },
-            Blocks::If {
-                condition,
-                result,
-                r#else,
-            } => Blocks::If {
-                condition: Box::new(condition.optimize(api)),
-                result: Box::new(result.optimize(api)),
-                r#else: r#else.as_ref().map(|block| Box::new(block.optimize(api))),
-            },
-            Blocks::OneInXChance { chance } => Blocks::OneInXChance { chance: *chance },
-            Blocks::IsEmpty { direction } => Blocks::IsEmpty {
-                direction: *direction,
-            },
-            Blocks::CompareIs { block1, block2 } => Blocks::CompareIs {
-                block1: block1.optimize(api),
-                block2: block2.optimize(api),
-            },
-            Blocks::CompareBiggerThan { block1, block2 } => Blocks::CompareBiggerThan {
-                block1: block1.optimize(api),
-                block2: block2.optimize(api),
-            },
-            Blocks::CompareLessThan { block1, block2 } => Blocks::CompareLessThan {
-                block1: block1.optimize(api),
-                block2: block2.optimize(api),
-            },
-            Blocks::Boolean { value } => Blocks::Boolean { value: *value },
         }
     }
 }

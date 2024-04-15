@@ -89,20 +89,17 @@ pub fn to_plugin_result(json: &JsonValue) -> Result<PluginResult, String> {
 #[rustfmt::skip]
 pub fn build_update_func(json: &JsonValue, api: Option<&ParticleApi>) -> Result<Box<dyn Fn(&JSPlugin, Particle, &mut ParticleApi)>, String>
 {
-    let update_str = json["update"].to_string();
-    let mut blocks: Vec<Blocks> = serde_json::from_str(&update_str).map_err(|err| err.to_string())?;
-
-    if let Some(api) = api {
-        // With the api is possible to optimize some blocks by turning them into other
-        blocks = blocks
-            .iter()
-            .map(|block| block.optimize(api))
-            .collect::<Vec<_>>();
+    if api.is_none()
+    {
+        return Ok(Box::new(|_, _, _| {}));
     }
+    
+    let update_str = json["update"].to_string();
+    let blocks: Vec<Blocks> = serde_json::from_str(&update_str).map_err(|err| err.to_string())?;
 
     let func_vec = blocks
         .iter()
-        .map(|block| block.to_func())
+        .map(|block| block.to_func(api.unwrap()))
         .collect::<Vec<_>>();
 
     Ok(Box::new(move |plugin, particle, api| {
