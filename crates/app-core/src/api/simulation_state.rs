@@ -14,6 +14,41 @@ pub struct Vec2u {
     pub y: usize,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Transformation {
+    HorizontalReflection(bool),
+    VerticalReflection(bool),
+    Reflection(bool, bool),
+    Rotation(usize),
+    None,
+}
+
+impl Transformation {
+    pub fn transform(&self, direction: &[i32; 2]) -> [i32; 2] {
+        match self {
+            Transformation::HorizontalReflection(true) => [-direction[0], direction[1]],
+            Transformation::VerticalReflection(true) => [direction[0], -direction[1]],
+            Transformation::Reflection(true, true) => [-direction[0], -direction[1]],
+            Transformation::Reflection(true, false) => [-direction[0], direction[1]],
+            Transformation::Reflection(false, true) => [direction[0], -direction[1]],
+            // Rotation mus be a number between 0 and 7
+            Transformation::Rotation(rotations) => match direction {
+                [0, 1] => SimulationState::DIRECTIONS_VEC[*rotations],
+                [1, 1] => SimulationState::DIRECTIONS_VEC[*rotations + 1],
+                [1, 0] => SimulationState::DIRECTIONS_VEC[*rotations + 2],
+                [1, -1] => SimulationState::DIRECTIONS_VEC[*rotations + 3],
+                [0, -1] => SimulationState::DIRECTIONS_VEC[*rotations + 4],
+                [-1, -1] => SimulationState::DIRECTIONS_VEC[*rotations + 5],
+                [-1, 0] => SimulationState::DIRECTIONS_VEC[*rotations + 6],
+                [-1, 1] => SimulationState::DIRECTIONS_VEC[*rotations + 7],
+                _ => panic!("Invalid direction, `[{}, {}]`", direction[0], direction[1]),
+            },
+            Transformation::None => direction.clone(),
+            _ => direction.clone(),
+        }
+    }
+}
+
 pub struct SimulationState {
     particle_definitions: Vec<ParticleCommonData>,
     particles: Vec<Vec<Particle>>,
@@ -24,6 +59,7 @@ pub struct SimulationState {
     clock: u8,
     color_buffer: Vec<u8>,
     particle_name_to_id: FxHashMap<String, u8>,
+    transformation: Transformation,
 }
 
 impl SimulationState {
@@ -46,6 +82,7 @@ impl SimulationState {
             color_buffer,
             clock: 0,
             particle_name_to_id: FxHashMap::default(),
+            transformation: Transformation::None,
         };
 
         state.add_particle_definition(ParticleCommonData {
@@ -60,6 +97,26 @@ impl SimulationState {
 
         state
     }
+
+    #[allow(unused)]
+    const DIRECTIONS_VEC: [[i32; 2]; 16] = [
+        [0, 1],   // N 0
+        [1, 1],   // NE 1
+        [1, 0],   // E 2
+        [1, -1],  // SE 3
+        [0, -1],  // S 4
+        [-1, -1], // SW 5
+        [-1, 0],  // W 6
+        [-1, 1],  // NW 7
+        [0, 1],   // N 0
+        [1, 1],   // NE 1
+        [1, 0],   // E 2
+        [1, -1],  // SE 3
+        [0, -1],  // S 4
+        [-1, -1], // SW 5
+        [-1, 0],  // W 6
+        [-1, 1],  // NW 7
+    ];
 
     pub const NEIGHBORS: [Vec2i; 8] = [
         Vec2i { x: 0, y: -1 },
@@ -85,6 +142,14 @@ impl SimulationState {
         Vec2i { x: -1, y: 1 },
         Vec2i { x: -1, y: -1 },
     ];
+
+    pub fn set_transformation(&mut self, transformation: Transformation) -> () {
+        self.transformation = transformation;
+    }
+
+    pub fn get_transformation(&self) -> &Transformation {
+        &self.transformation
+    }
 
     pub fn id_from_name(&self, name: &str) -> u8 {
         *self
@@ -336,6 +401,10 @@ impl SimulationState {
 
     pub fn random_sign(&self) -> i32 {
         fastrand::i32(0..2) * 2 - 1
+    }
+
+    pub fn random_bool(&self) -> bool {
+        fastrand::bool()
     }
 
     pub fn get_type(&self, x: i32, y: i32) -> u8 {

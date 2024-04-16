@@ -1,4 +1,4 @@
-use app_core::{Particle, ParticleApi};
+use app_core::{Particle, ParticleApi, Transformation};
 use serde::{Deserialize, Serialize};
 
 use crate::plugins::JSPlugin;
@@ -15,14 +15,14 @@ type NumberLiteral = usize;
 // The particles names with an index that will be indexed into an array that has the particle IDs.
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
-#[serde(tag="variadic_number", content="data", rename_all = "camelCase")]
+#[serde(tag = "variadic_number", content = "data", rename_all = "camelCase")]
 pub enum Number {
     NumbersRuntime(NumbersRuntime),
     NumberConstants(NumberConstants),
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
-#[serde(tag="runtime_number", content="data", rename_all = "camelCase")]
+#[serde(tag = "runtime_number", content = "data", rename_all = "camelCase")]
 pub enum NumbersRuntime {
     NumberOfXTouching(NumberConstants),
     TypeOf(Direction),
@@ -46,11 +46,40 @@ impl NumbersRuntime {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
-#[serde(tag="constant_number", content="data", rename_all = "camelCase")]
+#[serde(tag = "constant_number", content = "data", rename_all = "camelCase")]
 pub enum NumberConstants {
     ParticleType(ParticleType), // This shouldn't be used at all, it's more an internal block
     ParticleIdFromName(String),
     Number(NumberLiteral),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum TransformationInternal {
+    HorizontalReflection,
+    VerticalReflection,
+    Reflection,
+    Rotation,
+    None,
+}
+
+impl TransformationInternal {
+    pub fn to_transformation(&self, api: &ParticleApi) -> Transformation {
+        match self {
+            TransformationInternal::HorizontalReflection => {
+                Transformation::HorizontalReflection(api.random_bool())
+            }
+            TransformationInternal::VerticalReflection => {
+                Transformation::VerticalReflection(api.random_bool())
+            }
+            TransformationInternal::Reflection => {
+                Transformation::Reflection(api.random_bool(), api.random_bool())
+            }
+            TransformationInternal::Rotation => {
+                Transformation::Rotation(api.gen_range(0, 7) as usize)
+            }
+            TransformationInternal::None => Transformation::None,
+        }
+    }
 }
 
 #[rustfmt::skip]
@@ -69,6 +98,8 @@ impl NumberConstants {
 #[serde(tag = "block", content = "data", rename_all = "camelCase")]
 #[rustfmt::skip]
 pub enum Blocks {
+    RandomTransformation { transformation: TransformationInternal, block: Action},
+    ForEachTransformation { transformation: TransformationInternal, block: Action},
     Swap { direction: Direction },
     CopyTo { direction: Direction },
     ChangeInto { direction: Direction, r#type: NumberConstants },
@@ -100,16 +131,19 @@ impl Blocks {
     ) -> Box<dyn Fn(&JSPlugin, Particle, &mut ParticleApi) -> bool> {
         let block = self.clone();
         match block {
-            Blocks::Swap { direction } => {
-                Box::new(move |plugin, particle, api| api.swap(direction[0], direction[1]))
-            }
-            Blocks::CopyTo { direction } => {
-                Box::new(move |plugin, particle, api| api.set(direction[0], direction[1], particle))
-            }
+            Blocks::Swap { direction } => Box::new(move |plugin, particle, api| {
+                let direction = api.get_transformation().transform(&direction);
+                api.swap(direction[0], direction[1])
+            }),
+            Blocks::CopyTo { direction } => Box::new(move |plugin, particle, api| {
+                let direction = api.get_transformation().transform(&direction);
+                api.set(direction[0], direction[1], particle)
+            }),
             Blocks::ChangeInto { direction, r#type } => {
                 let particle_id = r#type.to_number(api) as u8;
 
                 Box::new(move |plugin, particle, api| {
+                    let direction = api.get_transformation().transform(&direction);
                     api.set(direction[0], direction[1], api.new_particle(particle_id))
                 })
             }
@@ -117,6 +151,7 @@ impl Blocks {
                 let particle_id = r#type.to_number(api) as u8;
 
                 Box::new(move |plugin, particle, api| {
+                    let direction = api.get_transformation().transform(&direction);
                     api.get(direction[0], direction[1]).id == particle_id
                 })
             }
@@ -127,6 +162,7 @@ impl Blocks {
                     .collect::<Vec<_>>();
 
                 Box::new(move |plugin, particle, api| {
+                    let direction = api.get_transformation().transform(&direction);
                     api.is_any_particle_at(direction[0], direction[1], &types)
                 })
             }
@@ -213,10 +249,11 @@ impl Blocks {
                 // As number can be runtime or constant, I have to try all the combinations
                 // Sure I could just compute everything at runtime but the most function calls I can avoid the better
 
-                match (block1, block2) 
-                {
+                match (block1, block2) {
                     (Number::NumbersRuntime(runtime1), Number::NumbersRuntime(runtime2)) => {
-                        Box::new(move |plugin, particle, api| runtime1.to_number(api) == runtime2.to_number(api))
+                        Box::new(move |plugin, particle, api| {
+                            runtime1.to_number(api) == runtime2.to_number(api)
+                        })
                     }
                     (Number::NumbersRuntime(runtime1), Number::NumberConstants(constant2)) => {
                         let number2 = constant2.to_number(api);
@@ -229,58 +266,73 @@ impl Blocks {
                     (Number::NumberConstants(constant1), Number::NumberConstants(constant2)) => {
                         let number1 = constant1.to_number(api);
                         let number2 = constant2.to_number(api);
-                        Box::new(move |plugin, particle, api| number1 == number2)
+                        let result = number1 == number2;
+                        Box::new(move |plugin, particle, api| result)
                     }
                 }
             }
-            Blocks::CompareBiggerThan { block1, block2 } => {
-                
-                match (block1, block2) 
-                {
-                    (Number::NumbersRuntime(runtime1), Number::NumbersRuntime(runtime2)) => {
-                        Box::new(move |plugin, particle, api| runtime1.to_number(api) > runtime2.to_number(api))
-                    }
-                    (Number::NumbersRuntime(runtime1), Number::NumberConstants(constant2)) => {
-                        let number2 = constant2.to_number(api);
-                        Box::new(move |plugin, particle, api| runtime1.to_number(api) > number2)
-                    }
-                    (Number::NumberConstants(constant1), Number::NumbersRuntime(runtime2)) => {
-                        let number1 = constant1.to_number(api);
-                        Box::new(move |plugin, particle, api| number1 > runtime2.to_number(api))
-                    }
-                    (Number::NumberConstants(constant1), Number::NumberConstants(constant2)) => {
-                        let number1 = constant1.to_number(api);
-                        let number2 = constant2.to_number(api);
-                        Box::new(move |plugin, particle, api| number1 > number2)
-                    }
+            Blocks::CompareBiggerThan { block1, block2 } => match (block1, block2) {
+                (Number::NumbersRuntime(runtime1), Number::NumbersRuntime(runtime2)) => {
+                    Box::new(move |plugin, particle, api| {
+                        runtime1.to_number(api) > runtime2.to_number(api)
+                    })
                 }
-            }
-            Blocks::CompareLessThan { block1, block2 } =>
-            {
-                match (block1, block2) 
-                {
-                    (Number::NumbersRuntime(runtime1), Number::NumbersRuntime(runtime2)) => {
-                        Box::new(move |plugin, particle, api| runtime1.to_number(api) < runtime2.to_number(api))
-                    }
-                    (Number::NumbersRuntime(runtime1), Number::NumberConstants(constant2)) => {
-                        let number2 = constant2.to_number(api);
-                        Box::new(move |plugin, particle, api| runtime1.to_number(api) < number2)
-                    }
-                    (Number::NumberConstants(constant1), Number::NumbersRuntime(runtime2)) => {
-                        let number1 = constant1.to_number(api);
-                        Box::new(move |plugin, particle, api| number1 < runtime2.to_number(api))
-                    }
-                    (Number::NumberConstants(constant1), Number::NumberConstants(constant2)) => {
-                        let number1 = constant1.to_number(api);
-                        let number2 = constant2.to_number(api);
-                        Box::new(move |plugin, particle, api| number1 < number2)
-                    }
+                (Number::NumbersRuntime(runtime1), Number::NumberConstants(constant2)) => {
+                    let number2 = constant2.to_number(api);
+                    Box::new(move |plugin, particle, api| runtime1.to_number(api) > number2)
+                }
+                (Number::NumberConstants(constant1), Number::NumbersRuntime(runtime2)) => {
+                    let number1 = constant1.to_number(api);
+                    Box::new(move |plugin, particle, api| number1 > runtime2.to_number(api))
+                }
+                (Number::NumberConstants(constant1), Number::NumberConstants(constant2)) => {
+                    let number1 = constant1.to_number(api);
+                    let number2 = constant2.to_number(api);
+                    let result = number1 > number2;
+                    Box::new(move |plugin, particle, api| result)
+                }
+            },
+            Blocks::CompareLessThan { block1, block2 } => match (block1, block2) {
+                (Number::NumbersRuntime(runtime1), Number::NumbersRuntime(runtime2)) => {
+                    Box::new(move |plugin, particle, api| {
+                        runtime1.to_number(api) < runtime2.to_number(api)
+                    })
+                }
+                (Number::NumbersRuntime(runtime1), Number::NumberConstants(constant2)) => {
+                    let number2 = constant2.to_number(api);
+                    Box::new(move |plugin, particle, api| runtime1.to_number(api) < number2)
+                }
+                (Number::NumberConstants(constant1), Number::NumbersRuntime(runtime2)) => {
+                    let number1 = constant1.to_number(api);
+                    Box::new(move |plugin, particle, api| number1 < runtime2.to_number(api))
+                }
+                (Number::NumberConstants(constant1), Number::NumberConstants(constant2)) => {
+                    let number1 = constant1.to_number(api);
+                    let number2 = constant2.to_number(api);
+                    let result = number1 < number2;
+                    Box::new(move |plugin, particle, api| result)
                 }
             },
             Blocks::Boolean { value } => Box::new(move |plugin, particle, api| value),
             Blocks::IsEmpty { direction } => {
                 Box::new(move |plugin, particle, api| api.is_empty(direction[0], direction[1]))
             }
+            Blocks::RandomTransformation {
+                transformation,
+                block,
+            } => {
+                let transformation = transformation.to_transformation(api);
+                let func = block.to_func(api);
+
+                Box::new(move |plugin, particle, api| {
+                    api.set_transformation(transformation);
+                    func(plugin, particle, api)
+                })
+            }
+            Blocks::ForEachTransformation {
+                transformation,
+                block,
+            } => todo!(),
         }
     }
 }

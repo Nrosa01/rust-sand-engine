@@ -1,5 +1,7 @@
 #[cfg(test)]
 mod tests {
+    use app_core::Transformation;
+
     use crate::blocks::{Blocks, Number, NumberConstants, NumbersRuntime};
 
     #[test]
@@ -44,4 +46,95 @@ mod tests {
     
         std::fs::write("sand.json", serialized).map_err(|err| err.to_string()).unwrap();
     }
+
+    #[test]
+    pub fn test_transformations()
+    {
+        let direction = [1,0];
+        let direction2 = [0,1];
+        let direction3 = [1,1];
+        
+        let transformation = Transformation::HorizontalReflection(true);
+        let new_direction = transformation.transform(&direction);
+        let new_direction2 = transformation.transform(&direction2);
+        let new_direction3 = transformation.transform(&direction3);
+        assert_eq!(new_direction, [-1,0]);
+        assert_eq!(new_direction2, direction2);
+        assert_eq!(new_direction3, [-1,1]);
+
+        let transformation = Transformation::HorizontalReflection(false);
+        let new_direction = transformation.transform(&direction);
+        let new_direction2 = transformation.transform(&direction2);
+        let new_direction3 = transformation.transform(&direction3);
+        assert_eq!(new_direction, direction);
+        assert_eq!(new_direction2, direction2);
+        assert_eq!(new_direction3, direction3);
+
+        let transformation = Transformation::VerticalReflection(true);
+        let new_direction = transformation.transform(&direction);
+        let new_direction2 = transformation.transform(&direction2);
+        let new_direction3 = transformation.transform(&direction3);
+        assert_eq!(new_direction, direction);
+        assert_eq!(new_direction2, [0,-1]);
+        assert_eq!(new_direction3, [1,-1]);
+
+        let transformation = Transformation::VerticalReflection(false);
+        let new_direction = transformation.transform(&direction);
+        let new_direction2 = transformation.transform(&direction2);
+        let new_direction3 = transformation.transform(&direction3);
+        assert_eq!(new_direction, direction);
+        assert_eq!(new_direction2, direction2);
+        assert_eq!(new_direction3, direction3);
+
+        let transformation = Transformation::Reflection(true, true);
+        let new_direction = transformation.transform(&direction);
+        let new_direction2 = transformation.transform(&direction2);
+        let new_direction3 = transformation.transform(&direction3);
+        assert_eq!(new_direction, [-1,0]);
+        assert_eq!(new_direction2, [0,-1]);
+        assert_eq!(new_direction3, [-1,-1]);
+
+        let transformation = Transformation::Reflection(false, false);
+        let new_direction = transformation.transform(&direction);
+        let new_direction2 = transformation.transform(&direction2);
+        let new_direction3 = transformation.transform(&direction3);
+        assert_eq!(new_direction, direction);
+        assert_eq!(new_direction2, direction2);
+        assert_eq!(new_direction3, direction3);
+
+        let transformation = Transformation::Reflection(true, false);
+        let new_direction = transformation.transform(&direction);
+        let new_direction2 = transformation.transform(&direction2);
+        let new_direction3 = transformation.transform(&direction3);
+        assert_eq!(new_direction, [-1,0]);
+        assert_eq!(new_direction2, direction2);
+        assert_eq!(new_direction3, [-1,1]);
+
+        let transformation = Transformation::Reflection(false, true);
+        let new_direction = transformation.transform(&direction);
+        let new_direction2 = transformation.transform(&direction2);
+        let new_direction3 = transformation.transform(&direction3);
+        assert_eq!(new_direction, direction);
+        assert_eq!(new_direction2, [0,-1]);
+        assert_eq!(new_direction3, [1,-1]);
+
+        let transformation = Transformation::Rotation(1);
+        let new_direction = transformation.transform(&direction);
+        let new_direction2 = transformation.transform(&direction2);
+        let new_direction3 = transformation.transform(&direction3);
+        assert_eq!(new_direction, [1,-1]);
+        assert_eq!(new_direction2, [1,1]);
+        assert_eq!(new_direction3, [1,0]);
+
+        let transformation = Transformation::Rotation(0);
+        let new_direction = transformation.transform(&direction);
+        let new_direction2 = transformation.transform(&direction2);
+        let new_direction3 = transformation.transform(&direction3);
+        let new_direction4 = transformation.transform(&[-1, 1]);
+        assert_eq!(new_direction, direction);
+        assert_eq!(new_direction2, direction2);
+        assert_eq!(new_direction3, direction3);
+        assert_eq!(new_direction4, [-1, 1]);
+    }
+
 }
