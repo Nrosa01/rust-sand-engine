@@ -41,7 +41,7 @@ impl Transformation {
                 [-1, -1] => SimulationState::DIRECTIONS_VEC[*rotations + 5],
                 [-1, 0] => SimulationState::DIRECTIONS_VEC[*rotations + 6],
                 [-1, 1] => SimulationState::DIRECTIONS_VEC[*rotations + 7],
-                _ => panic!("Invalid direction, `[{}, {}]`", direction[0], direction[1]),
+                _ => direction.clone(),
             },
             Transformation::None => direction.clone(),
             _ => direction.clone(),

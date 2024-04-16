@@ -5,14 +5,14 @@
   "alpha": [0.9, 1],
   "update": [
     {
-      "block": "randomTransformation",
+      "action": "randomTransformation",
       "data": {
         "transformation": "HorizontalReflection",
         "block": {
-          "block": "if",
+          "action": "if",
           "data": {
             "condition": {
-              "block": "ifDirectionIsAnyType",
+              "block": "checkTypesInDirection",
               "data": {
                 "direction": [0, -1],
                 "types": [
@@ -21,12 +21,12 @@
                 ]
               }
             },
-            "result": { "block": "swap", "data": { "direction": [0, -1] } },
+            "result": { "action": "swap", "data": { "direction": [0, -1] } },
             "else": {
-              "block": "if",
+              "action": "if",
               "data": {
                 "condition": {
-                  "block": "ifDirectionIsAnyType",
+                  "block": "checkTypesInDirection",
                   "data": {
                     "direction": [-1, -1],
                     "types": [
@@ -42,14 +42,14 @@
                   }
                 },
                 "result": {
-                  "block": "swap",
+                  "action": "swap",
                   "data": { "direction": [-1, -1] }
                 },
                 "else": {
-                  "block": "if",
+                  "action": "if",
                   "data": {
                     "condition": {
-                      "block": "ifDirectionIsAnyType",
+                      "block": "checkTypesInDirection",
                       "data": {
                         "direction": [1, -1],
                         "types": [
@@ -65,7 +65,7 @@
                       }
                     },
                     "result": {
-                      "block": "swap",
+                      "action": "swap",
                       "data": { "direction": [1, -1] }
                     },
                     "else": null
