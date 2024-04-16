@@ -14,38 +14,48 @@ type NumberLiteral = usize;
 // Once we get this working, we are going to transform de json and substitute
 // The particles names with an index that will be indexed into an array that has the particle IDs.
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(tag = "number", rename_all = "camelCase")]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[serde(tag="variadic_number", content="data", rename_all = "camelCase")]
+pub enum Number {
+    NumbersRuntime(NumbersRuntime),
+    NumberConstants(NumberConstants),
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[serde(tag="runtime_number", content="data", rename_all = "camelCase")]
 pub enum NumbersRuntime {
-    NumberOfXTouching(ParticleType),
+    NumberOfXTouching(NumberConstants),
     TypeOf(Direction),
 }
 
 #[rustfmt::skip]
 // Enum that holds values that cannot be precomputed
 impl NumbersRuntime {
-    pub fn to_number(&self, _: &JSPlugin, _: Particle, api: &mut ParticleApi) -> usize {
+    pub fn to_number(&self, api: &ParticleApi) -> usize {
         match self {
-            NumbersRuntime::NumberOfXTouching(particle_type) => ParticleApi::NEIGHBORS
-                .iter()
-                .filter(|dir| api.get_type(dir.x, dir.y) == *particle_type)
-                .count(),
+            NumbersRuntime::NumberOfXTouching(particle_type) => {
+                let particle_type = particle_type.to_number(api) as u8;
+                ParticleApi::NEIGHBORS
+                    .iter()
+                    .filter(|dir| api.get_type(dir.x, dir.y) == particle_type)
+                    .count()
+            }
             NumbersRuntime::TypeOf(direction) => api.get_type(direction[0], direction[1]) as usize,
         }
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(untagged, rename_all = "camelCase")]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[serde(tag="constant_number", content="data", rename_all = "camelCase")]
 pub enum NumberConstants {
-    ParticleType(ParticleType),
+    ParticleType(ParticleType), // This shouldn't be used at all, it's more an internal block
     ParticleIdFromName(String),
     Number(NumberLiteral),
 }
 
 #[rustfmt::skip]
 impl NumberConstants {
-    pub fn to_particle(&self, api: &ParticleApi) -> usize {
+    pub fn to_number(&self, api: &ParticleApi) -> usize {
         match self {
             NumberConstants::ParticleType(particle_type) => *particle_type as usize,
             NumberConstants::ParticleIdFromName(name) => api.id_from_name(&name) as usize,
@@ -55,7 +65,7 @@ impl NumberConstants {
 }
 
 // Taken from Sandspiel Studio
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[serde(tag = "block", content = "data", rename_all = "camelCase")]
 #[rustfmt::skip]
 pub enum Blocks {
@@ -74,9 +84,10 @@ pub enum Blocks {
 
     // Here I should have more variants, as I could compare a constant number with a runtime one, or runtime with constant, constant with constnat...
     // This part can be greatly optimized.
-    CompareIs { block1: NumbersRuntime, block2: NumbersRuntime }, // Compares two blocks
-    CompareBiggerThan { block1: NumbersRuntime, block2: NumbersRuntime }, // Compares two blocks
-    CompareLessThan { block1: NumbersRuntime, block2: NumbersRuntime }, // Compares two blocks
+    CompareNumberEquality { block1: Number, block2: Number }, // Compares two blocks
+    CompareBooleans { block1: Condition, block2: Condition }, // Compares two blocks
+    CompareBiggerThan { block1: Number, block2: Number }, // Compares two blocks
+    CompareLessThan { block1: Number, block2: Number }, // Compares two blocks
     Boolean { value: bool }, // Returns a boolean value
 }
 
@@ -96,14 +107,14 @@ impl Blocks {
                 Box::new(move |plugin, particle, api| api.set(direction[0], direction[1], particle))
             }
             Blocks::ChangeInto { direction, r#type } => {
-                let particle_id = r#type.to_particle(api) as u8;
+                let particle_id = r#type.to_number(api) as u8;
 
                 Box::new(move |plugin, particle, api| {
                     api.set(direction[0], direction[1], api.new_particle(particle_id))
                 })
             }
             Blocks::IfDirectionIsType { direction, r#type } => {
-                let particle_id = r#type.to_particle(api) as u8;
+                let particle_id = r#type.to_number(api) as u8;
 
                 Box::new(move |plugin, particle, api| {
                     api.get(direction[0], direction[1]).id == particle_id
@@ -112,7 +123,7 @@ impl Blocks {
             Blocks::IfDirectionIsAnyType { direction, types } => {
                 let types = types
                     .iter()
-                    .map(|particle| particle.to_particle(api) as u8)
+                    .map(|particle| particle.to_number(api) as u8)
                     .collect::<Vec<_>>();
 
                 Box::new(move |plugin, particle, api| {
@@ -141,8 +152,8 @@ impl Blocks {
                 })
             }
             Blocks::Touching { r#type } => {
-                let r#type = r#type.to_particle(api) as u8;
-                
+                let r#type = r#type.to_number(api) as u8;
+
                 Box::new(move |plugin, particle, api| {
                     ParticleApi::NEIGHBORS
                         .iter()
@@ -189,27 +200,83 @@ impl Blocks {
                     random_number == 0
                 })
             }
-            Blocks::CompareIs { block1, block2 } => Box::new(move |plugin, particle, api| {
-                // It would be cool if I could precompute the numbers here
-                // I shold be able to do for 2 of the variants, I could try to do that
-                // and if it fails, that means I need to compute then insie the closure
-                // Performance wise the impact should be minimal
-                let number1 = block1.to_number(plugin, particle, api);
-                let number2 = block2.to_number(plugin, particle, api);
-                number1 == number2
-            }),
-            Blocks::CompareBiggerThan { block1, block2 } => {
+            Blocks::CompareBooleans { block1, block2 } => {
+                let func1 = block1.to_func(api);
+                let func2 = block2.to_func(api);
+
                 Box::new(move |plugin, particle, api| {
-                    let number1 = block1.to_number(plugin, particle, api);
-                    let number2 = block2.to_number(plugin, particle, api);
-                    number1 > number2
+                    func1(plugin, particle, api) == func2(plugin, particle, api)
                 })
             }
-            Blocks::CompareLessThan { block1, block2 } => Box::new(move |plugin, particle, api| {
-                let number1 = block1.to_number(plugin, particle, api);
-                let number2 = block2.to_number(plugin, particle, api);
-                number1 < number2
-            }),
+            Blocks::CompareNumberEquality { block1, block2 } => {
+                // I know this might look ugly but this is what peak performance looks like
+                // As number can be runtime or constant, I have to try all the combinations
+                // Sure I could just compute everything at runtime but the most function calls I can avoid the better
+
+                match (block1, block2) 
+                {
+                    (Number::NumbersRuntime(runtime1), Number::NumbersRuntime(runtime2)) => {
+                        Box::new(move |plugin, particle, api| runtime1.to_number(api) == runtime2.to_number(api))
+                    }
+                    (Number::NumbersRuntime(runtime1), Number::NumberConstants(constant2)) => {
+                        let number2 = constant2.to_number(api);
+                        Box::new(move |plugin, particle, api| runtime1.to_number(api) == number2)
+                    }
+                    (Number::NumberConstants(constant1), Number::NumbersRuntime(runtime2)) => {
+                        let number1 = constant1.to_number(api);
+                        Box::new(move |plugin, particle, api| number1 == runtime2.to_number(api))
+                    }
+                    (Number::NumberConstants(constant1), Number::NumberConstants(constant2)) => {
+                        let number1 = constant1.to_number(api);
+                        let number2 = constant2.to_number(api);
+                        Box::new(move |plugin, particle, api| number1 == number2)
+                    }
+                }
+            }
+            Blocks::CompareBiggerThan { block1, block2 } => {
+                
+                match (block1, block2) 
+                {
+                    (Number::NumbersRuntime(runtime1), Number::NumbersRuntime(runtime2)) => {
+                        Box::new(move |plugin, particle, api| runtime1.to_number(api) > runtime2.to_number(api))
+                    }
+                    (Number::NumbersRuntime(runtime1), Number::NumberConstants(constant2)) => {
+                        let number2 = constant2.to_number(api);
+                        Box::new(move |plugin, particle, api| runtime1.to_number(api) > number2)
+                    }
+                    (Number::NumberConstants(constant1), Number::NumbersRuntime(runtime2)) => {
+                        let number1 = constant1.to_number(api);
+                        Box::new(move |plugin, particle, api| number1 > runtime2.to_number(api))
+                    }
+                    (Number::NumberConstants(constant1), Number::NumberConstants(constant2)) => {
+                        let number1 = constant1.to_number(api);
+                        let number2 = constant2.to_number(api);
+                        Box::new(move |plugin, particle, api| number1 > number2)
+                    }
+                }
+            }
+            Blocks::CompareLessThan { block1, block2 } =>
+            {
+                match (block1, block2) 
+                {
+                    (Number::NumbersRuntime(runtime1), Number::NumbersRuntime(runtime2)) => {
+                        Box::new(move |plugin, particle, api| runtime1.to_number(api) < runtime2.to_number(api))
+                    }
+                    (Number::NumbersRuntime(runtime1), Number::NumberConstants(constant2)) => {
+                        let number2 = constant2.to_number(api);
+                        Box::new(move |plugin, particle, api| runtime1.to_number(api) < number2)
+                    }
+                    (Number::NumberConstants(constant1), Number::NumbersRuntime(runtime2)) => {
+                        let number1 = constant1.to_number(api);
+                        Box::new(move |plugin, particle, api| number1 < runtime2.to_number(api))
+                    }
+                    (Number::NumberConstants(constant1), Number::NumberConstants(constant2)) => {
+                        let number1 = constant1.to_number(api);
+                        let number2 = constant2.to_number(api);
+                        Box::new(move |plugin, particle, api| number1 < number2)
+                    }
+                }
+            },
             Blocks::Boolean { value } => Box::new(move |plugin, particle, api| value),
             Blocks::IsEmpty { direction } => {
                 Box::new(move |plugin, particle, api| api.is_empty(direction[0], direction[1]))
