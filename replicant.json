@@ -8,7 +8,10 @@
       "action": "forEachTransformation",
       "data": {
         "transformation": "Rotation",
-        "block": { "action": "copyTo", "data": { "direction": [0, -1] } }
+        "block": {
+          "action": "copyTo",
+          "data": { "direction": { "direction": "constant", "data": [0, -1] } }
+        }
       }
     }
   ]

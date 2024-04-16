@@ -2,7 +2,7 @@
 mod tests {
     use app_core::Transformation;
 
-    use crate::blocks::{Actions, Conditions, Number, NumbersConstant, NumbersRuntime, TransformationInternal};
+    use crate::blocks::{Actions, Conditions, Direction, Number, NumbersConstant, NumbersRuntime, TransformationInternal};
 
     #[test]
     #[rustfmt::skip]
@@ -23,19 +23,19 @@ mod tests {
             Actions::If { 
                 condition:
                     Conditions::CheckTypesInDirection { 
-                    direction: [0, -1], 
+                    direction: Direction::Constant([0, -1]), 
                     types: vec![NumbersConstant::ParticleIdFromName("empty".to_string()), NumbersConstant::ParticleIdFromName("water".to_string())] }, 
-                result: Box::new(Actions::Swap { direction: [0, -1] }), 
+                result: Box::new(Actions::Swap { direction: Direction::Constant([0, -1]) }), 
                 r#else: Some(Box::new(Actions::If {
                     condition: Conditions::CheckTypesInDirection { 
-                        direction: [-1, -1], 
+                        direction: Direction::Constant([-1, -1]), 
                         types: vec![NumbersConstant::ParticleIdFromName("empty".to_string()), NumbersConstant::ParticleIdFromName("water".to_string())] }, 
-                    result: Box::new(Actions::Swap { direction: [-1, -1] }), 
+                    result: Box::new(Actions::Swap { direction: Direction::Constant([-1, -1]) }), 
                     r#else: Some(Box::new(Actions::If {
                         condition: Conditions::CheckTypesInDirection { 
-                            direction: [1, -1], 
+                            direction: Direction::Constant([1, -1]), 
                             types: vec![NumbersConstant::ParticleIdFromName("empty".to_string()), NumbersConstant::ParticleIdFromName("water".to_string())] }, 
-                        result: Box::new(Actions::Swap { direction: [1, -1] }), 
+                        result: Box::new(Actions::Swap { direction: Direction::Constant([1, -1]) }), 
                         r#else: None
                     }))
                 }))
@@ -55,7 +55,7 @@ mod tests {
     {
         let blocks = vec![
             Actions::ForEachTransformation { transformation: TransformationInternal::Rotation, block: 
-            Box::new(Actions::CopyTo { direction: [0, -1] }) }
+            Box::new(Actions::CopyTo { direction: Direction::Constant([0, -1]) }) }
         ];
     
     
@@ -72,33 +72,33 @@ mod tests {
             transformation: TransformationInternal::HorizontalReflection,
             block: Box::new(Actions::If {
                 condition: Conditions::CheckTypesInDirection {
-                    direction: [0, -1],
+                    direction: Direction::Constant([0, -1]),
                     types: vec![
                         NumbersConstant::ParticleIdFromName("empty".to_string()),
                         NumbersConstant::ParticleIdFromName("water".to_string()),
                     ],
                 },
-                result: Box::new(Actions::Swap { direction: [0, -1] }),
+                result: Box::new(Actions::Swap { direction: Direction::Constant([0, -1]) }),
                 r#else: Some(Box::new(Actions::If {
                     condition: Conditions::CheckTypesInDirection {
-                        direction: [-1, -1],
+                        direction: Direction::Constant([-1, -1]),
                         types: vec![
                             NumbersConstant::ParticleIdFromName("empty".to_string()),
                             NumbersConstant::ParticleIdFromName("water".to_string()),
                         ],
                     },
                     result: Box::new(Actions::Swap {
-                        direction: [-1, -1],
+                        direction: Direction::Constant([-1, -1]),
                     }),
                     r#else: Some(Box::new(Actions::If {
                         condition: Conditions::CheckTypesInDirection {
-                            direction: [1, -1],
+                            direction: Direction::Constant([1, -1]),
                             types: vec![
                                 NumbersConstant::ParticleIdFromName("empty".to_string()),
                                 NumbersConstant::ParticleIdFromName("water".to_string()),
                             ],
                         },
-                        result: Box::new(Actions::Swap { direction: [1, -1] }),
+                        result: Box::new(Actions::Swap { direction: Direction::Constant([1, -1]) }),
                         r#else: None,
                     })),
                 })),
