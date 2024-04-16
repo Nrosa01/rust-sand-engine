@@ -324,10 +324,20 @@ impl Conditions {
                     .map(|particle| particle.to_number(api) as u8)
                     .collect::<Vec<_>>();
 
-                Box::new(move |plugin, particle, api| {
-                    let direction = api.get_transformation().transform(&direction);
-                    api.is_any_particle_at(direction[0], direction[1], &types)
-                })
+                // If the array is only one element, we can optimize it by taking it out.
+                if types.len() == 1{
+                    let particle_id = types[0];
+                    Box::new(move |plugin, particle, api| {
+                        let direction = api.get_transformation().transform(&direction);
+                        api.get_type(direction[0], direction[1]) == particle_id
+                    })
+                }
+                else {   
+                    Box::new(move |plugin, particle, api| {
+                        let direction = api.get_transformation().transform(&direction);
+                        api.is_any_particle_at(direction[0], direction[1], &types)
+                    })
+                }
             }
             Conditions::Not { block } => {
                 let func = block.to_func(api);
