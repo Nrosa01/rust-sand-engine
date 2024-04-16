@@ -396,16 +396,16 @@ impl Actions{
                         {
                             ParticlePropierties::Light => Box::new(move |_, particle, api| 
                             {
-                                let number = number.to_number(api) as u8;
+                                let number = number.to_number(api) as i8;
                                 let mut particle = particle;
-                                particle.light += number;
+                                particle.light = particle.light.saturating_add_signed(number); // This is to avoid overflow
                                 api.set(0, 0, particle);
                             }),
                             ParticlePropierties::Extra => Box::new(move |_, particle, api| 
                             {
-                                let number = number.to_number(api) as u8;
+                                let number = number.to_number(api) as i8;
                                 let mut particle = particle;
-                                particle.extra += number;
+                                particle.extra = particle.extra.saturating_add_signed(number); // This is to avoid overflow
                                 api.set(0, 0, particle);
                             }),
                         }
@@ -413,19 +413,19 @@ impl Actions{
                     },
                     Number::NumbersConstant(number) => 
                     {
-                        let number = number.get_as_u8(api);
+                        let number = number.get_as_i32(api) as i8;
                         match propierty
                         {
                             ParticlePropierties::Light => Box::new(move |_, particle, api| 
                             {
                                 let mut particle = particle;
-                                particle.light += number;
+                                particle.light = particle.light.saturating_add_signed(number); // This is to avoid overflow
                                 api.set(0, 0, particle);
                             }),
                             ParticlePropierties::Extra => Box::new(move |_, particle, api| 
                             {
                                 let mut particle = particle;
-                                particle.extra += number;
+                                particle.extra = particle.extra.saturating_add_signed(number); // This is to avoid overflow
                                 api.set(0, 0, particle);
                             }),
                         }
@@ -445,14 +445,14 @@ impl Actions{
                             {
                                 let number = number.to_number(api) as u8;
                                 let mut particle = particle;
-                                particle.light = number;
+                                particle.light = number.rem_euclid(u8::MAX);
                                 api.set(0, 0, particle);
                             }),
                             ParticlePropierties::Extra => Box::new(move |_, particle, api| 
                             {
                                 let number = number.to_number(api) as u8;
                                 let mut particle = particle;
-                                particle.extra = number;
+                                particle.extra = number.rem_euclid(u8::MAX);
                                 api.set(0, 0, particle);
                             }),
                         }
@@ -460,7 +460,7 @@ impl Actions{
                     },
                     Number::NumbersConstant(number) => 
                     {
-                        let number = number.get_as_u8(api);
+                        let number = number.get_as_u8(api).rem_euclid(u8::MAX);
                         match propierty
                         {
                             ParticlePropierties::Light => Box::new(move |_, particle, api| 
