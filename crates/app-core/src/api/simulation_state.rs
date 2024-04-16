@@ -60,6 +60,7 @@ pub struct SimulationState {
     color_buffer: Vec<u8>,
     particle_name_to_id: FxHashMap<String, u8>,
     transformation: Transformation,
+    frame_count: u32,
 }
 
 impl SimulationState {
@@ -83,6 +84,7 @@ impl SimulationState {
             clock: 0,
             particle_name_to_id: FxHashMap::default(),
             transformation: Transformation::None,
+            frame_count: 0,
         };
 
         state.add_particle_definition(ParticleCommonData {
@@ -388,6 +390,11 @@ impl SimulationState {
 
         self.current_x = 0;
         self.current_y = 0;
+        self.frame_count += 1;
+    }
+
+    pub fn get_frame(&self) -> u32 {
+        self.frame_count
     }
 
     /// Range, min and max are inclusive
