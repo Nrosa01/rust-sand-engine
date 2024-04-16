@@ -321,18 +321,126 @@ impl Blocks {
                 transformation,
                 block,
             } => {
-                let transformation = transformation.to_transformation(api);
                 let func = block.to_func(api);
-
+                
                 Box::new(move |plugin, particle, api| {
+                    let previous_trasnformation = api.get_transformation().clone();
+                    
+                    let transformation = transformation.to_transformation(api);
                     api.set_transformation(transformation);
-                    func(plugin, particle, api)
+                    
+                    let result = func(plugin, particle, api);
+                    
+                    api.set_transformation(previous_trasnformation);
+                    
+                    result
                 })
             }
+            // This is a for.. This shoould not return a bool, this should be separated into other enum
             Blocks::ForEachTransformation {
                 transformation,
                 block,
-            } => todo!(),
+            } => 
+            {
+                let func = block.to_func(api);
+
+                match transformation {
+                    TransformationInternal::HorizontalReflection => 
+                    {
+                        Box::new(move |plugin, particle, api| 
+                        {
+                            let previous_trasnformation = api.get_transformation().clone();
+                            
+                            let transformation = Transformation::HorizontalReflection(true);
+                            api.set_transformation(transformation);
+                            
+                            func(plugin, particle, api);
+                            
+                            let transformation = Transformation::HorizontalReflection(false);
+                            api.set_transformation(transformation);
+                            
+                            func(plugin, particle, api);
+                            
+                            api.set_transformation(previous_trasnformation);
+                            
+                            true
+                        })
+                    
+                    },
+                    TransformationInternal::VerticalReflection => 
+                    {
+                        Box::new(move |plugin, particle, api| 
+                        {
+                            let previous_trasnformation = api.get_transformation().clone();
+                            
+                            let transformation = Transformation::VerticalReflection(true);
+                            api.set_transformation(transformation);
+                            
+                            func(plugin, particle, api);
+                            
+                            let transformation = Transformation::VerticalReflection(false);
+                            api.set_transformation(transformation);
+                            
+                            func(plugin, particle, api);
+                            
+                            api.set_transformation(previous_trasnformation);
+                            
+                            true
+                        })
+                    },
+                    TransformationInternal::Reflection =>
+                    {
+                        Box::new(move |plugin, particle, api| 
+                        {
+                            let previous_trasnformation = api.get_transformation().clone();
+                            
+                            let transformation = Transformation::Reflection(true, true);
+                            api.set_transformation(transformation);
+                            
+                            func(plugin, particle, api);
+                            
+                            let transformation = Transformation::Reflection(false, false);
+                            api.set_transformation(transformation);
+                            
+                            func(plugin, particle, api);
+
+                            let transformation = Transformation::Reflection(false, true);
+                            api.set_transformation(transformation);
+                            
+                            func(plugin, particle, api);
+                            
+                            let transformation = Transformation::Reflection(true, false);
+                            api.set_transformation(transformation);
+                            
+                            func(plugin, particle, api);
+                            
+                            api.set_transformation(previous_trasnformation);
+                            
+                            true
+                        })
+                    },
+                    TransformationInternal::Rotation => 
+                    {
+                        Box::new(move |plugin, particle, api| 
+                        {
+                            let previous_transformation = api.get_transformation().clone();
+                            
+                            for i in 1..=7 {
+                                let transformation = Transformation::Rotation(i);
+                                api.set_transformation(transformation);
+                                
+                                func(plugin, particle, api);
+                            }
+                            
+                            api.set_transformation(previous_transformation);
+                            
+                            true
+                        })
+                    
+                    },
+                    TransformationInternal::None => Box::new(move |plugin, particle, api| func(plugin, particle, api)),
+                }
+            },
         }
     }
 }

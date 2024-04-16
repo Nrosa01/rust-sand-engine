@@ -2,9 +2,10 @@
 mod tests {
     use app_core::Transformation;
 
-    use crate::blocks::{Blocks, Number, NumberConstants, NumbersRuntime};
+    use crate::blocks::{Blocks, Number, NumberConstants, NumbersRuntime, TransformationInternal};
 
     #[test]
+    #[rustfmt::skip]
     fn test_block_serialization_and_deserialization() {
         let block1 = Blocks::CompareNumberEquality { block1: Number::NumberConstants(NumberConstants::ParticleIdFromName("Water".to_string())), block2: Number::NumbersRuntime(NumbersRuntime::NumberOfXTouching(NumberConstants::ParticleType(1))) };
         let serialized = serde_json::to_string(&block1).unwrap();
@@ -15,6 +16,7 @@ mod tests {
     }
 
     #[test]
+    #[rustfmt::skip]
     pub fn test_sand_serialization_and_deserialization()
     {
         let blocks = vec![
@@ -48,6 +50,57 @@ mod tests {
     }
 
     #[test]
+    pub fn test_sand2_serialization_and_deserialization() {
+        let blocks = vec![Blocks::RandomTransformation {
+            transformation: TransformationInternal::HorizontalReflection,
+            block: Box::new(Blocks::If {
+                condition: Box::new(Blocks::IfDirectionIsAnyType {
+                    direction: [0, -1],
+                    types: vec![
+                        NumberConstants::ParticleIdFromName("empty".to_string()),
+                        NumberConstants::ParticleIdFromName("water".to_string()),
+                    ],
+                }),
+                result: Box::new(Blocks::Swap { direction: [0, -1] }),
+                r#else: Some(Box::new(Blocks::If {
+                    condition: Box::new(Blocks::IfDirectionIsAnyType {
+                        direction: [-1, -1],
+                        types: vec![
+                            NumberConstants::ParticleIdFromName("empty".to_string()),
+                            NumberConstants::ParticleIdFromName("water".to_string()),
+                        ],
+                    }),
+                    result: Box::new(Blocks::Swap {
+                        direction: [-1, -1],
+                    }),
+                    r#else: Some(Box::new(Blocks::If {
+                        condition: Box::new(Blocks::IfDirectionIsAnyType {
+                            direction: [1, -1],
+                            types: vec![
+                                NumberConstants::ParticleIdFromName("empty".to_string()),
+                                NumberConstants::ParticleIdFromName("water".to_string()),
+                            ],
+                        }),
+                        result: Box::new(Blocks::Swap { direction: [1, -1] }),
+                        r#else: None,
+                    })),
+                })),
+            }),
+        }];
+
+        println!("Block going to be serilized");
+        let serialized = serde_json::to_string(&blocks)
+            .map_err(|err| err.to_string())
+            .unwrap();
+        println!("Block serilized");
+
+        std::fs::write("sand2.json", serialized)
+            .map_err(|err| err.to_string())
+            .unwrap();
+    }
+
+    #[test]
+    #[rustfmt::skip]
     pub fn test_transformations()
     {
         let direction = [1,0];
@@ -146,5 +199,4 @@ mod tests {
         assert_eq!(new_direction3, [0,1]);
         assert_eq!(new_direction4, [-1, 0]);
     }
-
 }
