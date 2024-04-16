@@ -135,6 +135,16 @@ mod tests {
         assert_eq!(new_direction2, direction2);
         assert_eq!(new_direction3, direction3);
         assert_eq!(new_direction4, [-1, 1]);
+
+        let transformation = Transformation::Rotation(7);
+        let new_direction = transformation.transform(&direction);
+        let new_direction2 = transformation.transform(&direction2);
+        let new_direction3 = transformation.transform(&direction3);
+        let new_direction4 = transformation.transform(&[-1, 1]);
+        assert_eq!(new_direction, [1,1]);
+        assert_eq!(new_direction2, [-1,1]);
+        assert_eq!(new_direction3, [0,1]);
+        assert_eq!(new_direction4, [-1, 0]);
     }
 
 }
