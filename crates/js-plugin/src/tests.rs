@@ -50,6 +50,22 @@ mod tests {
     }
 
     #[test]
+    pub fn test_replicant()
+    {
+        let blocks = vec![
+            Blocks::ForEachTransformation { transformation: TransformationInternal::Rotation, block: 
+            Box::new(Blocks::CopyTo { direction: [0, -1] }) }
+        ];
+    
+    
+        println!("Block going to be serilized");
+        let serialized = serde_json::to_string(&blocks).map_err(|err| err.to_string()).unwrap();
+        println!("Block serilized");
+    
+        std::fs::write("replicant.json", serialized).map_err(|err| err.to_string()).unwrap();
+    }
+
+    #[test]
     pub fn test_sand2_serialization_and_deserialization() {
         let blocks = vec![Blocks::RandomTransformation {
             transformation: TransformationInternal::HorizontalReflection,

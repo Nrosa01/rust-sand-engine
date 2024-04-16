@@ -179,7 +179,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
         if is_key_pressed(KeyCode::P) {
             let data = load_string("data.json").await.unwrap();
+            let data2 = load_string("replicant.json").await.unwrap();
             push_command(Command::NewPlugin(data));
+            push_command(Command::NewPlugin(data2));
         }
 
         if is_key_pressed(KeyCode::H) {
