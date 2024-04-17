@@ -90,11 +90,9 @@ Blockly.Blocks['test_field_slider'] = {
 Blockly.defineBlocksWithJsonArray([
   {
     type: "if",
-    message0: "if %1 %2 %3",
+    message0: "if %1 %2",
     args0: [
-      {
-        type: "input_dummy",
-      },
+
       {
         type: "input_value",
         name: "CONDITION",
@@ -116,23 +114,57 @@ Blockly.defineBlocksWithJsonArray([
 export const blocks = Blockly.common.createBlockDefinitionsFromJsonArray([
 
   {
-    "type": "my_block",
-    "message0": "My Block %1 text %2",
-    "args0": [
+    type: "update",
+    message0: "update logic %1",
+    args0: [
       {
-        "type": "input_dummy"
+        type: "input_statement",
+        name: "THEN",
+      },
+
+    ],
+    inputsInline: true,
+    previousStatement: null,
+    nextStatement: null,
+  },
+  {
+    type: "transformation",
+    message0: "type of transformation %1 %2 %3",
+    args0: [
+      {
+        type: "field_dropdown",
+        name: "TRANSFORMATION",
+        options: [
+          // [
+          //   "translate",
+          //   "translate"
+          // ],
+          // [
+          //   "scale",
+          //   "scale"
+          // ],
+          // [
+          //   "rotate",
+          //   "rotate"
+          [
+            "randomTransformation",
+            "randomTransformation"
+          ]
+        ]
       },
       {
-        "type": "boolean",
-        "name": "TEXT",
-        "check": "String"
-      }
+        type: "input_dummy"
+      },
+      {
+        type: "input_statement",
+        name: "THEN",
+      },
     ],
-    "inputsInline": true,
-    "output": "String",
-    "colour": 230,
-    "tooltip": "Tooltip text",
-    "helpUrl": "https://www.example.com/"
+    inputsInline: true,
+    previousStatement: null,
+    nextStatement: null,
+    colour: 230,
+
   },
 
   //#region tutorial

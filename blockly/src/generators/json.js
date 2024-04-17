@@ -104,8 +104,19 @@ jsonGenerator.forBlock['custom_input_color'] = function (block, generator) {
   const code = `"alpha": ${min_alpha}`
   return code;
 };
-jsonGenerator.forBlock['test_field_slider'] = function (block, generator) {
 
-  return null;
+jsonGenerator.forBlock['transformation'] = function (block, generator) {
+
+  const action = block.getFieldValue('TRANSFORMATION');
+
+  const statementMembers =
+    generator.statementToCode(block, 'THEN');
+
+  const code =
+    `"action": ${action},
+"data":  {
+${statementMembers}
+}`;
+  return code;
+
 };
-

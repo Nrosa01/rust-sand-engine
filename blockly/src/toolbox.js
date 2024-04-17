@@ -39,7 +39,7 @@ export const toolbox = {
         },
         {
           'kind': 'block',
-          'type': 'my_block'
+          'type': 'transformation'
         }
       ]
     },
