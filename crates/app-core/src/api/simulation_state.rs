@@ -314,7 +314,7 @@ impl SimulationState {
         self.current_y = local_y;
         true
     }
-
+     
     pub fn swap(&mut self, x: i32, y: i32) -> bool {
         let local_x = (self.current_x as i32 - x) as usize;
         let local_y = (self.current_y as i32 - y) as usize;
@@ -377,7 +377,7 @@ impl SimulationState {
 
                 self.current_x = x;
                 self.current_y = y;
-                let current_particle = &self.particles[y][x];
+                let current_particle = &mut self.particles[y][x];
                 if current_particle.id == Particle::EMPTY.id || current_particle.clock != self.clock
                 {
                     continue;
@@ -422,6 +422,40 @@ impl SimulationState {
         for y in 0..self.height {
             for x in 0..self.width {
                 self.set_particle_at_unchecked(x, y, Particle::EMPTY);
+            }
+        }
+    }
+
+    pub fn resize(&mut self, size: u32) {
+        
+        self.width = size as usize;
+        self.height = size as usize;
+
+        self.particles.resize(size as usize, Vec::new());
+        for buffer in self.particles.iter_mut() {
+            buffer.resize(size as usize, Particle::EMPTY);
+        }
+        
+        // Resize the color buffer
+        let color_buffer_size = (size * size * 4) as usize;
+        self.color_buffer.resize(color_buffer_size, Default::default());
+
+        // As buffer is a linear vector and particles a 2d matrix, we can't be sure color buffer state is correct
+        // So for now I will just repaint each particle
+        self.repaint();
+    }
+
+    pub fn repaint(&mut self)
+    {        
+        for y in 0..self.height {
+            for x in 0..self.width {
+                let particle = &self.particles[y][x];
+                let color = self.particle_definitions[particle.id as usize].color;
+                let start_index = (y * self.width + x) * 4;
+                self.color_buffer[start_index] = color[0];
+                self.color_buffer[start_index + 1] = color[1];
+                self.color_buffer[start_index + 2] = color[2];
+                self.color_buffer[start_index + 3] = particle.light;
             }
         }
     }
