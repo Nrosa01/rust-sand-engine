@@ -174,11 +174,7 @@ impl Actions {
                     }
                 }
             }
-            Actions::If {
-                condition,
-                result,
-                r#else,
-            } => {
+            Actions::If {condition, result, r#else,} => {
                 // We bake the functions here so they don't have to get built every time this block is called
                 let condition = condition.to_func(api);
                 let result = result.to_func(api);
