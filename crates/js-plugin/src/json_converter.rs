@@ -1,7 +1,7 @@
 use app_core::{Particle, ParticleApi, PluginResult, Vec2};
 use json::JsonValue;
 
-use crate::{blocks::Blocks, plugins::JSPlugin};
+use crate::{blocks::Actions, plugins::JSPlugin};
 
 fn get_color(json: &JsonValue) -> [u8; 4] {
     if json.is_number() {
@@ -95,7 +95,7 @@ pub fn build_update_func(json: &JsonValue, api: Option<&ParticleApi>) -> Result<
     }
     
     let update_str = json["update"].to_string();
-    let blocks: Vec<Blocks> = serde_json::from_str(&update_str).map_err(|err| err.to_string())?;
+    let blocks: Vec<Actions> = serde_json::from_str(&update_str).map_err(|err| err.to_string())?;
 
     let func_vec = blocks
         .iter()
@@ -103,6 +103,6 @@ pub fn build_update_func(json: &JsonValue, api: Option<&ParticleApi>) -> Result<
         .collect::<Vec<_>>();
 
     Ok(Box::new(move |plugin, particle, api| {
-        func_vec.iter().all(|func| func(plugin, particle, api));
+        func_vec.iter().for_each(|func| func(plugin, particle, api));
     }))
 }

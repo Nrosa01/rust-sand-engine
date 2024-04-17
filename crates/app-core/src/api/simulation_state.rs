@@ -14,6 +14,41 @@ pub struct Vec2u {
     pub y: usize,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Transformation {
+    HorizontalReflection(bool),
+    VerticalReflection(bool),
+    Reflection(bool, bool),
+    Rotation(usize),
+    None,
+}
+
+impl Transformation {
+    pub fn transform(&self, direction: &[i32; 2]) -> [i32; 2] {
+        match self {
+            Transformation::HorizontalReflection(true) => [-direction[0], direction[1]],
+            Transformation::VerticalReflection(true) => [direction[0], -direction[1]],
+            Transformation::Reflection(true, true) => [-direction[0], -direction[1]],
+            Transformation::Reflection(true, false) => [-direction[0], direction[1]],
+            Transformation::Reflection(false, true) => [direction[0], -direction[1]],
+            // Rotation mus be a number between 0 and 7
+            Transformation::Rotation(rotations) => match direction {
+                [0, 1] => SimulationState::DIRECTIONS_VEC[*rotations],
+                [1, 1] => SimulationState::DIRECTIONS_VEC[*rotations + 1],
+                [1, 0] => SimulationState::DIRECTIONS_VEC[*rotations + 2],
+                [1, -1] => SimulationState::DIRECTIONS_VEC[*rotations + 3],
+                [0, -1] => SimulationState::DIRECTIONS_VEC[*rotations + 4],
+                [-1, -1] => SimulationState::DIRECTIONS_VEC[*rotations + 5],
+                [-1, 0] => SimulationState::DIRECTIONS_VEC[*rotations + 6],
+                [-1, 1] => SimulationState::DIRECTIONS_VEC[*rotations + 7],
+                _ => direction.clone(),
+            },
+            Transformation::None => direction.clone(),
+            _ => direction.clone(),
+        }
+    }
+}
+
 pub struct SimulationState {
     particle_definitions: Vec<ParticleCommonData>,
     particles: Vec<Vec<Particle>>,
@@ -24,6 +59,8 @@ pub struct SimulationState {
     clock: u8,
     color_buffer: Vec<u8>,
     particle_name_to_id: FxHashMap<String, u8>,
+    transformation: Transformation,
+    frame_count: u32,
 }
 
 impl SimulationState {
@@ -46,6 +83,8 @@ impl SimulationState {
             color_buffer,
             clock: 0,
             particle_name_to_id: FxHashMap::default(),
+            transformation: Transformation::None,
+            frame_count: 0,
         };
 
         state.add_particle_definition(ParticleCommonData {
@@ -60,6 +99,26 @@ impl SimulationState {
 
         state
     }
+
+    #[allow(unused)]
+    const DIRECTIONS_VEC: [[i32; 2]; 16] = [
+        [0, 1],   // N 0
+        [1, 1],   // NE 1
+        [1, 0],   // E 2
+        [1, -1],  // SE 3
+        [0, -1],  // S 4
+        [-1, -1], // SW 5
+        [-1, 0],  // W 6
+        [-1, 1],  // NW 7
+        [0, 1],   // N 0
+        [1, 1],   // NE 1
+        [1, 0],   // E 2
+        [1, -1],  // SE 3
+        [0, -1],  // S 4
+        [-1, -1], // SW 5
+        [-1, 0],  // W 6
+        [-1, 1],  // NW 7
+    ];
 
     pub const NEIGHBORS: [Vec2i; 8] = [
         Vec2i { x: 0, y: -1 },
@@ -85,6 +144,14 @@ impl SimulationState {
         Vec2i { x: -1, y: 1 },
         Vec2i { x: -1, y: -1 },
     ];
+
+    pub fn set_transformation(&mut self, transformation: Transformation) -> () {
+        self.transformation = transformation;
+    }
+
+    pub fn get_transformation(&self) -> &Transformation {
+        &self.transformation
+    }
 
     pub fn id_from_name(&self, name: &str) -> u8 {
         *self
@@ -247,7 +314,7 @@ impl SimulationState {
         self.current_y = local_y;
         true
     }
-
+     
     pub fn swap(&mut self, x: i32, y: i32) -> bool {
         let local_x = (self.current_x as i32 - x) as usize;
         let local_y = (self.current_y as i32 - y) as usize;
@@ -310,7 +377,7 @@ impl SimulationState {
 
                 self.current_x = x;
                 self.current_y = y;
-                let current_particle = &self.particles[y][x];
+                let current_particle = &mut self.particles[y][x];
                 if current_particle.id == Particle::EMPTY.id || current_particle.clock != self.clock
                 {
                     continue;
@@ -323,6 +390,11 @@ impl SimulationState {
 
         self.current_x = 0;
         self.current_y = 0;
+        self.frame_count += 1;
+    }
+
+    pub fn get_frame(&self) -> u32 {
+        self.frame_count
     }
 
     /// Range, min and max are inclusive
@@ -338,6 +410,10 @@ impl SimulationState {
         fastrand::i32(0..2) * 2 - 1
     }
 
+    pub fn random_bool(&self) -> bool {
+        fastrand::bool()
+    }
+
     pub fn get_type(&self, x: i32, y: i32) -> u8 {
         self.get(x, y).id
     }
@@ -346,6 +422,55 @@ impl SimulationState {
         for y in 0..self.height {
             for x in 0..self.width {
                 self.set_particle_at_unchecked(x, y, Particle::EMPTY);
+            }
+        }
+    }
+
+    pub fn resize(&mut self, size: u32) {
+        let current_size = self.width as u32;
+    
+        self.width = size as usize;
+        self.height = size as usize;
+    
+        let mut new_particles: Vec<Vec<Particle>> = vec![vec![Particle::EMPTY; size as usize]; size as usize];
+    
+        let offset = ((size as i32) - (current_size as i32)) / 2;
+    
+        // I want to make this feel like a "crop", so if a Particle is in the midddle, it will stay in the midle when you resize
+        // Particle position is their position in the array, but now the array changed so we have to adapt it
+        // Sadly this is not an in-place solution like using vector::resize, but this function is called very sparingly
+        // so it's fine to keep it like this.
+        for (y, row) in self.particles.iter().enumerate() {
+            for (x, particle) in row.iter().enumerate() {
+                let new_x = x as i32 + offset;
+                let new_y = y as i32 + offset;
+                if new_x >= 0 && new_x < size as i32 && new_y >= 0 && new_y < size as i32 {
+                    new_particles[new_y as usize][new_x as usize] = *particle;
+                }
+            }
+        }
+    
+        self.particles = new_particles;
+    
+        let color_buffer_size = (size * size * 4) as usize;
+        self.color_buffer.resize(color_buffer_size, Default::default());
+    
+        // As buffer is a linear vector and particles a 2d matrix, we can't be sure color buffer state is correct
+        // So for now I will just repaint each particle
+        self.repaint();
+    }
+    
+    pub fn repaint(&mut self)
+    {        
+        for y in 0..self.height {
+            for x in 0..self.width {
+                let particle = &self.particles[y][x];
+                let color = self.particle_definitions[particle.id as usize].color;
+                let start_index = (y * self.width + x) * 4;
+                self.color_buffer[start_index] = color[0];
+                self.color_buffer[start_index + 1] = color[1];
+                self.color_buffer[start_index + 2] = color[2];
+                self.color_buffer[start_index + 3] = particle.light;
             }
         }
     }

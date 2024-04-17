@@ -95,6 +95,15 @@ impl Simulation {
         self.simulation_state.clear();
     }
 
+    pub fn repaint(&mut self) -> () {
+        self.simulation_state.repaint();
+    }
+
+    pub fn resize(&mut self, size: u32) -> () {
+        self.simulation_state.resize(size);
+        self.order_scheme = OrderSchemes::new(self.get_width(), self.get_height());
+    }
+
     pub fn set_particle(&mut self, x: usize, y: usize, particle: Particle) -> () {
         self.simulation_state
             .set_particle_at_by_id(x, y, particle.id);

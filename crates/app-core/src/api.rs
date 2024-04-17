@@ -8,6 +8,7 @@ pub mod color;
 pub mod vec2;
 
 pub(crate) use crate::simulation_state::*;
+pub use crate::simulation_state::Transformation;
 pub use crate::particle::*;
 pub use crate::plugin::*;
 pub(crate) use crate::custom_range::*;

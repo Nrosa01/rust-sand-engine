@@ -15,25 +15,7 @@ mod commands;
 use commands::*;
 
 #[cfg(target_family = "wasm")]
-#[no_mangle]
-pub extern "C" fn receive_json_plugin(data: sapp_jsutils::JsObject) {
-    miniquad::debug!("Function called");
-
-    if data.is_nil() {
-        return;
-    }
-
-    let mut buffer = String::new();
-    data.to_string(&mut buffer);
-
-    push_command(Command::NewPlugin(buffer));
-}
-
-#[cfg(target_family = "wasm")]
-#[no_mangle]
-pub extern "C" fn test() {
-    debug!("Received data call form js");
-}
+mod wasm_bindings;
 
 const WINDOW_WIDTH: i32 = 800;
 const WINDOW_HEIGHT: i32 = 800;
@@ -48,18 +30,20 @@ fn conf() -> Conf {
     }
 }
 
-const SIM_WIDTH: usize = 300;
-const SIM_HEIGHT: usize = 300;
-const SENSITIVITY: isize = WINDOW_WIDTH as isize / SIM_WIDTH as isize * 5;
 
 // I'm just mapping the mouse position to the texture coordinates
-fn mouse_pos_to_square() -> (isize, isize) {
+fn mouse_pos_to_square(width: usize, height: usize) -> (isize, isize) {
     let (mouse_x, mouse_y) = mouse_position();
     let min = screen_height().min(screen_width());
-    let x = (mouse_x - (screen_width() - min) / 2.0) / min * SIM_WIDTH as f32;
-    let y = (mouse_y - (screen_height() - min) / 2.0) / min * SIM_HEIGHT as f32;
+    let x = (mouse_x - (screen_width() - min) / 2.0) / min * width as f32;
+    let y = (mouse_y - (screen_height() - min) / 2.0) / min * height as f32;
 
     (x as isize, y as isize)
+}
+
+pub fn resize_texture(texture: &mut Texture2D, width: u32, height: u32, buffer: &[u8]) {
+    let ctx = unsafe { get_internal_gl().quad_context };
+    texture.texture.resize(ctx, width, height, Some(buffer));
 }
 
 pub fn draw_simulation(texture: &Texture2D, bytes: &[u8]) {
@@ -96,17 +80,25 @@ pub fn draw_simulation(texture: &Texture2D, bytes: &[u8]) {
 
 #[macroquad::main(conf)]
 async fn main() -> Result<(), Box<dyn Error>> {
+    let mut sim_width = 300;
+    let mut sim_height = 300;
+    let sensitivity = WINDOW_WIDTH as isize / sim_width as isize * 5;
+
+
     print!("Hello, world!");
     macroquad::rand::srand(macroquad::miniquad::date::now() as u64);
+
+    // Now create a vec of string and f32 because I want to store the time each string will be displayed
+    let mut strings: Vec<(String, f32)> = Vec::new();
 
     #[cfg(not(target_family = "wasm"))]
     let mut loader = DylibLoader::new();
 
-    let mut simulation = Simulation::new(SIM_WIDTH, SIM_HEIGHT);
+    let mut simulation = Simulation::new(sim_width, sim_height);
 
-    let texture = Texture2D::from_rgba8(
-        SIM_WIDTH as u16,
-        SIM_HEIGHT as u16,
+    let mut texture = Texture2D::from_rgba8(
+        sim_width as u16,
+        sim_height as u16,
         &simulation.get_buffer(),
     );
     texture.set_filter(FilterMode::Nearest);
@@ -129,6 +121,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let mut radius: isize = 40;
     let mut hide_ui = false;
+    let mut paused = false;
 
     let mut selected_plugin = 1;
 
@@ -150,8 +143,20 @@ async fn main() -> Result<(), Box<dyn Error>> {
                         }
                     }
                 }
-                Command::CanvasSize(_) => todo!(),
-                Command::Clear => todo!(),
+                Command::CanvasSize(size) => 
+                {            
+                    resize_texture(&mut texture, size, size, simulation.get_buffer());
+                    simulation.resize(size);
+                    sim_width = size as usize;
+                    sim_height = size as usize;
+                },
+                Command::Clear => simulation.clear(),
+                Command::Pause(is_paused)  => {
+                    paused = is_paused;
+                }
+                Command::Debug(data) =>{
+                    strings.push(data);
+                },
             }
 
             command = pop_command();
@@ -179,12 +184,29 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
         if is_key_pressed(KeyCode::P) {
             let data = load_string("data.json").await.unwrap();
+            let data2 = load_string("replicant.json").await.unwrap();
             push_command(Command::NewPlugin(data));
+            push_command(Command::NewPlugin(data2));
         }
 
         if is_key_pressed(KeyCode::H) {
             hide_ui = !hide_ui;
         }
+
+        if is_key_pressed(KeyCode::K) {
+            simulation.repaint();
+        }
+
+
+        if is_key_pressed(KeyCode::F) {
+            if sim_width == 300{
+                push_command(Command::CanvasSize(150));
+            }
+            else {
+                push_command(Command::CanvasSize(300));
+            }
+        }
+
 
         if is_key_pressed(KeyCode::Left) || is_key_pressed(KeyCode::A) || is_key_pressed(KeyCode::W)
         {
@@ -209,7 +231,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         // Draw both mouse wheelv alues
         if mouse_wheel != 0.0 {
             let sign = mouse_wheel.signum() as isize;
-            radius = radius + sign * SENSITIVITY;
+            radius = radius + sign * sensitivity;
 
             if radius < 10 {
                 radius = 10;
@@ -222,9 +244,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
         }
 
         if is_mouse_button_down(MouseButton::Left) && !capture_mouse {
-            let (mouse_x, mouse_y) = mouse_pos_to_square();
+            let (mouse_x, mouse_y) = mouse_pos_to_square(sim_width, sim_height);
             let screen_ratio_to_texture =
-                screen_height().min(screen_width()) / (SIM_WIDTH.min(SIM_HEIGHT)) as f32;
+                screen_height().min(screen_width()) / (sim_width.min(sim_height)) as f32;
 
             let radius = (radius as f32 / screen_ratio_to_texture) as isize;
 
@@ -248,7 +270,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
             }
         }
 
-        simulation.update();
+        if !paused {
+            simulation.update();
+        }
 
         // Clear the screen
         clear_background(BLACK);
@@ -292,6 +316,26 @@ async fn main() -> Result<(), Box<dyn Error>> {
         }
 
         egui_macroquad::draw();
+
+        // Update lifetime of strings
+        strings = strings
+            .into_iter()
+            .filter_map(|(string, time)| {
+                if time > 0.0 {
+                    Some((string, time - get_frame_time()))
+                } else {
+                    None
+                }
+            })
+            .collect();
+
+        // Draw the strings 
+        for (i, data) in strings.iter().enumerate() {
+            // For the color ill go with a white, but alpha will vary depending on the time of the particle between 0 and 2
+            let mut color = WHITE;
+            color.a = (data.1 / 2.0).min(1.0);
+            draw_text(&data.0, 10.0, screen_height() - 30.0 - i as f32 * 20.0, 20.0, color);
+        }
         next_frame().await;
     }
 
