@@ -1,5 +1,5 @@
 {
-  "name": "custom-generator-codelab",
+  "name": "blockly",
   "version": "1.0.0",
   "description": "A sample app using Blockly",
   "main": "index.js",
@@ -24,6 +24,8 @@
     "webpack-dev-server": "^4.11.1"
   },
   "dependencies": {
-    "blockly": "^10.0.0"
+    "@blockly/field-slider": "^6.1.7",
+    "blockly": "^10.0.0",
+    "blockly-field-color-wheel": "^1.0.2"
   }
 }

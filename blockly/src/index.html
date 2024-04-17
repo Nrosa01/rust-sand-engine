@@ -2,7 +2,7 @@
  <html>
    <head>
      <meta charset="utf-8" />
-     <title>Blockly Json Generator</title>
+     <title>Blockly Sample App</title>
    </head>
    <body>
     <div id="pageContainer">
@@ -11,6 +11,11 @@
         <div id="output"></div>
       </div>
       <div id="blocklyDiv"></div>
+     
     </div>
+    <script>
+      // Initialize Blockly
+      Blockly.inject('blocklyDiv', { renderer: 'Zelos' });
+    </script>
    </body>
  </html>

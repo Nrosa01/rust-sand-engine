@@ -30,12 +30,14 @@ const ws = Blockly.inject(blocklyDiv, { toolbox });
 // This function resets the code div and shows the
 // generated code from the workspace.
 const runCode = () => {
+
   const code = jsonGenerator.workspaceToCode(ws);
   codeDiv.innerText = code;
 };
 
 // Load the initial state from storage and run the code.
-load(ws);
+// this messes up code generation, so I keep it commented out
+//load(ws)
 runCode();
 
 // Every time the workspace changes state, save the changes to storage.
@@ -43,7 +45,7 @@ ws.addChangeListener((e) => {
   // UI events are things like scrolling, zooming, etc.
   // No need to save after one of these.
   if (e.isUiEvent) return;
-  save(ws);
+  //save(ws);
 });
 
 
@@ -56,5 +58,7 @@ ws.addChangeListener((e) => {
     ws.isDragging()) {
     return;
   }
+
   runCode();
 });
+
