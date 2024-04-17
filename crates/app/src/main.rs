@@ -199,7 +199,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
 
         if is_key_pressed(KeyCode::F) {
-            push_command(Command::CanvasSize(150));
+            if sim_width == 300{
+                push_command(Command::CanvasSize(150));
+            }
+            else {
+                push_command(Command::CanvasSize(300));
+            }
         }
 
 

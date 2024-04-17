@@ -427,24 +427,39 @@ impl SimulationState {
     }
 
     pub fn resize(&mut self, size: u32) {
-        
+        let current_size = self.width as u32;
+    
         self.width = size as usize;
         self.height = size as usize;
-
-        self.particles.resize(size as usize, Vec::new());
-        for buffer in self.particles.iter_mut() {
-            buffer.resize(size as usize, Particle::EMPTY);
+    
+        let mut new_particles: Vec<Vec<Particle>> = vec![vec![Particle::EMPTY; size as usize]; size as usize];
+    
+        let offset = ((size as i32) - (current_size as i32)) / 2;
+    
+        // I want to make this feel like a "crop", so if a Particle is in the midddle, it will stay in the midle when you resize
+        // Particle position is their position in the array, but now the array changed so we have to adapt it
+        // Sadly this is not an in-place solution like using vector::resize, but this function is called very sparingly
+        // so it's fine to keep it like this.
+        for (y, row) in self.particles.iter().enumerate() {
+            for (x, particle) in row.iter().enumerate() {
+                let new_x = x as i32 + offset;
+                let new_y = y as i32 + offset;
+                if new_x >= 0 && new_x < size as i32 && new_y >= 0 && new_y < size as i32 {
+                    new_particles[new_y as usize][new_x as usize] = *particle;
+                }
+            }
         }
-        
-        // Resize the color buffer
+    
+        self.particles = new_particles;
+    
         let color_buffer_size = (size * size * 4) as usize;
         self.color_buffer.resize(color_buffer_size, Default::default());
-
+    
         // As buffer is a linear vector and particles a 2d matrix, we can't be sure color buffer state is correct
         // So for now I will just repaint each particle
         self.repaint();
     }
-
+    
     pub fn repaint(&mut self)
     {        
         for y in 0..self.height {
