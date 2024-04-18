@@ -4,9 +4,9 @@ version = 3
 
 [[package]]
 name = "ab_glyph"
-version = "0.2.25"
+version = "0.2.24"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6f90148830dac590fac7ccfe78ec4a8ea404c60f75a24e16407a71f0f40de775"
+checksum = "8e08104bebc65a46f8bc7aa733d39ea6874bfa7156f41a46b805785e3af1587d"
 dependencies = [
  "ab_glyph_rasterizer",
  "owned_ttf_parser",
@@ -45,7 +45,6 @@ dependencies = [
  "egui-macroquad",
  "js-plugin",
  "libloading",
- "macroquad 0.4.5",
  "sapp-jsutils",
 ]
 
@@ -208,7 +207,7 @@ checksum = "04684094ab441cee64e836dac5d07b822c0dd002739a9790023f9d2d08ce2875"
 dependencies = [
  "egui",
  "egui-miniquad",
- "macroquad 0.3.26",
+ "macroquad",
 ]
 
 [[package]]
@@ -221,7 +220,7 @@ dependencies = [
  "copypasta",
  "egui",
  "getrandom",
- "miniquad 0.3.16",
+ "miniquad",
  "quad-rand",
  "quad-url",
 ]
@@ -421,24 +420,8 @@ dependencies = [
  "glam",
  "image",
  "macroquad_macro",
- "miniquad 0.3.16",
+ "miniquad",
  "quad-rand",
-]
-
-[[package]]
-name = "macroquad"
-version = "0.4.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "002647f9301eb8827145a6ae71f1fc0b0441d3a3e0648146e3c7de926e78c37d"
-dependencies = [
- "bumpalo",
- "fontdue",
- "glam",
- "image",
- "macroquad_macro",
- "miniquad 0.4.0",
- "quad-rand",
- "slotmap",
 ]
 
 [[package]]
@@ -479,18 +462,6 @@ name = "miniquad"
 version = "0.3.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c1251d63dfea7109063b2cec354253e8bf150e7878837a6ac0f9185d6a2518b6"
-dependencies = [
- "libc",
- "ndk-sys",
- "objc",
- "winapi",
-]
-
-[[package]]
-name = "miniquad"
-version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "91e9c578ad261f84512751bfdd9919c762ecd6103d06051fbdaede35136e1988"
 dependencies = [
  "libc",
  "ndk-sys",
@@ -736,15 +707,6 @@ name = "simd-adler32"
 version = "0.3.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d66dc143e6b11c1eddc06d5c423cfc97062865baf299914ab64caa38182078fe"
-
-[[package]]
-name = "slotmap"
-version = "1.0.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dbff4acf519f630b3a3ddcfaea6c06b42174d9a44bc70c620e9ed1649d58b82a"
-dependencies = [
- "version_check",
-]
 
 [[package]]
 name = "smallvec"

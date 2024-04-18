@@ -1,7 +1,4 @@
-#[cfg(not(target_family = "wasm"))]
-use egui_macroquad::macroquad;
-use macroquad::prelude::*;
-
+use egui_macroquad::{egui, macroquad::texture::Texture2D};
 use js_plugin::plugins::JSPlugin;
 
 use crate::*;
@@ -124,8 +121,6 @@ impl Entity for Universe {
 
     #[cfg(not(target_family = "wasm"))]
     fn ui(&mut self, egui_ctx: &egui_macroquad::egui::Context) {
-        use egui_macroquad::egui;
-
         egui::Area::new(egui::Id::new("my_area"))
             .default_pos(egui::pos2(32.0, 32.0))
             .movable(true)
@@ -147,52 +142,11 @@ impl Entity for Universe {
     }
 }
 
-#[cfg(not(target_family = "wasm"))]
 fn resize_texture(texture: &mut Texture2D, width: u32, height: u32, buffer: &[u8]) {
     let ctx = unsafe { get_internal_gl().quad_context };
     texture.texture.resize(ctx, width, height, Some(buffer));
 }
 
-#[cfg(target_family = "wasm")]
-fn resize_texture(texture: &mut Texture2D, width: u32, height: u32, buffer: &[u8]) {
-    let ctx = unsafe { get_internal_gl().quad_context };
-    ctx.texture_resize(texture.raw_miniquad_id(), width, height, Some(buffer));
-}
-
-#[cfg(target_family = "wasm")]
-fn draw_simulation(texture: &Texture2D, bytes: &[u8]) {
-    // let raw = texture.raw_miniquad_texture_handle();
-    let ctx = unsafe { get_internal_gl().quad_context };
-    ctx.texture_update(texture.raw_miniquad_id(), bytes);
-
-    let pos_x = (screen_width() / 2.0 - screen_height() / 2.0).max(0.);
-    let pos_y = (screen_height() / 2.0 - screen_width() / 2.0).max(0.);
-
-    let dest_size = screen_height().min(screen_width());
-
-    // Draw rect with transparent color
-    draw_rectangle(
-        pos_x,
-        pos_y,
-        dest_size,
-        dest_size,
-        Color::from_hex(0x12212b),
-    );
-
-    // Draw the texture
-    draw_texture_ex(
-        texture,
-        pos_x,
-        pos_y,
-        WHITE,
-        DrawTextureParams {
-            dest_size: Some(vec2(dest_size, dest_size)),
-            ..Default::default()
-        },
-    );
-}
-
-#[cfg(not(target_family = "wasm"))]
 fn draw_simulation(texture: &Texture2D, bytes: &[u8]) {
     let raw = texture.raw_miniquad_texture_handle();
     let ctx = unsafe { get_internal_gl().quad_context };

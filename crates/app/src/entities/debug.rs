@@ -1,6 +1,4 @@
-#[cfg(not(target_family = "wasm"))]
-use egui_macroquad::macroquad;
-use macroquad::prelude::*;
+use egui_macroquad::macroquad::input::{is_key_pressed, KeyCode};
 
 use crate::{push_command, Command, Entity };
 
