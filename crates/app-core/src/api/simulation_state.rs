@@ -176,6 +176,25 @@ impl SimulationState {
         }
     }
 
+    pub(crate) fn remove_particle_definition(&mut self, id: u8) -> () {
+        let name = self.particle_definitions[id as usize].name.to_lowercase();
+        self.particle_name_to_id.remove(&name);
+        self.particle_definitions.remove(id as usize);
+
+        // We have to update the particle buffer as indices higher than the removed one will be shifted
+        // If the index is the same as the removed one we'll just replace it with an empty particle
+        for y in 0..self.height {
+            for x in 0..self.width {
+                let particle = &mut self.particles[y][x];
+                if particle.id == id as u8 {
+                    *particle = Particle::EMPTY;
+                } else if particle.id > id as u8 {
+                    particle.id -= 1;
+                }
+            }
+        }
+    }
+
     pub(crate) fn get_particle_definitions(&self) -> &Vec<ParticleCommonData> {
         &self.particle_definitions
     }

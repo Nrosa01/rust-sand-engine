@@ -5,6 +5,7 @@ use app_core::Simulation;
 #[allow(unused)]
 pub enum Command {
     NewPlugin(String),
+    RemovePlugin(u8),
     Debug((String, f32)),
     CanvasSize(u32),
     Pause(bool),

@@ -96,6 +96,9 @@ impl Entity for Universe {
             }
             Command::SimulationMethod(method) => method(&mut self.simulation),
             Command::ParticleSelected(id) => self.select_particle(*id as usize),
+            Command::RemovePlugin(id) => {
+                self.simulation.remove_plugin(*id);
+            }
             _ => {}
         }
     }
@@ -117,6 +120,11 @@ impl Entity for Universe {
 
         if is_key_pressed(KeyCode::Left) || is_key_pressed(KeyCode::A) || is_key_pressed(KeyCode::W) {
             self.simulation.select_previous_plugin();
+        }
+
+        if is_key_pressed(KeyCode::K)
+        {
+            push_command(Command::RemovePlugin(self.simulation.get_selected_plugin()));
         }
     }
 

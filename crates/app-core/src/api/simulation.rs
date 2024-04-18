@@ -99,6 +99,15 @@ impl Simulation {
         self.plugin_data.notify(&self.simulation_state);
     }
 
+    pub fn remove_plugin(&mut self, id: u8) -> () {
+        self.simulation_state.remove_particle_definition(id);
+        self.plugin_data.plugins.remove(id as usize);
+        self.repaint();
+        self.plugin_data.notify(&self.simulation_state);
+
+        self.selected_plugin = self.selected_plugin.min(self.get_plugin_count() as u8 - 1);
+    }
+
     pub fn add_plugins(&mut self, plugins: Vec<Box<dyn Plugin>>) -> () {
         for plugin in plugins {
             self.add_plugin(plugin);

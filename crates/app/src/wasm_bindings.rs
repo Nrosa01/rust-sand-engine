@@ -61,3 +61,41 @@ pub extern "C" fn resize_simulation(data: sapp_jsutils::JsObject) {
         }
     }
 }
+
+#[no_mangle]
+pub extern "C" fn select_particle(data: sapp_jsutils::JsObject) {
+
+    if data.is_nil() {
+        return;
+    }
+
+    let mut buffer = String::new();
+    data.to_string(&mut buffer);
+
+    let id = buffer.parse();
+
+    match id {
+        Ok(id) => {
+            push_command(Command::ParticleSelected(id));
+            add_dbg((&format!("Select particle command received with data: {}", id), 5.0));
+        }
+        Err(_) => {
+            add_dbg(("Select particle command received with invalid data", 2.0));
+        }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn remove_plugin(data: sapp_jsutils::JsObject) {
+
+    if data.is_nil() {
+        return;
+    }
+
+    let mut buffer = String::new();
+    data.to_string(&mut buffer);
+    let buffer = buffer.parse().unwrap(); // I don't manage errors here because this shuouldnt fail at all
+
+    add_dbg((&format!("Remove plugin command received with data: {}", buffer), 5.0));
+    push_command(Command::RemovePlugin(buffer));
+}
