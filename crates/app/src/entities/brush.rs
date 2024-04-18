@@ -1,5 +1,6 @@
-// use egui_macroquad::macroquad::{experimental::camera::mouse, input::{is_mouse_button_down, mouse_position, mouse_wheel}, window::{screen_height, screen_width}};
-use egui_macroquad::macroquad::{input::*, shapes::draw_circle_lines, window::*};
+#[cfg(not(target_family = "wasm"))]
+use egui_macroquad::macroquad;
+use macroquad::prelude::*;
 
 use crate::{push_command, Command, Entity, WINDOW_WIDTH};
 
@@ -80,7 +81,7 @@ impl Entity for Brush{
     fn draw(&self) {
         if !self.mouse_captured {
             let (mouse_x, mouse_y) = mouse_position();
-            draw_circle_lines(mouse_x, mouse_y, self.radius as f32, 1.0, egui_macroquad::macroquad::color::WHITE);
+            draw_circle_lines(mouse_x, mouse_y, self.radius as f32, 1.0, WHITE);
         }
     }
 

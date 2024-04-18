@@ -8,11 +8,12 @@ edition = "2021"
 [dependencies]
 app-core.workspace = true
 js-plugin.workspace = true
-egui-macroquad = { version = "0.15.0", default-features = false }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
+macroquad = "0.4.5"
 sapp-jsutils = "0.1.5"
 
-[target.'cfg(not(wasm))'.dependencies]
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+egui-macroquad = { version = "0.15.0", default-features = false }
 default-plugins.workspace = true
 libloading = "0.8.3"

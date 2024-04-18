@@ -2,6 +2,7 @@
 
 
 use app_core::api::Simulation;
+#[cfg(not(target_family = "wasm"))]
 use egui_macroquad::macroquad;
 use macroquad::prelude::*;
 use std::error::Error;

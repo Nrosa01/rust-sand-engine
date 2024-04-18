@@ -1,4 +1,6 @@
-use egui_macroquad::macroquad::{self, time::get_frame_time, window::screen_height};
+#[cfg(not(target_family = "wasm"))]
+use egui_macroquad::macroquad;
+use macroquad::prelude::*;
 
 use crate::Entity;
 
