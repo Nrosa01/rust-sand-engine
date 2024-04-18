@@ -87,7 +87,7 @@ impl SimulationState {
             frame_count: 0,
         };
 
-        state.add_particle_definition(ParticleCommonData {
+        state.add_or_replace_particle_definition(ParticleCommonData {
             name: String::from("Empty"),
             color: [18, 33, 43, 1],
             rand_alpha_min: 0,
@@ -159,26 +159,21 @@ impl SimulationState {
             .unwrap_or(&Particle::INVALID.id)
     }
 
-    pub(crate) fn add_particle_definition(
-        &mut self,
-        particle_definition: ParticleCommonData,
-    ) -> () {
-        self.particle_definitions.push(particle_definition);
-        self.particle_name_to_id.insert(
-            self.particle_definitions
-                .last()
-                .unwrap()
-                .name
-                .to_lowercase()
-                .clone(),
-            self.particle_definitions.len() as u8 - 1,
-        );
+    pub(crate) fn add_or_replace_particle_definition(&mut self, particle_definition: ParticleCommonData) -> Option<usize>{
+        let name = particle_definition.name.to_lowercase();
 
-        // Print the name of the particle definition
-        println!(
-            "Added particle definition: {}",
-            self.particle_definitions.last().unwrap().name
-        );
+        if self.particle_name_to_id.contains_key(&name) {
+            let id = *self.particle_name_to_id.get(&name).unwrap();
+            self.particle_definitions[id as usize] = particle_definition;
+            Some(id as usize)
+        } else {
+            self.particle_definitions.push(particle_definition);
+            self.particle_name_to_id
+                .insert(name.to_lowercase().clone(), (self.particle_definitions.len() - 1) as u8);
+
+            println!("Added or updated particle definition: {}", name);
+            None
+        }
     }
 
     pub(crate) fn get_particle_definitions(&self) -> &Vec<ParticleCommonData> {
@@ -313,7 +308,7 @@ impl SimulationState {
         self.current_y = local_y;
         true
     }
-     
+
     pub fn swap(&mut self, x: i32, y: i32) -> bool {
         let local_x = (self.current_x as i32 - x) as usize;
         let local_y = (self.current_y as i32 - y) as usize;
@@ -427,14 +422,15 @@ impl SimulationState {
 
     pub fn resize(&mut self, size: u32) {
         let current_size = self.width as u32;
-    
+
         self.width = size as usize;
         self.height = size as usize;
-    
-        let mut new_particles: Vec<Vec<Particle>> = vec![vec![Particle::EMPTY; size as usize]; size as usize];
-    
+
+        let mut new_particles: Vec<Vec<Particle>> =
+            vec![vec![Particle::EMPTY; size as usize]; size as usize];
+
         let offset = ((size as i32) - (current_size as i32)) / 2;
-    
+
         // I want to make this feel like a "crop", so if a Particle is in the midddle, it will stay in the midle when you resize
         // Particle position is their position in the array, but now the array changed so we have to adapt it
         // Sadly this is not an in-place solution like using vector::resize, but this function is called very sparingly
@@ -448,19 +444,19 @@ impl SimulationState {
                 }
             }
         }
-    
+
         self.particles = new_particles;
-    
+
         let color_buffer_size = (size * size * 4) as usize;
-        self.color_buffer.resize(color_buffer_size, Default::default());
-    
+        self.color_buffer
+            .resize(color_buffer_size, Default::default());
+
         // As buffer is a linear vector and particles a 2d matrix, we can't be sure color buffer state is correct
         // So for now I will just repaint each particle
         self.repaint();
     }
-    
-    pub fn repaint(&mut self)
-    {        
+
+    pub fn repaint(&mut self) {
         for y in 0..self.height {
             for x in 0..self.width {
                 let particle = &self.particles[y][x];
