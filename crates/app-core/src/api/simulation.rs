@@ -4,10 +4,8 @@ pub struct Simulation {
     simulation_state: SimulationState,
     plugin_data: PluginData,
     order_scheme: OrderSchemes,
+    selected_plugin: u8,
 }
-
-// type PluginLoader<'a> =
-//     Result<libloading::Symbol<'a, fn() -> Vec<Box<dyn Plugin>>>, libloading::Error>;
 
 impl Simulation {
     pub fn new(width: usize, height: usize) -> Simulation {
@@ -15,7 +13,26 @@ impl Simulation {
             simulation_state: SimulationState::new(width, height),
             plugin_data: PluginData::new(),
             order_scheme: OrderSchemes::new(width, height),
+            selected_plugin: 1,
         }
+    }
+
+    pub fn get_selected_plugin(&self) -> u8 {
+        self.selected_plugin
+    }
+
+    pub fn select_next_plugin(&mut self)
+    {
+        self.selected_plugin = (self.selected_plugin + 1) % self.get_plugin_count() as u8;
+    }
+
+    pub fn select_previous_plugin(&mut self)
+    {
+        self.selected_plugin = (self.selected_plugin + self.get_plugin_count() as u8 - 1) % self.get_plugin_count() as u8;
+    }
+
+    pub fn set_selected_plugin(&mut self, selected_plugin: u8) -> () {
+        self.selected_plugin = selected_plugin;
     }
 
     pub fn get_particle_definitions(&self) -> &Vec<ParticleCommonData> {
@@ -41,10 +58,6 @@ impl Simulation {
         );
     }
 
-    // pub fn draw(&mut self) -> () {
-    //     self.simulation_state.draw();
-    // }
-
     pub fn get_buffer(&self) -> &[u8] {
         self.simulation_state.get_buffer()
     }
@@ -57,24 +70,12 @@ impl Simulation {
         Ok(&self.simulation_state.get_particle_name(id))
     }
 
-    pub fn get_particle_hide_in_ui(&self, id: usize) -> Result<bool, String> {
-        if id >= self.get_plugin_count() {
-            return Err("Particle with id ".to_string() + &id.to_string() + " not found");
-        }
-
-        Ok(self.simulation_state.get_particle_definitions()[id].hide_in_ui)
-    }
-
     pub fn get_particle_color(&self, id: usize) -> Result<&[u8; 4], String> {
         if id >= self.get_plugin_count() {
             return Err("Particle with id ".to_string() + &id.to_string() + " not found");
         }
 
         Ok(&self.simulation_state.get_particle_color(id))
-    }
-
-    pub fn notify_plugins_of_change(&self) -> () {
-        
     }
 
     pub fn add_plugin(&mut self, plugin: Box<dyn Plugin>) -> () {
@@ -102,6 +103,11 @@ impl Simulation {
     pub fn resize(&mut self, size: u32) -> () {
         self.simulation_state.resize(size);
         self.order_scheme = OrderSchemes::new(self.get_width(), self.get_height());
+    }
+
+    pub fn set_selected_particle(&mut self, x: usize, y: usize) -> () {
+        self.simulation_state
+            .set_particle_at_by_id(x, y, self.selected_plugin.into());
     }
 
     pub fn set_particle(&mut self, x: usize, y: usize, particle: Particle) -> () {

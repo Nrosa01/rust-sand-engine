@@ -16,7 +16,6 @@ pub struct PluginResult {
     pub color: Color,
     pub alpha: Vec2,
     pub extra: Vec2,
-    pub hidden_in_ui: bool,
 }
 
 impl Default for PluginResult {
@@ -26,7 +25,6 @@ impl Default for PluginResult {
             color: Color::NOT_BLACK,
             alpha: Vec2 { x: 0.9, y: 1.0 },
             extra: Vec2 { x: 0.0, y: 0.0 },
-            hidden_in_ui: false,
         }
     }
 }
@@ -40,7 +38,6 @@ impl From<PluginResult> for ParticleCommonData {
             rand_alpha_max: (plugin_result.alpha.y * FROM_NORMALIZED_TO_COLOR) as u8,
             rand_extra_min: (plugin_result.extra.x * FROM_NORMALIZED_TO_COLOR) as u8,
             rand_extra_max: (plugin_result.extra.y * FROM_NORMALIZED_TO_COLOR) as u8,
-            hide_in_ui: plugin_result.hidden_in_ui,
         }
     }
 }
@@ -67,7 +64,6 @@ pub struct ParticleCommonData {
     pub rand_alpha_max: u8,
     pub rand_extra_min: u8,
     pub rand_extra_max: u8,
-    pub hide_in_ui: bool,
 }
 
 pub struct PluginData {

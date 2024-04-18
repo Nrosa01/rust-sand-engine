@@ -94,7 +94,6 @@ impl SimulationState {
             rand_alpha_max: 0,
             rand_extra_min: 0,
             rand_extra_max: 0,
-            hide_in_ui: false,
         });
 
         state

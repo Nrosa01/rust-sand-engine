@@ -15,9 +15,9 @@ pub struct JSPlugin
 
 impl JSPlugin
 {
-    pub fn new(json: String) -> Result<JSPlugin, String>
+    pub fn new(json: &str) -> Result<JSPlugin, String>
     {
-        let json_result = json::parse(&json);
+        let json_result = json::parse(json);
 
         match json_result
         {
@@ -58,7 +58,6 @@ impl Plugin for JSPlugin
             color: self.plugin_data.color,
             extra: self.plugin_data.extra,
             alpha: self.plugin_data.alpha,
-            hidden_in_ui: self.plugin_data.hidden_in_ui,
         }
     }
 

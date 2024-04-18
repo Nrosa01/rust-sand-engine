@@ -71,7 +71,6 @@ pub fn to_plugin_result(json: &JsonValue) -> Result<PluginResult, String> {
     let color = get_color(&json["color"]);
     let alpha = get_alpha(&json["alpha"]);
     let extra = get_extra(&json["extra"]);
-    let hidden_in_ui = json["hidden_in_ui"].as_bool().unwrap_or(false); // Optional, default false
 
     if json["color"].is_empty() || json["color"].is_null() {
         return Err("color was empty or null".to_string());
@@ -82,7 +81,6 @@ pub fn to_plugin_result(json: &JsonValue) -> Result<PluginResult, String> {
         color: color.into(),
         alpha: alpha,
         extra: extra,
-        hidden_in_ui: hidden_in_ui,
     })
 }
 

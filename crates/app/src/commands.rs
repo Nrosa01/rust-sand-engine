@@ -1,11 +1,15 @@
 use std::collections::VecDeque;
 
+use app_core::Simulation;
+
 #[allow(unused)]
 pub enum Command {
     NewPlugin(String),
     Debug((String, f32)),
     CanvasSize(u32),
     Pause(bool),
+    ParticleSelected(u8),
+    SimulationMethod(Box<dyn Fn(&mut Simulation)>),
     Clear,
 }
 
