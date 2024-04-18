@@ -33,7 +33,7 @@ impl Particle {
         extra: 0,
     };
 
-    pub(crate) const INVALID: Particle = Particle {
+    pub const INVALID: Particle = Particle {
         id: u8::MAX,
         clock: 0,
         light: 255,

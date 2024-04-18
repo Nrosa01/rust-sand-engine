@@ -55,6 +55,12 @@ impl Actions {
             },
             Actions::ChangeInto { direction, r#type } => {
                 let particle_id = r#type.get_particle_id(api) as u8;
+
+                // As the particle is invalid, all this block is invalid
+                if particle_id == Particle::INVALID.id {
+                    return Box::new(|_, _, _| ());
+                }
+
                 let new_particle = api.new_particle(particle_id);
 
                 match direction {
