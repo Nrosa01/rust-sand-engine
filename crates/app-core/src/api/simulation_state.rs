@@ -371,8 +371,8 @@ impl SimulationState {
 
                 self.current_x = x;
                 self.current_y = y;
-                let current_particle = &mut self.particles[y][x];
-                if current_particle.id == Particle::EMPTY.id || current_particle.clock != self.clock
+                let current_particle = self.particles[y][x];
+                if current_particle.clock != self.clock
                 {
                     continue;
                 }

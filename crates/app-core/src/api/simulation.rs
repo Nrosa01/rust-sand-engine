@@ -80,6 +80,8 @@ impl Simulation {
 
     pub fn add_plugin(&mut self, plugin: Box<dyn Plugin>) -> () {
         let mut plugin = plugin;
+
+        // The simulation state returns the id of the particle definition if it already exists
         let id = self.simulation_state.add_or_replace_particle_definition(plugin.register().into());
 
         match id
