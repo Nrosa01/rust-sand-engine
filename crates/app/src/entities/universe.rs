@@ -1,4 +1,8 @@
+#[cfg(target_family = "wasm")]
+use egui_macroquad::macroquad::texture::Texture2D;
+#[cfg(not(target_family = "wasm"))]
 use egui_macroquad::{egui, macroquad::texture::Texture2D};
+
 use js_plugin::plugins::JSPlugin;
 
 use crate::*;
@@ -76,6 +80,7 @@ impl Entity for Universe {
                 match plugin {
                     Ok(plugin) => {
                         self.simulation.add_plugin(Box::new(plugin));
+                        push_command(Command::NewBackgroundColor(*self.simulation.get_particle_color(0).unwrap()));
                     }
                     Err(error) => {
                         println!("Error loading plugin: {}", error);
@@ -116,7 +121,8 @@ impl Entity for Universe {
     }
 
     fn draw(&self) {
-        draw_simulation(&self.texture, &self.simulation.get_buffer());
+        let clear_color = self.simulation.get_particle_color(0).unwrap_or(&[0,0,0,0]);
+        draw_simulation(&self.texture, &self.simulation.get_buffer(), (*clear_color).into());
     }
 
     #[cfg(not(target_family = "wasm"))]
@@ -147,7 +153,7 @@ fn resize_texture(texture: &mut Texture2D, width: u32, height: u32, buffer: &[u8
     texture.texture.resize(ctx, width, height, Some(buffer));
 }
 
-fn draw_simulation(texture: &Texture2D, bytes: &[u8]) {
+fn draw_simulation(texture: &Texture2D, bytes: &[u8], clear_color: Color) {
     let raw = texture.raw_miniquad_texture_handle();
     let ctx = unsafe { get_internal_gl().quad_context };
     raw.update(ctx, bytes);
@@ -163,7 +169,7 @@ fn draw_simulation(texture: &Texture2D, bytes: &[u8]) {
         pos_y,
         dest_size,
         dest_size,
-        Color::from_hex(0x12212b),
+        clear_color,
     );
 
     // Draw the texture

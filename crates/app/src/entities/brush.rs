@@ -1,5 +1,5 @@
 // use egui_macroquad::macroquad::{experimental::camera::mouse, input::{is_mouse_button_down, mouse_position, mouse_wheel}, window::{screen_height, screen_width}};
-use egui_macroquad::macroquad::{input::*, shapes::draw_circle_lines, window::*};
+use egui_macroquad::macroquad::{color::{hsl_to_rgb, rgb_to_hsl, Color, WHITE}, input::*, shapes::draw_circle_lines, window::*};
 
 use crate::{push_command, Command, Entity, WINDOW_WIDTH};
 
@@ -16,6 +16,7 @@ fn mouse_pos_to_square(width: usize, height: usize) -> (isize, isize) {
 pub struct Brush{
     radius: isize,
     mouse_captured: bool,
+    brush_color: Color
 }
 
 impl Brush{
@@ -23,11 +24,28 @@ impl Brush{
         Brush{
             radius: 40,
             mouse_captured: false,
+            brush_color: WHITE
         }
     }
 }
 
 impl Entity for Brush{
+    fn receive_command(&mut self, command: &Command) {
+        match command
+        {
+            Command::NewBackgroundColor(new_color) => 
+            {
+                // We are inverting the lightness of the color based on the new background color
+                let new_color: Color = (*new_color).into();
+                let mut hsl = rgb_to_hsl(new_color);
+                hsl.2 = 1.0 - hsl.2;
+                let rgb = hsl_to_rgb(hsl.0, hsl.1, hsl.2);
+                self.brush_color = rgb;
+            },
+            _ => {}
+        }
+    }
+
     fn handle_input(&mut self){
         let mouse_wheel = mouse_wheel().1;
         if mouse_wheel != 0.0 {
@@ -80,7 +98,7 @@ impl Entity for Brush{
     fn draw(&self) {
         if !self.mouse_captured {
             let (mouse_x, mouse_y) = mouse_position();
-            draw_circle_lines(mouse_x, mouse_y, self.radius as f32, 1.0, egui_macroquad::macroquad::color::WHITE);
+            draw_circle_lines(mouse_x, mouse_y, self.radius as f32, 1.0, self.brush_color);
         }
     }
 

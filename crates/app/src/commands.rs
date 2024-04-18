@@ -10,6 +10,7 @@ pub enum Command {
     Pause(bool),
     ParticleSelected(u8),
     SimulationMethod(Box<dyn Fn(&mut Simulation)>),
+    NewBackgroundColor([u8; 4]),
     Clear,
 }
 

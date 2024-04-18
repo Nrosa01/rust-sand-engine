@@ -88,6 +88,8 @@ impl Simulation {
         {
             Some(id) => {
                 self.plugin_data.plugins[id] = plugin;
+                // Maybe it was just a color change
+                self.simulation_state.repaint();
             },
             None => {
                 self.plugin_data.plugins.push(plugin);
