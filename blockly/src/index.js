@@ -17,6 +17,8 @@ import { save, load } from './serialization';
 import { toolbox } from './toolbox';
 import './index.css';
 
+import './renderers/renderer.js';
+
 // Register the blocks and generator with Blockly
 Blockly.common.defineBlocks(blocks);
 
@@ -25,7 +27,10 @@ Blockly.common.defineBlocks(blocks);
 const codeDiv = document.getElementById('generatedCode').firstChild;
 
 const blocklyDiv = document.getElementById('blocklyDiv');
-const ws = Blockly.inject(blocklyDiv, { toolbox });
+const ws = Blockly.inject(blocklyDiv, {
+  renderer: 'custom_renderer',
+  toolbox,
+});
 
 // This function resets the code div and shows the
 // generated code from the workspace.
@@ -38,7 +43,7 @@ const runCode = () => {
 // Load the initial state from storage and run the code.
 // this messes up code generation, so I keep it commented out
 //load(ws)
-runCode();
+//runCode();
 
 // Every time the workspace changes state, save the changes to storage.
 ws.addChangeListener((e) => {

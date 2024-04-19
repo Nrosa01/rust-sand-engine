@@ -44,9 +44,9 @@ Blockly.Blocks['particle_base'] = {
       .appendField(" Alpha: ")
       .appendField(new FieldSlider(1, 0, 1, 0.1, validator_min), "MIN_ALPHA")
       .appendField(new FieldSlider(1, 0, 1, 0.1, validator_max), "MAX_ALPHA");
+    this.appendStatementInput("THEN")
 
 
-    this.setNextStatement(true, null);
     this.setInputsInline(true);
     this.setDeletable(false);
     this.setMovable(true);
@@ -75,10 +75,6 @@ Blockly.Blocks['custom_input_color'] = {
   }
 };
 
-Blockly.Blocks['is_equal'] = {
-
-}
-
 Blockly.Blocks['test_field_slider'] = {
   init: function () {
     this.appendDummyInput()
@@ -88,6 +84,121 @@ Blockly.Blocks['test_field_slider'] = {
 };
 
 Blockly.defineBlocksWithJsonArray([
+
+]);
+
+
+// Blockly.Blocks['cell'] = {
+//   init: function () {
+//     this.appendDummyInput()
+//       .appendField("Transformation:")
+//       .appendField(new Blockly.FieldDropdown([
+//         ["up", "up"],
+//         ["down", "down"],
+//         ["left", "left"],
+//         ["right", "right"],
+//         ["upleft", "upleft"],
+//         ["upright", "upright"],
+//         ["downleft", "downleft"],
+//         ["downright", "downright"]
+//       ]), "TRANSFORMATION");
+//     this.setOutput(true, "Vector");
+//     this.setColour(230);
+//     this.setTooltip("");
+//     this.setHelpUrl("");
+//   }
+// };
+
+
+
+var transformationOptions = [
+  ["up", "up"],
+  ["down", "down"],
+  ["left", "left"],
+  ["right", "right"],
+  ["upleft", "upleft"],
+  ["upright", "upright"],
+  ["downleft", "downleft"],
+  ["downright", "downright"]
+];
+
+//placeholder
+var particlesOptions = [
+  ["empty", "empty"],
+  ["sand", "sand"],
+  ["water", "water"],
+  ["stone", "stone"],
+
+];
+export const blocks = Blockly.common.createBlockDefinitionsFromJsonArray([
+  {
+    type: "cell",
+    message0: "%1",
+    args0: [
+      {
+        type: "field_dropdown",
+        name: "TRANSFORMATION",
+        options: transformationOptions
+      }
+
+    ],
+    output: "Vector",
+    colour: 230,
+  },
+  {
+    type: "particle",
+    message0: "%1",
+    args0: [
+      //IMPORTANT
+      //this will need to fetch other particles names in order to work
+      //for the time being i will just use a list of names of particles for testing
+      {
+        type: "field_dropdown",
+        name: "PARTICLE",
+        options: particlesOptions
+      }
+
+    ],
+    output: "Particle",
+    colour: 230,
+  },
+  {
+    type: "move",
+    message0: "move %1",
+    args0: [
+      {
+        "type": "input_value",
+        "name": "OTHER",
+        "check": "Vector"
+      },
+
+    ],
+    inputsInline: true,
+    previousStatement: true,
+    nextStatement: true,
+    colour: 160,
+  },
+  {
+    type: "is_equal",
+    message0: "%1 is %2",
+    args0: [
+      {
+        type: "input_value",
+        name: "DIRECTION",
+        check: "Vector"
+      },
+      {
+        type: "input_value",
+        name: "TYPE_PARTICLE",
+        check: "Particle"
+      },
+    ],
+    inputsInline: true,
+
+
+    colour: 160,
+    output: "Boolean"
+  },
   {
     type: "if",
     message0: "if %1 %2",
@@ -96,7 +207,7 @@ Blockly.defineBlocksWithJsonArray([
       {
         type: "input_value",
         name: "CONDITION",
-        check: "Boolean",
+        check: "Boolean"
       },
       {
         type: "input_statement",
@@ -109,14 +220,14 @@ Blockly.defineBlocksWithJsonArray([
     colour: 330,
 
   },
-]);
-
-export const blocks = Blockly.common.createBlockDefinitionsFromJsonArray([
 
   {
     type: "update",
-    message0: "update logic %1",
+    message0: "update logic %1 %2",
     args0: [
+      {
+        type: "input_dummy"
+      },
       {
         type: "input_statement",
         name: "THEN",
@@ -126,29 +237,20 @@ export const blocks = Blockly.common.createBlockDefinitionsFromJsonArray([
     inputsInline: true,
     previousStatement: null,
     nextStatement: null,
+    colour: 100
   },
   {
     type: "transformation",
-    message0: "type of transformation %1 %2 %3",
+    message0: "random transformation %1 %2 %3",
     args0: [
       {
         type: "field_dropdown",
         name: "TRANSFORMATION",
         options: [
-          // [
-          //   "translate",
-          //   "translate"
-          // ],
-          // [
-          //   "scale",
-          //   "scale"
-          // ],
-          // [
-          //   "rotate",
-          //   "rotate"
+
           [
-            "randomTransformation",
-            "randomTransformation"
+            "HorizontalReflection",
+            "HorizontalReflection"
           ]
         ]
       },
@@ -169,42 +271,42 @@ export const blocks = Blockly.common.createBlockDefinitionsFromJsonArray([
 
   //#region tutorial
   {
-    "type": "object",
-    "message0": "{ %1 %2 }",
-    "args0": [
+    type: "object",
+    message0: "{ %1 %2 }",
+    args0: [
       {
-        "type": "input_dummy"
+        type: "input_dummy"
       },
       {
-        "type": "input_statement",
-        "name": "MEMBERS"
+        type: "input_statement",
+        name: "MEMBERS"
       }
     ],
-    "output": null,
-    "colour": 230,
+    output: null,
+    colour: 230,
   },
   {
-    "type": "member",
-    "message0": "%1 %2 %3",
-    "args0": [
+    type: "member",
+    message0: "%1 %2 %3",
+    args0: [
       {
-        "type": "field_input",
-        "name": "MEMBER_NAME",
-        "text": ""
+        type: "field_input",
+        name: "MEMBER_NAME",
+        text: ""
       },
       {
-        "type": "field_label",
-        "name": "COLON",
-        "text": ":"
+        type: "field_label",
+        name: "COLON",
+        text: ":"
       },
       {
-        "type": "input_value",
-        "name": "MEMBER_VALUE"
+        type: "input_value",
+        name: "MEMBER_VALUE"
       }
     ],
-    "previousStatement": null,
-    "nextStatement": null,
-    "colour": 230,
+    previousStatement: null,
+    nextStatement: null,
+    colour: 230,
   }
   //#endregion
 

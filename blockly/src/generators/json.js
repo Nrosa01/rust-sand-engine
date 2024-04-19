@@ -92,11 +92,18 @@ jsonGenerator.forBlock['particle_base'] = function (block, generator) {
   const color = hexToRgb(block.getFieldValue('COLOR'));
   const min_alpha = block.getFieldValue('MIN_ALPHA');
   //const max_alpha = block.getFieldValue('MAX_ALPHA');
+
+  const statementMembers =
+    generator.statementToCode(block, 'THEN');
+
   const code =
-    `"name": "${nameValue}",  
+    `{
+"name": "${nameValue}",  
 "version": "1.0.0", 
 "color": [${color.r},${color.g}, ${color.b}],
-"alpha": [${min_alpha}, ${min_alpha}]`;
+"alpha": [${min_alpha}, ${min_alpha}]
+${statementMembers}
+}`;
   return code;
 };
 jsonGenerator.forBlock['custom_input_color'] = function (block, generator) {
@@ -112,11 +119,23 @@ jsonGenerator.forBlock['transformation'] = function (block, generator) {
   const statementMembers =
     generator.statementToCode(block, 'THEN');
 
-  const code =
-    `"action": ${action},
-"data":  {
-${statementMembers}
-}`;
+  const code = `"action": ${action},
+    "data": {
+    ${statementMembers}
+    }`;
+
   return code;
 
+};
+
+jsonGenerator.forBlock['update'] = function (block, generator) {
+  const statementMembers =
+    generator.statementToCode(block, 'THEN');
+  const code =
+    `"update": [
+    {
+    ${statementMembers}
+    }
+  ]`;
+  return code;
 };

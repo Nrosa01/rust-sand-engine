@@ -40,6 +40,45 @@ export const toolbox = {
         {
           'kind': 'block',
           'type': 'transformation'
+        },
+        {
+          'kind': 'block',
+          'type': 'update'
+        },
+        {
+          'kind': 'block',
+          'type': 'move',
+          'inputs': {
+            'OTHER': {
+              'shadow': {
+                'type': 'cell',
+              },
+            },
+          },
+        },
+        {
+          'kind': 'block',
+          'type': 'cell'
+        },
+        {
+          'kind': 'block',
+          'type': 'particle'
+        },
+        {
+          'kind': 'block',
+          'type': 'is_equal',
+          'inputs': {
+            'DIRECTION': {
+              'shadow': {
+                'type': 'cell',
+              },
+            },
+            'TYPE_PARTICLE': {
+              'shadow': {
+                'type': 'particle',
+              },
+            }
+          },
         }
       ]
     },
