@@ -57,7 +57,7 @@ pub extern "C" fn resize_simulation(data: sapp_jsutils::JsObject) {
             add_dbg((&format!("Resize command received with data: {}", size), 5.0));
         }
         Err(_) => {
-            add_dbg(("Resize command received with invalid data", 2.0));
+            add_dbg((&format!("Resize command received with data: {}", buffer), 2.0));
         }
     }
 }

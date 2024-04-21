@@ -28,4 +28,9 @@ impl Iterator for CustomRange {
             None
         }
     }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let len = (self.end - self.current).abs() as usize;
+        (len, Some(len))
+    }
 }

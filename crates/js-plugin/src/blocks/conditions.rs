@@ -1,15 +1,16 @@
+use self::numbers::ParticleType;
+
 use super::*;
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[serde(tag = "block", content = "data", rename_all = "camelCase")]
 #[rustfmt::skip]
 pub enum Conditions {
-    CheckTypeInDirection { direction: Direction, r#type: NumbersConstant }, // If particle at direction is of type X
-    CheckTypesInDirection { direction: Direction, types: Vec<NumbersConstant> }, // If particle at direction is of type X
+    CheckTypesInDirection { direction: Direction, types: Vec<ParticleType> }, // If particle at direction is of type X
     Not { block: Condition }, // Negates a block result, it's inverting a boolean
     And { block1: Condition, block2: Condition }, // Logical AND
     Or { block1: Condition, block2: Condition }, // Logical OR
-    IsTouching { r#type: NumbersConstant }, // Looks neighbour to see if it's of type X
+    IsTouching { r#type: Vec<ParticleType> }, // Looks neighbour to see if it's of type X
     OneInXChance { chance: NumberLiteral }, // Returns true one in a X chance, for example, if X is 3, it will return true 1/3 of the time
     IsEmpty { direction: Direction }, // Checks if a direction is empty
     CompareNumberEquality { block1: Number, block2: Number }, // Compares two blocks
@@ -28,24 +29,6 @@ impl Conditions {
     ) -> Box<dyn Fn(&JSPlugin, Particle, &mut ParticleApi) -> bool> {
         let block = self.clone();
         match block {
-            Conditions::CheckTypeInDirection { direction, r#type } => {
-                let particle_id = r#type.get_particle_id(api) as u8;
-
-                match direction {
-                    Direction::Constant(direction) => {
-                        let direction = direction;
-                        Box::new(move |plugin, particle, api| {
-                            let direction = api.get_transformation().transform(&direction);
-                            api.get_type(direction[0], direction[1]) == particle_id
-                        })
-                    }
-                    _ => Box::new(move |plugin, particle, api| {
-                        let direction = direction.get_direction(api);
-                        let direction = api.get_transformation().transform(&direction);
-                        api.get_type(direction[0], direction[1]) == particle_id
-                    }),
-                }
-            }
             Conditions::CheckTypesInDirection { direction, types } => {
                 let types = types
                     .iter()
@@ -55,7 +38,7 @@ impl Conditions {
                 // If the array is only one element, we can optimize it by taking it out.
                 if types.len() == 1 {
                     let particle_id = types[0];
-                    
+
                     match direction {
                         Direction::Constant(direction) => {
                             let direction = direction;
@@ -109,100 +92,66 @@ impl Conditions {
                 })
             }
             Conditions::IsTouching { r#type } => {
-                let r#type = r#type.get_particle_id(api) as u8;
+                let types = r#type
+                .iter()
+                .map(|particle| particle.get_particle_id(api) as u8)
+                .collect::<Vec<_>>();
 
-                Box::new(move |plugin, particle, api| {
-                    ParticleApi::NEIGHBORS
+                if types.len() == 1
+                {
+                    let r#type = types[0];
+                    
+                    Box::new(move |plugin, particle, api| {
+                        ParticleApi::NEIGHBORS
                         .iter()
                         .any(|(direction)| api.get_type(direction.x, direction.y) == r#type)
-                })
+                    })
+                }
+                else {
+                    Box::new(move |plugin, particle, api| {
+                        ParticleApi::NEIGHBORS
+                        .iter()
+                        .any(|(direction)| types.contains(&api.get_type(direction.x, direction.y)))
+                    })
+                }
             }
             Conditions::CompareNumberEquality { block1, block2 } => {
-                // I know this might look ugly but this is what peak performance looks like
-                // As number can be runtime or constant, I have to try all the combinations
-                // Sure I could just compute everything at runtime but the most function calls I can avoid the better
-
-                match (block1, block2) {
-                    (Number::NumbersRuntime(runtime1), Number::NumbersRuntime(runtime2)) => {
-                        Box::new(move |plugin, particle, api| {
-                            runtime1.to_number(api) == runtime2.to_number(api)
-                        })
-                    }
-                    (Number::NumbersRuntime(runtime1), Number::NumbersConstant(constant2)) => {
-                        let number2 = constant2.get_as_i32(api);
-                        Box::new(move |plugin, particle, api| runtime1.to_number(api) == number2)
-                    }
-                    (Number::NumbersConstant(constant1), Number::NumbersRuntime(runtime2)) => {
-                        let number1 = constant1.get_as_i32(api);
-                        Box::new(move |plugin, particle, api| number1 == runtime2.to_number(api))
-                    }
-                    (Number::NumbersConstant(constant1), Number::NumbersConstant(constant2)) => {
-                        let number1 = constant1.get_as_i32(api);
-                        let number2 = constant2.get_as_i32(api);
-                        let result = number1 == number2;
-                        Box::new(move |plugin, particle, api| result)
-                    }
-                }
+                Box::new(move |plugin, particle, api| 
+                {
+                    let number1 = block1.to_number(api);
+                    let number2 = block2.to_number(api);
+                    number1 == number2
+                })
             }
-            Conditions::CompareBiggerThan { block1, block2 } => match (block1, block2) {
-                (Number::NumbersRuntime(runtime1), Number::NumbersRuntime(runtime2)) => {
-                    Box::new(move |plugin, particle, api| {
-                        runtime1.to_number(api) > runtime2.to_number(api)
-                    })
-                }
-                (Number::NumbersRuntime(runtime1), Number::NumbersConstant(constant2)) => {
-                    let number2 = constant2.get_as_i32(api);
-                    Box::new(move |plugin, particle, api| runtime1.to_number(api) > number2)
-                }
-                (Number::NumbersConstant(constant1), Number::NumbersRuntime(runtime2)) => {
-                    let number1 = constant1.get_as_i32(api);
-                    Box::new(move |plugin, particle, api| number1 > runtime2.to_number(api))
-                }
-                (Number::NumbersConstant(constant1), Number::NumbersConstant(constant2)) => {
-                    let number1 = constant1.get_as_i32(api);
-                    let number2 = constant2.get_as_i32(api);
-                    let result = number1 > number2;
-                    Box::new(move |plugin, particle, api| result)
-                }
+            Conditions::CompareBiggerThan { block1, block2 } => {
+                Box::new(move |plugin, particle, api| {
+                    let number1 = block1.to_number(api);
+                    let number2 = block2.to_number(api);
+                    number1 > number2
+                })
             },
-            Conditions::CompareLessThan { block1, block2 } => match (block1, block2) {
-                (Number::NumbersRuntime(runtime1), Number::NumbersRuntime(runtime2)) => {
-                    Box::new(move |plugin, particle, api| {
-                        runtime1.to_number(api) < runtime2.to_number(api)
-                    })
-                }
-                (Number::NumbersRuntime(runtime1), Number::NumbersConstant(constant2)) => {
-                    let number2 = constant2.get_as_i32(api);
-                    Box::new(move |plugin, particle, api| runtime1.to_number(api) < number2)
-                }
-                (Number::NumbersConstant(constant1), Number::NumbersRuntime(runtime2)) => {
-                    let number1 = constant1.get_as_i32(api);
-                    Box::new(move |plugin, particle, api| number1 < runtime2.to_number(api))
-                }
-                (Number::NumbersConstant(constant1), Number::NumbersConstant(constant2)) => {
-                    let number1 = constant1.get_as_i32(api);
-                    let number2 = constant2.get_as_i32(api);
-                    let result = number1 < number2;
-                    Box::new(move |plugin, particle, api| result)
-                }
+            Conditions::CompareLessThan { block1, block2 } => {
+                Box::new(move |plugin, particle, api| {
+                    let number1 = block1.to_number(api);
+                    let number2 = block2.to_number(api);
+                    number1 < number2
+                })
             },
             Conditions::Boolean { value } => Box::new(move |plugin, particle, api| value),
-            Conditions::IsEmpty { direction } => {
-                match direction {
-                    Direction::Constant(direction) => {
-                        let direction = direction;
-                        Box::new(move |_, _, api| {
-                            let direction = api.get_transformation().transform(&direction);
-                            api.is_empty(direction[0], direction[1])
-                        })
-                    }
-                    _ => Box::new(move |_, _, api| {
-                        let direction = direction.get_direction(api);
+            Conditions::IsEmpty { direction } => match direction {
+                Direction::Constant(direction) => {
+                    let direction = direction;
+                    Box::new(move |_, _, api| {
                         let direction = api.get_transformation().transform(&direction);
                         api.is_empty(direction[0], direction[1])
-                    }),
+                    })
                 }
-            }
+                _ => Box::new(move |_, _, api| {
+                    let direction = direction.get_direction(api);
+                    let direction = api.get_transformation().transform(&direction);
+                    api.is_empty(direction[0], direction[1])
+                }),
+            },
             Conditions::OneInXChance { chance } => {
                 let chance = chance as i32;
                 Box::new(move |plugin, particle, api| {
