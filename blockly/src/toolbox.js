@@ -19,12 +19,12 @@ export const toolbox = {
     {
       "kind": "category",
       "name": "Particle",
+      
       "contents": [
         {
           'kind': 'block',
-          'type': 'particle_base'
+          'type': 'particle_base',
         },
-
         {
           'kind': 'block',
           'type': 'custom_input_color'
@@ -39,7 +39,7 @@ export const toolbox = {
         },
         {
           'kind': 'block',
-          'type': 'transformation'
+          'type': 'randomTransformation'
         },
         {
           'kind': 'block',
@@ -117,6 +117,10 @@ export const toolbox = {
           'kind': 'block',
           'type': 'lists_create_with'
         },
+        {
+          'kind': 'block',
+          'type': 'controls_if'
+        }
       ]
     }
     //#endregion

@@ -3,22 +3,14 @@ import * as Blockly from 'blockly';
 import { ColorWheelField } from "blockly-field-color-wheel";
 import { FieldSlider } from "@blockly/field-slider";
 
+import {PlusMinus} from '@blockly/block-plus-minus';
 
-// Custom validator to ensure VALUE1 <= VALUE2
-// function validateSliderValues(newValue) {
-//   var value1 = parseFloat(this.getSourceBlock().getFieldValue('MIN_ALPHA'));
-//   var value2 = parseFloat(this.getSourceBlock().getFieldValue('MAX_ALPHA'));
-
-//   // Ensure VALUE2 is not less than VALUE1
-//   if (this.name === 'MAX_ALPHA' && newValue < value1) {
-//     return value1;
-//   }
-
-//   return newValue;
-// }
 
 Blockly.Blocks['particle_base'] = {
   init: function () {
+    // if (globalState.workspace === undefined) return;
+    // const blocks = globalState.workspace.getAllBlocks();
+
     const validator_max = function (newValue) {
 
       var value_min = parseFloat(this.getSourceBlock().getFieldValue('MIN_ALPHA'));
@@ -48,11 +40,11 @@ Blockly.Blocks['particle_base'] = {
 
 
     this.setInputsInline(true);
-    this.setDeletable(false);
+    this.setDeletable(true);
     this.setMovable(true);
-
     this.setColour(160);
-
+    
+    this.hat = 'cap'; 
   }
 
 };
@@ -68,7 +60,6 @@ Blockly.Blocks['custom_input_color'] = {
       }),
         "COLOR")
 
-
     this.setOutput(true, null);
     this.setColour(160);
 
@@ -83,44 +74,6 @@ Blockly.Blocks['test_field_slider'] = {
   },
 };
 
-Blockly.defineBlocksWithJsonArray([
-
-]);
-
-
-// Blockly.Blocks['cell'] = {
-//   init: function () {
-//     this.appendDummyInput()
-//       .appendField("Transformation:")
-//       .appendField(new Blockly.FieldDropdown([
-//         ["up", "up"],
-//         ["down", "down"],
-//         ["left", "left"],
-//         ["right", "right"],
-//         ["upleft", "upleft"],
-//         ["upright", "upright"],
-//         ["downleft", "downleft"],
-//         ["downright", "downright"]
-//       ]), "TRANSFORMATION");
-//     this.setOutput(true, "Vector");
-//     this.setColour(230);
-//     this.setTooltip("");
-//     this.setHelpUrl("");
-//   }
-// };
-
-
-
-var transformationOptions = [
-  ["up", "up"],
-  ["down", "down"],
-  ["left", "left"],
-  ["right", "right"],
-  ["upleft", "upleft"],
-  ["upright", "upright"],
-  ["downleft", "downleft"],
-  ["downright", "downright"]
-];
 
 //placeholder
 var particlesOptions = [
@@ -130,6 +83,31 @@ var particlesOptions = [
   ["stone", "stone"],
 
 ];
+
+var transformationOptions = [
+  ["me", "HERE"],
+        ["➡ right", "RIGHT"],
+        ["⬅ left", "LEFT"],
+        ["⬆ up", "UP"],
+        ["⬇ down", "DOWN"],
+        ["⬈ NE ", "NE"],
+        ["⬊ SE", "SE"],
+        ["⬋ SW", "SW"],
+        ["⬉ NW", "NW"],
+        ["? Neighbor", "RAND"],
+        ["Arrow Keys", "KB"],
+];
+
+// Blockly.Extensions.registerMutator(
+//   "if_else_mutator",
+//   {
+    
+//   }
+
+// );
+
+
+
 export const blocks = Blockly.common.createBlockDefinitionsFromJsonArray([
   {
     type: "cell",
@@ -159,8 +137,10 @@ export const blocks = Blockly.common.createBlockDefinitionsFromJsonArray([
       }
 
     ],
+    
     output: "Particle",
     colour: 230,
+    
   },
   {
     type: "move",
@@ -177,6 +157,7 @@ export const blocks = Blockly.common.createBlockDefinitionsFromJsonArray([
     previousStatement: true,
     nextStatement: true,
     colour: 160,
+    
   },
   {
     type: "is_equal",
@@ -194,8 +175,6 @@ export const blocks = Blockly.common.createBlockDefinitionsFromJsonArray([
       },
     ],
     inputsInline: true,
-
-
     colour: 160,
     output: "Boolean"
   },
@@ -213,14 +192,16 @@ export const blocks = Blockly.common.createBlockDefinitionsFromJsonArray([
         type: "input_statement",
         name: "THEN",
       },
+      
     ],
     inputsInline: true,
     previousStatement: null,
     nextStatement: null,
     colour: 330,
-
+    
+    //mutator: "if_mutator"
   },
-
+   
   {
     type: "update",
     message0: "update logic %1 %2",
@@ -240,9 +221,10 @@ export const blocks = Blockly.common.createBlockDefinitionsFromJsonArray([
     colour: 100
   },
   {
-    type: "transformation",
+    type: "randomTransformation",
     message0: "random transformation %1 %2 %3",
     args0: [
+
       {
         type: "field_dropdown",
         name: "TRANSFORMATION",

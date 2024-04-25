@@ -41,16 +41,17 @@ const runCode = () => {
 };
 
 // Load the initial state from storage and run the code.
-// this messes up code generation, so I keep it commented out
-//load(ws)
-//runCode();
+//this messes up code generation, so I keep it commented out
+//out of the blue it works xd, i will keep the comment in case it randomly stops working again
+load(ws)
+runCode();
 
 // Every time the workspace changes state, save the changes to storage.
 ws.addChangeListener((e) => {
   // UI events are things like scrolling, zooming, etc.
   // No need to save after one of these.
   if (e.isUiEvent) return;
-  //save(ws);
+  save(ws);
 });
 
 

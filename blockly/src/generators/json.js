@@ -91,7 +91,7 @@ jsonGenerator.forBlock['particle_base'] = function (block, generator) {
   const nameValue = block.getFieldValue('NAME');
   const color = hexToRgb(block.getFieldValue('COLOR'));
   const min_alpha = block.getFieldValue('MIN_ALPHA');
-  //const max_alpha = block.getFieldValue('MAX_ALPHA');
+  const max_alpha = block.getFieldValue('MAX_ALPHA');
 
   const statementMembers =
     generator.statementToCode(block, 'THEN');
@@ -101,7 +101,7 @@ jsonGenerator.forBlock['particle_base'] = function (block, generator) {
 "name": "${nameValue}",  
 "version": "1.0.0", 
 "color": [${color.r},${color.g}, ${color.b}],
-"alpha": [${min_alpha}, ${min_alpha}]
+"alpha": [${min_alpha}, ${max_alpha}],
 ${statementMembers}
 }`;
   return code;
@@ -112,17 +112,19 @@ jsonGenerator.forBlock['custom_input_color'] = function (block, generator) {
   return code;
 };
 
-jsonGenerator.forBlock['transformation'] = function (block, generator) {
+jsonGenerator.forBlock['randomTransformation'] = function (block, generator) {
 
   const action = block.getFieldValue('TRANSFORMATION');
 
   const statementMembers =
     generator.statementToCode(block, 'THEN');
 
-  const code = `"action": ${action},
-    "data": {
-    ${statementMembers}
-    }`;
+  const code = 
+`"action": "randomTransformation",
+"data": {
+  "transformation": "${action}",
+${statementMembers}
+  }`;
 
   return code;
 
@@ -133,9 +135,142 @@ jsonGenerator.forBlock['update'] = function (block, generator) {
     generator.statementToCode(block, 'THEN');
   const code =
     `"update": [
-    {
-    ${statementMembers}
-    }
-  ]`;
+  {
+${statementMembers}
+  }
+]`;
   return code;
 };
+
+
+jsonGenerator.forBlock['if'] = function (block, generator) {
+  const statementMembers =
+    generator.statementToCode(block, 'THEN');
+    const condition =
+    generator.statementToCode(block, 'CONDITION');
+  const code =
+`"block": {
+  "action": "if",
+  "data": {
+  ${condition}
+  ${statementMembers}
+  }
+}`;
+  return code;
+
+};
+var lastBlock = null;
+jsonGenerator.forBlock['controls_if'] = function (block, generator) {
+  // Assuming 'block' is your Blockly block
+  console.log(lastBlock == block); 
+  lastBlock = block;
+// if (mutator) {
+//     // Access the value of elseifCount_
+//     const elseifCount = mutator.getFieldValue('elseifCount_');
+//     console.log('Number of elseifs:', elseifCount);
+// }
+
+  const statementMembers =
+  generator.statementToCode(block, 'DO0');
+  const condition =
+  generator.statementToCode(block, 'IF0');
+const code =
+`"block": {
+"action": "if",
+"data": {
+${condition}
+${statementMembers}
+}
+}`;
+return code;
+}
+
+
+//IMPORTANT:
+//get this out of here my man
+const directions = {
+  "up": [0, 1],
+  "down": [0, -1],
+  "left": [-1, 0],
+  "right": [1, 0],
+  "upleft": [-1, 1],
+  "upright": [1, 1],
+  "downleft": [-1, -1],
+  "downright": [1, -1]
+};
+
+
+
+jsonGenerator.forBlock['cell'] = function (block){
+  const direction = block.getFieldValue('TRANSFORMATION');
+  return [direction, Order.ATOMIC]
+}
+
+
+jsonGenerator.forBlock['particle'] = function (block){
+  const particle = block.getFieldValue('PARTICLE');
+  return [particle, Order.ATOMIC]
+}
+
+/*
+"condition": {
+  "block": "checkTypesInDirection",
+  "data": {
+    "direction": { "direction": "constant", "data": [0, -1] },
+    "types": [
+      { "constant_number": "particleIdFromName", "data": "empty" },
+      { "constant_number": "particleIdFromName", "data": "water" }
+    ]
+  }
+},
+*/
+
+jsonGenerator.forBlock['is_equal'] = function (block, generator) {
+  
+  // const direction = block.getFieldValue('DIRECTION');
+  // const type_particle = block.getFieldValue('TYPE_PARTICLE');
+
+  const direction = generator.valueToCode(block, 'DIRECTION', Order.ATOMIC);
+  const type_particle = generator.valueToCode(block, 'TYPE_PARTICLE', Order.ATOMIC);
+
+  console.log(direction);
+  //result code
+  const statementMembers =
+  generator.statementToCode(block, 'THEN');
+
+//TODO: Create a for that writes the types content depending on the number of types
+//gotta create or block before
+
+  const code = 
+`"condition": {
+    "block": "checkTypesInDirection",
+    "data": {
+      "direction": { "direction": "constant", "data": [${directions[direction]}] },
+      "types": [
+        { "constant_number": "particleIdFromName", "data": "${type_particle}" }
+      ]
+    }
+  },${statementMembers}`
+
+  return code;
+
+};
+/*
+"result": {
+  "action": "swap",
+  "data": {
+    "direction": { "direction": "constant", "data": [0, -1] }
+  }
+},
+*/
+jsonGenerator.forBlock['move'] = function (block, generator) {
+  const direction = generator.valueToCode(block, 'OTHER', Order.ATOMIC);
+  const code = `"result": {
+    "action": "swap",
+    "data": {
+      "direction": { "direction": "constant", "data": [${directions[direction]}] }
+    }
+  }` ;
+
+  return code
+}
