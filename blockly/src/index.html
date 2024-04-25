@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+ <html>
+   <head>
+     <meta charset="utf-8" />
+     <title>Blockly Sample App</title>
+   </head>
+   <body>
+    <div id="pageContainer">
+      <div id="outputPane">
+        <pre id="generatedCode"><code></code></pre>
+        <div id="output"></div>
+      </div>
+      <div id="blocklyDiv"></div>
+     
+    </div>
+    <script>
+      // Initialize Blockly
+      Blockly.inject('blocklyDiv', { renderer: 'Zelos' });
+    </script>
+   </body>
+ </html>

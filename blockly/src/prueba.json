@@ -1,0 +1,34 @@
+{
+    "name": "Sand",
+    "version": "1.0.0",
+    "color": [127,218, 180],
+    "alpha": [1, 1],
+      "update": [
+        {
+        "action": "randomTransformation",
+        "data": {
+          "transformation": "HorizontalReflection",
+          "block": {
+            "action": "if",
+            "data": {
+              "condition": {
+                "block": "checkTypesInDirection",
+                "data": {
+                  "direction": { "direction": "constant", "data": [0,1] },
+                  "types": [
+                    { "constant_number": "particleIdFromName", "data": "empty" }
+                  ]
+                }
+              },
+              "result": {
+                "action": "swap",
+                "data": {
+                  "direction": { "direction": "constant", "data": [0,-1] }
+                }
+              }
+            }
+            }
+            }
+        }
+    ]
+}
