@@ -1,0 +1,3 @@
+[submodule "web-pixel-creator"]
+	path = web-pixel-creator
+	url = https://github.com/Nrosa01/pixel-creator

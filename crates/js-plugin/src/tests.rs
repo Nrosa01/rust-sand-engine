@@ -2,18 +2,7 @@
 mod tests {
     use app_core::Transformation;
 
-    use crate::blocks::{Actions, Conditions, Direction, Number, NumbersConstant, NumbersRuntime, TransformationInternal};
-
-    #[test]
-    #[rustfmt::skip]
-    fn test_block_serialization_and_deserialization() {
-        let block1 = Conditions::CompareNumberEquality { block1: Number::NumbersConstant(NumbersConstant::ParticleIdFromName("Water".to_string())), block2: Number::NumbersRuntime(NumbersRuntime::NumberOfXTouching(NumbersConstant::ParticleType(1))) };
-        let serialized = serde_json::to_string(&block1).unwrap();
-        let deserialized: Conditions = serde_json::from_str(&serialized).unwrap();
-
-        std::fs::write("test.json", serialized).unwrap();
-        assert_eq!(block1, deserialized);
-    }
+    use crate::blocks::{Actions, Conditions, Direction, ParticleType, TransformationInternal};
 
     #[test]
     #[rustfmt::skip]
@@ -24,17 +13,17 @@ mod tests {
                 condition:
                     Conditions::CheckTypesInDirection { 
                     direction: Direction::Constant([0, -1]), 
-                    types: vec![NumbersConstant::ParticleIdFromName("empty".to_string()), NumbersConstant::ParticleIdFromName("water".to_string())] }, 
+                    types: vec![ParticleType::FromName("empty".to_string()), ParticleType::FromName("water".to_string())] }, 
                 result: Box::new(Actions::Swap { direction: Direction::Constant([0, -1]) }), 
                 r#else: Some(Box::new(Actions::If {
                     condition: Conditions::CheckTypesInDirection { 
                         direction: Direction::Constant([-1, -1]), 
-                        types: vec![NumbersConstant::ParticleIdFromName("empty".to_string()), NumbersConstant::ParticleIdFromName("water".to_string())] }, 
+                        types: vec![ParticleType::FromName("empty".to_string()), ParticleType::FromName("water".to_string())] }, 
                     result: Box::new(Actions::Swap { direction: Direction::Constant([-1, -1]) }), 
                     r#else: Some(Box::new(Actions::If {
                         condition: Conditions::CheckTypesInDirection { 
                             direction: Direction::Constant([1, -1]), 
-                            types: vec![NumbersConstant::ParticleIdFromName("empty".to_string()), NumbersConstant::ParticleIdFromName("water".to_string())] }, 
+                            types: vec![ParticleType::FromName("empty".to_string()), ParticleType::FromName("water".to_string())] }, 
                         result: Box::new(Actions::Swap { direction: Direction::Constant([1, -1]) }), 
                         r#else: None
                     }))
@@ -74,8 +63,8 @@ mod tests {
                 condition: Conditions::CheckTypesInDirection {
                     direction: Direction::Constant([0, -1]),
                     types: vec![
-                        NumbersConstant::ParticleIdFromName("empty".to_string()),
-                        NumbersConstant::ParticleIdFromName("water".to_string()),
+                        ParticleType::FromName("empty".to_string()),
+                        ParticleType::FromName("water".to_string()),
                     ],
                 },
                 result: Box::new(Actions::Swap { direction: Direction::Constant([0, -1]) }),
@@ -83,8 +72,8 @@ mod tests {
                     condition: Conditions::CheckTypesInDirection {
                         direction: Direction::Constant([-1, -1]),
                         types: vec![
-                            NumbersConstant::ParticleIdFromName("empty".to_string()),
-                            NumbersConstant::ParticleIdFromName("water".to_string()),
+                            ParticleType::FromName("empty".to_string()),
+                            ParticleType::FromName("water".to_string()),
                         ],
                     },
                     result: Box::new(Actions::Swap {
@@ -94,8 +83,8 @@ mod tests {
                         condition: Conditions::CheckTypesInDirection {
                             direction: Direction::Constant([1, -1]),
                             types: vec![
-                                NumbersConstant::ParticleIdFromName("empty".to_string()),
-                                NumbersConstant::ParticleIdFromName("water".to_string()),
+                                ParticleType::FromName("empty".to_string()),
+                                ParticleType::FromName("water".to_string()),
                             ],
                         },
                         result: Box::new(Actions::Swap { direction: Direction::Constant([1, -1]) }),

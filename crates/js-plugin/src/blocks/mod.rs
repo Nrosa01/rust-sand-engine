@@ -19,6 +19,5 @@ use crate::plugins::JSPlugin;
 
 type Action = Box<Actions>;
 type Condition = Box<Conditions>;
-type ParticleType = u8;
 type NumberLiteral = usize;
 
