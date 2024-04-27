@@ -89,10 +89,17 @@ pub fn build_update_func(json: &JsonValue, api: Option<&ParticleApi>) -> Result<
 {
     if api.is_none()
     {
-        return Ok(Box::new(|_, _, _| {}));
+        return Err("API is none".to_string());
     }
     
-    let update_str = json["update"].to_string();
+    let update_str = &json["update"];
+
+    if update_str.is_empty() || update_str.is_null() {
+        return Err("update was empty or null".to_string());
+    }
+
+    let update_str = update_str.to_string();
+
     let blocks: Vec<Actions> = serde_json::from_str(&update_str).map_err(|err| err.to_string())?;
 
     let func_vec = blocks

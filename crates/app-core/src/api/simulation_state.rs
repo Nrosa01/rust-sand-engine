@@ -159,6 +159,7 @@ impl SimulationState {
             .unwrap_or(&Particle::INVALID.id)
     }
 
+    // Returns Some(id) if particle was updated None if it was added
     pub(crate) fn add_or_replace_particle_definition(&mut self, particle_definition: ParticleCommonData) -> Option<usize>{
         let name = particle_definition.name.to_lowercase();
 
