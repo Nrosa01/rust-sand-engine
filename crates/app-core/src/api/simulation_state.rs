@@ -221,7 +221,7 @@ impl SimulationState {
     }
 
     pub fn get(&self, x: i32, y: i32) -> Particle {
-        let local_x = (self.current_x as i32 - x) as usize;
+        let local_x = (self.current_x as i32 + x) as usize;
         let local_y = (self.current_y as i32 - y) as usize;
 
         if !self.is_inside_at(local_x, local_y) {
@@ -278,7 +278,7 @@ impl SimulationState {
     }
 
     pub fn set(&mut self, x: i32, y: i32, particle: Particle) -> bool {
-        let local_x = (self.current_x as i32 - x) as usize;
+        let local_x = (self.current_x as i32 + x) as usize;
         let local_y = (self.current_y as i32 - y) as usize;
 
         if !self.is_inside_at(local_x, local_y) {
@@ -290,14 +290,14 @@ impl SimulationState {
     }
 
     pub fn is_inside(&self, x: i32, y: i32) -> bool {
-        let local_x = (self.current_x as i32 - x) as usize;
+        let local_x = (self.current_x as i32 + x) as usize;
         let local_y = (self.current_y as i32 - y) as usize;
 
         self.is_inside_at(local_x, local_y)
     }
 
     pub fn move_to(&mut self, x: i32, y: i32) -> bool {
-        let local_x = (self.current_x as i32 - x) as usize;
+        let local_x = (self.current_x as i32 + x) as usize;
         let local_y = (self.current_y as i32 - y) as usize;
 
         if !self.is_inside_at(local_x, local_y) {
@@ -314,7 +314,7 @@ impl SimulationState {
     }
 
     pub fn move_to_using(&mut self, x: i32, y: i32, particle: Particle) -> bool {
-        let local_x = (self.current_x as i32 - x) as usize;
+        let local_x = (self.current_x as i32 + x) as usize;
         let local_y = (self.current_y as i32 - y) as usize;
 
         if !self.is_inside_at(local_x, local_y) {
@@ -330,7 +330,7 @@ impl SimulationState {
     }
 
     pub fn swap(&mut self, x: i32, y: i32) -> bool {
-        let local_x = (self.current_x as i32 - x) as usize;
+        let local_x = (self.current_x as i32 + x) as usize;
         let local_y = (self.current_y as i32 - y) as usize;
 
         if !self.is_inside_at(local_x, local_y) {
@@ -348,7 +348,7 @@ impl SimulationState {
     }
 
     pub fn swap_using(&mut self, x: i32, y: i32, particle: Particle) -> bool {
-        let local_x = (self.current_x as i32 - x) as usize;
+        let local_x = (self.current_x as i32 + x) as usize;
         let local_y = (self.current_y as i32 - y) as usize;
 
         if !self.is_inside_at(local_x, local_y) {

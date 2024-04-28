@@ -92,7 +92,6 @@ impl Plugin for JSPlugin
     }
 
     fn on_plugin_changed(&mut self, api: &ParticleApi) {
-        // I could use unwrap_or(Box::new(|_, _, _| {}));, but this should never fail
-        self.update = build_update_func(&self.json, Some(api)).unwrap();   
+        self.update = build_update_func(&self.json, Some(api)).unwrap_or(Box::new(|_, _, _| {}));   
     }
 }
