@@ -11,7 +11,7 @@ impl Particle {
         Particle {
             id: 0,
             clock: 0,
-            light: 255,
+            light: 100,
             extra: 0,
         }
     }
@@ -21,7 +21,7 @@ impl Particle {
         Particle {
             id,
             clock: 0,
-            light: 255,
+            light: 100,
             extra: 0,
         }
     }
@@ -29,14 +29,14 @@ impl Particle {
     pub const EMPTY: Particle = Particle {
         id: 0,
         clock: 0,
-        light: 255,
+        light: 100,
         extra: 0,
     };
 
     pub const INVALID: Particle = Particle {
         id: u8::MAX,
         clock: 0,
-        light: 255,
+        light: 100,
         extra: 0,
     };
 }

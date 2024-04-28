@@ -18,4 +18,5 @@ pub use crate::color::*;
 pub use crate::vec2::*;
 
 pub const TO_NORMALIZED_COLOR: f32 = 1.0 / 255.0;
-pub const FROM_NORMALIZED_TO_COLOR: f32 = 255.0;
+pub const FROM_NORMALIZED_TO_COLOR: f32 = 100.0;
+// pub const FROM_NORMALIZED_TO_COLOR: f32 = 255.0;

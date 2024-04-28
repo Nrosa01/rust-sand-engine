@@ -274,7 +274,8 @@ impl SimulationState {
         self.color_buffer[start_index] = color[0];
         self.color_buffer[start_index + 1] = color[1];
         self.color_buffer[start_index + 2] = color[2];
-        self.color_buffer[start_index + 3] = particle.light;
+        self.color_buffer[start_index + 3] = ((particle.light as u16 * 255) / 100) as u8;
+        // self.color_buffer[start_index + 3] = particle.light;
     }
 
     pub fn set(&mut self, x: i32, y: i32, particle: Particle) -> bool {

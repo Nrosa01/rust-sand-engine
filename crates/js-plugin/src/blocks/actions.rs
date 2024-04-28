@@ -237,7 +237,7 @@ impl Actions {
                             let direction = api.get_transformation().transform(&direction);
                             let number = number.to_number(api) as i8;
                             let mut particle = api.get(direction[0], direction[1]);
-                            particle.light = particle.light.saturating_add_signed(number); // This is to avoid overflow
+                            particle.light = particle.light.saturating_add_signed(number).min(100); // This is to avoid overflow
                             api.set(0, 0, particle);
                         }),
                         ParticlePropierties::Extra => Box::new(move |_, _, api| {
@@ -245,7 +245,7 @@ impl Actions {
                             let direction = api.get_transformation().transform(&direction);
                             let number = number.to_number(api) as i8;
                             let mut particle = api.get(direction[0], direction[1]);
-                            particle.extra = particle.extra.saturating_add_signed(number); // This is to avoid overflow
+                            particle.extra = particle.extra.saturating_add_signed(number).min(100); // This is to avoid overflow
                             api.set(0, 0, particle);
                         }),
                     } 
@@ -254,13 +254,13 @@ impl Actions {
                         ParticlePropierties::Light => Box::new(move |_, particle, api| {
                             let number = number.to_number(api) as i8;
                             let mut particle = particle;
-                            particle.light = particle.light.saturating_add_signed(number); // This is to avoid overflow
+                            particle.light = particle.light.saturating_add_signed(number).min(100); // This is to avoid overflow
                             api.set(0, 0, particle);
                         }),
                         ParticlePropierties::Extra => Box::new(move |_, particle, api| {
                             let number = number.to_number(api) as i8;
                             let mut particle = particle;
-                            particle.extra = particle.extra.saturating_add_signed(number); // This is to avoid overflow
+                            particle.extra = particle.extra.saturating_add_signed(number).min(100); // This is to avoid overflow
                             api.set(0, 0, particle);
                         }),
                     }
@@ -281,7 +281,7 @@ impl Actions {
                             let direction = api.get_transformation().transform(&direction);
                             let number = number.to_number(api) as u8;
                             let mut particle = api.get(direction[0], direction[1]);
-                            particle.light = number.rem_euclid(u8::MAX);
+                            particle.light = number.min(100);
                             api.set(0, 0, particle);
                         }),
                         ParticlePropierties::Extra => Box::new(move |_, _, api| {
@@ -289,7 +289,7 @@ impl Actions {
                             let direction = api.get_transformation().transform(&direction);
                             let number = number.to_number(api) as u8;
                             let mut particle = api.get(direction[0], direction[1]);
-                            particle.extra = number.rem_euclid(u8::MAX);
+                            particle.extra = number.min(100);
                             api.set(0, 0, particle);
                         }),
                     }
@@ -300,13 +300,13 @@ impl Actions {
                         ParticlePropierties::Light => Box::new(move |_, particle, api| {
                             let number = number.to_number(api) as u8;
                             let mut particle = particle;
-                            particle.light = number.rem_euclid(u8::MAX);
+                            particle.light = number.min(100);
                             api.set(0, 0, particle);
                         }),
                         ParticlePropierties::Extra => Box::new(move |_, particle, api| {
                             let number = number.to_number(api) as u8;
                             let mut particle = particle;
-                            particle.extra = number.rem_euclid(u8::MAX);
+                            particle.extra = number.min(100);
                             api.set(0, 0, particle);
                         }),
                     }
