@@ -278,6 +278,10 @@ impl SimulationState {
         // self.color_buffer[start_index + 3] = particle.light;
     }
 
+    pub fn get_particles(&self) -> &Vec<Vec<Particle>> {
+        &self.particles
+    }
+
     pub fn set(&mut self, x: i32, y: i32, particle: Particle) -> bool {
         let local_x = (self.current_x as i32 + x) as usize;
         let local_y = (self.current_y as i32 - y) as usize;
@@ -481,12 +485,7 @@ impl SimulationState {
         for y in 0..self.height {
             for x in 0..self.width {
                 let particle = &self.particles[y][x];
-                let color = self.particle_definitions[particle.id as usize].color;
-                let start_index = (y * self.width + x) * 4;
-                self.color_buffer[start_index] = color[0];
-                self.color_buffer[start_index + 1] = color[1];
-                self.color_buffer[start_index + 2] = color[2];
-                self.color_buffer[start_index + 3] = particle.light;
+                self.set_particle_at_unchecked(x, y, *particle);
             }
         }
     }

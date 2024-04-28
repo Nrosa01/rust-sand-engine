@@ -10,6 +10,17 @@ use crate::*;
 const SIMULATION_STARTING_WIDTH: usize = 300;
 const SIMULATION_STARTING_HEIGHT: usize = 300;
 
+
+#[cfg(debug_assertions)]
+fn mouse_pos_to_square(width: usize, height: usize) -> (isize, isize) {
+    let (mouse_x, mouse_y) = mouse_position();
+    let min = screen_height().min(screen_width());
+    let x = (mouse_x - (screen_width() - min) / 2.0) / min * width as f32;
+    let y = (mouse_y - (screen_height() - min) / 2.0) / min * height as f32;
+
+    (x as isize, y as isize)
+}
+
 pub struct Universe {
     simulation: Simulation,
     texture: Texture2D,
@@ -56,8 +67,8 @@ impl Universe {
 
 impl Entity for Universe {
     fn init(&mut self) {
+        self.simulation.repaint();
         self.texture.set_filter(FilterMode::Nearest);
-
         #[cfg(not(target_family = "wasm"))]
         {
             let plugin_path = std::env::current_exe()
@@ -130,7 +141,37 @@ impl Entity for Universe {
 
     fn draw(&self) {
         let clear_color = self.simulation.get_particle_color(0).unwrap_or(&[0,0,0,0]);
+        clear_background(Color::from_rgba(clear_color[0], clear_color[1], clear_color[2], clear_color[3]));
         draw_simulation(&self.texture, &self.simulation.get_buffer(), (*clear_color).into());
+
+        #[cfg(debug_assertions)]
+        #[cfg(not(target_family = "wasm"))]
+        {
+            let (particle_x, particle_y) = mouse_pos_to_square(self.simulation.get_width(), self.simulation.get_height());
+            let (mouse_x, mouse_y) = mouse_position();
+
+            if particle_x < 0 || particle_y < 0 || particle_x >= self.simulation.get_width() as isize || particle_y >= self.simulation.get_height() as isize{
+                return;
+            }
+
+            let particle = self.simulation.get_particles()[particle_y as usize][particle_x as usize];
+
+            // Draw at mouse pos, particle id, light value and extra value
+            draw_text(
+                &format!(
+                    "Particle: {}\nLight: {}\nExtra: {}\n Pos: {} {}",
+                    particle.id,
+                    particle.light,
+                    particle.extra,
+                    particle_x,
+                    particle_y
+                ),
+                mouse_x,
+                mouse_y,
+                20.0,
+                RED,
+            );
+        }
     }
 
     #[cfg(not(target_family = "wasm"))]

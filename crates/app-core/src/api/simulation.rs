@@ -62,6 +62,10 @@ impl Simulation {
         self.simulation_state.get_buffer()
     }
 
+    pub fn get_particles(&self) -> &Vec<Vec<Particle>> {
+        self.simulation_state.get_particles()
+    }
+
     pub fn get_particle_name(&self, id: usize) -> Result<&String, String> {
         if id >= self.get_plugin_count() {
             return Err("Particle with id ".to_string() + &id.to_string() + " not found");
