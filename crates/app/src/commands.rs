@@ -8,6 +8,7 @@ pub enum Command {
     RemovePlugin(u8),
     Debug((String, f32)),
     CanvasSize(u32),
+    SetMouseHidden(bool),
     Pause(bool),
     ParticleSelected(u8),
     SimulationMethod(Box<dyn Fn(&mut Simulation)>),

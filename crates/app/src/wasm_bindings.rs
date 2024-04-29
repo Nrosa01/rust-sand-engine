@@ -99,3 +99,22 @@ pub extern "C" fn remove_plugin(data: sapp_jsutils::JsObject) {
     add_dbg((&format!("Remove plugin command received with data: {}", buffer), 5.0));
     push_command(Command::RemovePlugin(buffer));
 }
+
+#[no_mangle]
+pub extern "C" fn set_mouse_hidden(data: sapp_jsutils::JsObject) {
+
+    if data.is_nil() {
+        return;
+    }
+
+    let mut buffer = String::new();
+    data.to_string(&mut buffer);
+
+    let hidden = buffer.parse().unwrap_or(false);
+    push_command(Command::SetMouseHidden(hidden));
+    if buffer.is_empty() {
+        add_dbg(("Set mouse hidden command received with empty data", 2.0));
+    } else {
+        add_dbg((&format!("Set mouse hidden command received with data: {}", buffer), 5.0));
+    }
+}

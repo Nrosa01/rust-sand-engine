@@ -16,7 +16,8 @@ fn mouse_pos_to_square(width: usize, height: usize) -> (isize, isize) {
 pub struct Brush{
     radius: isize,
     mouse_captured: bool,
-    brush_color: Color
+    brush_color: Color,
+    mouse_hidden: bool
 }
 
 impl Brush{
@@ -24,7 +25,8 @@ impl Brush{
         Brush{
             radius: 40,
             mouse_captured: false,
-            brush_color: WHITE
+            brush_color: WHITE,
+            mouse_hidden: false
         }
     }
 }
@@ -42,6 +44,7 @@ impl Entity for Brush{
                 let rgb = hsl_to_rgb(hsl.0, hsl.1, hsl.2);
                 self.brush_color = rgb;
             },
+            Command::SetMouseHidden(hidden) => self.mouse_hidden = *hidden,
             _ => {}
         }
     }
@@ -96,7 +99,7 @@ impl Entity for Brush{
     }
 
     fn draw(&self) {
-        if !self.mouse_captured {
+        if !self.mouse_captured && !self.mouse_hidden {
             let (mouse_x, mouse_y) = mouse_position();
             draw_circle_lines(mouse_x, mouse_y, self.radius as f32, 1.0, self.brush_color);
         }
