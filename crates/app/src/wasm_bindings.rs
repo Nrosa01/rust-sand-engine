@@ -118,3 +118,8 @@ pub extern "C" fn set_mouse_hidden(data: sapp_jsutils::JsObject) {
         add_dbg((&format!("Set mouse hidden command received with data: {}", buffer), 5.0));
     }
 }
+
+extern "C" {
+    #[no_mangle]
+    pub fn send_to_js(data: sapp_jsutils::JsObject);
+}

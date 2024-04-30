@@ -14,6 +14,8 @@ use entities::*;
 
 #[cfg(target_family = "wasm")]
 mod wasm_bindings;
+#[cfg(target_family = "wasm")]
+use wasm_bindings::send_to_js;
 
 const WINDOW_WIDTH: i32 = 800;
 const WINDOW_HEIGHT: i32 = 800;
@@ -32,6 +34,13 @@ fn conf() -> Conf {
 async fn main() -> Result<(), Box<dyn Error>> {
     macroquad::rand::srand(macroquad::miniquad::date::now() as u64);
     let mut state = State::new();
+
+    #[cfg(target_family = "wasm")]
+    {
+        let data = sapp_jsutils::JsObject::string("Hi from rust");
+        unsafe {send_to_js(data)}
+    }
+
 
     loop {
         state.process();
