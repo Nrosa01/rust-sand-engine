@@ -5,7 +5,7 @@ use super::*;
 pub enum Number {
     NumberOfXTouching(Vec<ParticleType>), // Requires ParticleType or panics
     TypeOf(Direction),
-    RandomFromXToY(i32, i32),
+    RandomFromXToY(Box<Number>, Box<Number>),
     Light(Option<Direction>),
     Extra(Option<Direction>),
     MathOperation(MathOperations, Box<Number>, Box<Number>),
@@ -49,7 +49,8 @@ impl Number {
                 let direction = api.get_transformation().transform(&direction);
                 api.get_type(direction[0], direction[1]) as i32
             },
-            Number::RandomFromXToY(min, max) => api.gen_range(*min, *max),
+            // TODO, optimize this for when both numbers are constants
+            Number::RandomFromXToY(min, max) => api.gen_range(min.to_number(api), max.to_number(api)),
             Number::Light(direction) => {
                 let direction = direction.as_ref().unwrap_or(&Direction::Constant([0,0])).get_direction(api);
                 let direction = api.get_transformation().transform(&direction);

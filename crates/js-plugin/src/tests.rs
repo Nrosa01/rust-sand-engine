@@ -2,7 +2,7 @@
 mod tests {
     use app_core::Transformation;
 
-    use crate::blocks::{Actions, Conditions, Direction, ParticleType, TransformationInternal};
+    use crate::blocks::{Actions, Conditions, Direction, Number, ParticlePropierties, ParticleType, TransformationInternal};
 
     #[test]
     #[rustfmt::skip]
@@ -53,6 +53,21 @@ mod tests {
         println!("Block serilized");
     
         std::fs::write("replicant.json", serialized).map_err(|err| err.to_string()).unwrap();
+    }
+
+    #[test]
+    pub fn tset_blocks()
+    {
+        let blocks = vec![
+            Actions::SetParticlePropierty { propierty:ParticlePropierties::Light, number: Number::RandomFromXToY(Box::new(Number::Constant(0)), Box::new(Number::Constant(100))), direction: Some(Direction::Constant([0, -1]))}
+        ];
+    
+    
+        println!("Block going to be serilized");
+        let serialized = serde_json::to_string(&blocks).map_err(|err| err.to_string()).unwrap();
+        println!("Block serilized");
+    
+        std::fs::write("aaaaaaaa.json", serialized).map_err(|err| err.to_string()).unwrap();
     }
 
     #[test]
