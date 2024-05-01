@@ -19,5 +19,4 @@ use crate::plugins::JSPlugin;
 
 type Action = Box<Actions>;
 type Condition = Box<Conditions>;
-type NumberLiteral = usize;
 

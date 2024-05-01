@@ -11,7 +11,7 @@ pub enum Conditions {
     And { block1: Condition, block2: Condition }, // Logical AND
     Or { block1: Condition, block2: Condition }, // Logical OR
     IsTouching { r#type: Vec<ParticleType> }, // Looks neighbour to see if it's of type X
-    OneInXChance { chance: NumberLiteral }, // Returns true one in a X chance, for example, if X is 3, it will return true 1/3 of the time
+    OneInXChance { chance: Number }, // Returns true one in a X chance, for example, if X is 3, it will return true 1/3 of the time
     IsEmpty { direction: Direction }, // Checks if a direction is empty
     CompareNumberEquality { block1: Number, block2: Number }, // Compares two blocks
     CompareBooleans { block1: Condition, block2: Condition }, // Compares two blocks
@@ -93,31 +93,28 @@ impl Conditions {
             }
             Conditions::IsTouching { r#type } => {
                 let types = r#type
-                .iter()
-                .map(|particle| particle.get_particle_id(api) as u8)
-                .collect::<Vec<_>>();
+                    .iter()
+                    .map(|particle| particle.get_particle_id(api) as u8)
+                    .collect::<Vec<_>>();
 
-                if types.len() == 1
-                {
+                if types.len() == 1 {
                     let r#type = types[0];
-                    
+
                     Box::new(move |plugin, particle, api| {
                         ParticleApi::NEIGHBORS
-                        .iter()
-                        .any(|(direction)| api.get_type(direction.x, direction.y) == r#type)
+                            .iter()
+                            .any(|(direction)| api.get_type(direction.x, direction.y) == r#type)
                     })
-                }
-                else {
+                } else {
                     Box::new(move |plugin, particle, api| {
-                        ParticleApi::NEIGHBORS
-                        .iter()
-                        .any(|(direction)| types.contains(&api.get_type(direction.x, direction.y)))
+                        ParticleApi::NEIGHBORS.iter().any(|(direction)| {
+                            types.contains(&api.get_type(direction.x, direction.y))
+                        })
                     })
                 }
             }
             Conditions::CompareNumberEquality { block1, block2 } => {
-                Box::new(move |plugin, particle, api| 
-                {
+                Box::new(move |plugin, particle, api| {
                     let number1 = block1.to_number(api);
                     let number2 = block2.to_number(api);
                     number1 == number2
@@ -129,14 +126,14 @@ impl Conditions {
                     let number2 = block2.to_number(api);
                     number1 > number2
                 })
-            },
+            }
             Conditions::CompareLessThan { block1, block2 } => {
                 Box::new(move |plugin, particle, api| {
                     let number1 = block1.to_number(api);
                     let number2 = block2.to_number(api);
                     number1 < number2
                 })
-            },
+            }
             Conditions::Boolean { value } => Box::new(move |plugin, particle, api| value),
             Conditions::IsEmpty { direction } => match direction {
                 Direction::Constant(direction) => {
@@ -152,13 +149,20 @@ impl Conditions {
                     api.is_empty(direction[0], direction[1])
                 }),
             },
-            Conditions::OneInXChance { chance } => {
-                let chance = chance as i32;
-                Box::new(move |plugin, particle, api| {
+            Conditions::OneInXChance { chance } => match chance {
+                Number::Constant(number) => {
+                    let number = number as i32;
+                    Box::new(move |_, _, api| {
+                        let random_number = api.gen_range(1, number);
+                        random_number == 1
+                    })
+                }
+                number => Box::new(move |plugin, particle, api| {
+                    let chance = number.to_number(api);
                     let random_number = api.gen_range(1, chance);
-                    random_number == 0
-                })
-            }
+                    random_number == 1
+                }),
+            },
             Conditions::CompareBooleans { block1, block2 } => {
                 let func1 = block1.to_func(api);
                 let func2 = block2.to_func(api);
