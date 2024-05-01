@@ -262,7 +262,7 @@ impl Actions {
                         let number = number.to_number(api) as i8;
                         let mut particle = api.get(direction[0], direction[1]);
                         particle.light = particle.light.saturating_add_signed(number).min(100); // This is to avoid overflow
-                        api.set(0, 0, particle);
+                        api.set(direction[0], direction[1], particle);
                     }),
                     ParticlePropierties::Extra => Box::new(move |_, _, api| {
                         let direction = direction.get_direction(api);
@@ -270,7 +270,7 @@ impl Actions {
                         let number = number.to_number(api) as i8;
                         let mut particle = api.get(direction[0], direction[1]);
                         particle.extra = particle.extra.saturating_add_signed(number).min(100); // This is to avoid overflow
-                        api.set(0, 0, particle);
+                        api.set(direction[0], direction[1], particle);
                     }),
                 }
             }
@@ -285,7 +285,7 @@ impl Actions {
                     let number = number.to_number(api).clamp(0, 100) as u8;
                     let mut particle = api.get(direction[0], direction[1]);
                     particle.light = number;
-                    api.set(0, 0, particle);
+                    api.set(direction[0], direction[1], particle);
                 }),
                 ParticlePropierties::Extra => Box::new(move |_, _, api| {
                     let direction = direction.get_direction(api);
@@ -293,7 +293,7 @@ impl Actions {
                     let number = number.to_number(api).clamp(0, 100) as u8;
                     let mut particle = api.get(direction[0], direction[1]);
                     particle.extra = number;
-                    api.set(0, 0, particle);
+                    api.set(direction[0], direction[1], particle);
                 }),
             },
             Actions::Repeat { number, block } => {
