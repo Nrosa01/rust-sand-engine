@@ -120,6 +120,5 @@ pub extern "C" fn set_mouse_hidden(data: sapp_jsutils::JsObject) {
 }
 
 extern "C" {
-    #[no_mangle]
     pub fn send_to_js(data: sapp_jsutils::JsObject);
 }

@@ -217,7 +217,7 @@ impl Actions {
                     let previous_transformation = api.get_transformation().clone();
                     let rotations = number.to_number(api);
                     // As this is a runtime number, we have to force it to be between 0 and 7 using modulo
-                    let rotations = rotations % 8;
+                    let rotations = rotations.rem_euclid(8);
                     let transformation = Transformation::Rotation(rotations as usize);
                     api.set_transformation(transformation);
                     func(plugin, particle, api);
@@ -279,17 +279,17 @@ impl Actions {
                         ParticlePropierties::Light => Box::new(move |_, _, api| {
                             let direction = direction.get_direction(api);
                             let direction = api.get_transformation().transform(&direction);
-                            let number = number.to_number(api) as u8;
+                            let number = number.to_number(api).clamp(0, 100) as u8;
                             let mut particle = api.get(direction[0], direction[1]);
-                            particle.light = number.min(100);
+                            particle.light = number;
                             api.set(0, 0, particle);
                         }),
                         ParticlePropierties::Extra => Box::new(move |_, _, api| {
                             let direction = direction.get_direction(api);
                             let direction = api.get_transformation().transform(&direction);
-                            let number = number.to_number(api) as u8;
+                            let number = number.to_number(api).clamp(0, 100) as u8;
                             let mut particle = api.get(direction[0], direction[1]);
-                            particle.extra = number.min(100);
+                            particle.extra = number;
                             api.set(0, 0, particle);
                         }),
                     }
@@ -298,15 +298,15 @@ impl Actions {
                 else {
                     match propierty {
                         ParticlePropierties::Light => Box::new(move |_, particle, api| {
-                            let number = number.to_number(api) as u8;
+                            let number = number.to_number(api).clamp(0, 100) as u8;
                             let mut particle = particle;
-                            particle.light = number.min(100);
+                            particle.light = number;
                             api.set(0, 0, particle);
                         }),
                         ParticlePropierties::Extra => Box::new(move |_, particle, api| {
-                            let number = number.to_number(api) as u8;
+                            let number = number.to_number(api).clamp(0, 100) as u8;
                             let mut particle = particle;
-                            particle.extra = number.min(100);
+                            particle.extra = number;
                             api.set(0, 0, particle);
                         }),
                     }
