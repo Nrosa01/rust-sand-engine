@@ -11,7 +11,7 @@ pub enum Actions
     RandomTransformation { transformation: TransformationInternal, block: Option<Vec<Action>>},
     ForEachTransformation { transformation: TransformationInternal, block: Option<Vec<Action>>},
     RotatedBy { number: Number, block: Option<Vec<Action>> },
-    If { condition: Option<Conditions>, result: Option<Vec<Action>>, r#else: Option<Vec<Action>>}, // If block, if true, execute action
+    If (Vec<Option<(Conditions, Vec<Actions>)>>), 
     IncreaseParticlePropierty { propierty: ParticlePropierties, number: Number,  direction: Direction },
     SetParticlePropierty { propierty: ParticlePropierties, number: Number, direction: Direction },
     Repeat { number: Number, block: Option<Vec<Action>> },
@@ -192,40 +192,30 @@ impl Actions {
                     }
                 }
             }
-            Actions::If {
-                condition,
-                result,
-                r#else,
-            } => {
-                // We bake the functions here so they don't have to get built every time this block is called
-                if condition.is_none() {
+            Actions::If (
+                blocks
+            ) => {
+                let non_none_blocks = blocks.iter().filter(|block| block.is_some()).collect::<Vec<_>>();
+
+                if non_none_blocks.is_empty() {
                     return Box::new(|_, _, _| ());
                 }
 
-                let condition = condition.unwrap().to_func(api);
-                let result = result.unwrap_or(vec![Box::new(Actions::None)]).iter().map(|block| block.to_func(api)).collect::<Vec<_>>();
-                // "Baking" so we only call r#else if there is an else
-                // I could also create an empty function with let r#else = r#else.unwrap_or_else(|| Box::new(|_, _, _| true));
-                // And I could return a single lamnbda instead of this but....
-                // These funcs might get called a lot, this is hotpath so I prefer to optimize as much as possible
-                match r#else {
-                    Some(r#else) => {
-                        let r#else = r#else.iter().map(|block| block.to_func(api)).collect::<Vec<_>>();
-                        Box::new(move |plugin, particle, api| {
-                            if condition(plugin, particle, api) {
-                                result.iter().for_each(|func| func(plugin, particle, api));
-                            } else {
-                                r#else.iter().for_each(|func| func(plugin, particle, api));
-                            };
-                        })
-                    }
-                    // By default, an if blocks returns true
-                    None => Box::new(move |plugin, particle, api| {
+                // Convert to an array of tuples that are functions
+                let non_none_blocks = non_none_blocks.iter().map(|block| {
+                    let (condition, action) = block.as_ref().unwrap();
+                    let condition = condition.to_func(api);
+                    let action = action.iter().map(|block| block.to_func(api)).collect::<Vec<_>>();
+                    (condition, action)
+                }).collect::<Vec<_>>();
+
+                Box::new(move |plugin, particle, api| {
+                    non_none_blocks.iter().for_each(|(condition, action)| {
                         if condition(plugin, particle, api) {
-                            result.iter().for_each(|func| func(plugin, particle, api));
+                            action.iter().for_each(|func| func(plugin, particle, api));
                         }
-                    }),
-                }
+                    })
+                })
             }
             Actions::RotatedBy { number, block } => {
                 if block.is_none() {
