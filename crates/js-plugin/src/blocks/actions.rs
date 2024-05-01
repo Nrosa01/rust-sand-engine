@@ -62,20 +62,20 @@ impl Actions {
                     return Box::new(|_, _, _| ());
                 }
 
-                let new_particle = api.new_particle(particle_id);
+                // let new_particle = api.new_particle(particle_id);
 
                 match direction {
                     Direction::Constant(direction) => {
                         let direction = direction;
                         Box::new(move |_, _, api| {
                             let direction = api.get_transformation().transform(&direction);
-                            api.set(direction[0], direction[1], new_particle);
+                            api.set(direction[0], direction[1], api.new_particle(particle_id));
                         })
                     }
                     _ => Box::new(move |_, _, api| {
                         let direction = direction.get_direction(api);
                         let direction = api.get_transformation().transform(&direction);
-                        api.set(direction[0], direction[1], new_particle);
+                        api.set(direction[0], direction[1],  api.new_particle(particle_id));
                     }),
                 }
             }
@@ -224,9 +224,12 @@ impl Actions {
 
                 Box::new(move |plugin, particle, api| {
                     // We will iterate until we find a condition that is true, exeduting the block and return
-                    non_none_blocks.iter()
+                    non_none_blocks
+                        .iter()
                         .find(|(condition, _)| condition(plugin, particle, api))
-                        .map(|(_, action)| action.iter().for_each(|func| func(plugin, particle, api)));
+                        .map(|(_, action)| {
+                            action.iter().for_each(|func| func(plugin, particle, api))
+                        });
                 })
             }
             Actions::RotatedBy { number, block } => {
