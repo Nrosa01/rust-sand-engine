@@ -6,6 +6,7 @@ use crate::Brush;
 #[cfg(not(target_family = "wasm"))]
 use crate::Debug;
 use crate::Entity;
+#[cfg(debug_assertions)]
 use crate::MessageQueue;
 use crate::Universe;
 
@@ -22,6 +23,7 @@ impl State {
             Box::new(Universe::new()),
             #[cfg(not(target_family = "wasm"))]
             Box::new(Debug::new()),
+            #[cfg(debug_assertions)]
             Box::new(MessageQueue::new()),
             Box::new(Brush::new()),
         ];

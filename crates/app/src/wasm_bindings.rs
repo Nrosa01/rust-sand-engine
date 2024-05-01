@@ -119,6 +119,12 @@ pub extern "C" fn set_mouse_hidden(data: sapp_jsutils::JsObject) {
     }
 }
 
+#[no_mangle]
+pub fn pixel_creator_api_crate_version() -> u32
+{
+    (1 << 24) + (0 << 16) + 0
+}
+
 extern "C" {
     pub fn send_to_js(data: sapp_jsutils::JsObject);
 }
