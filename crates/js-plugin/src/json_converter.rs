@@ -1,4 +1,4 @@
-use app_core::{Particle, ParticleApi, PluginResult, Vec2};
+use app_core::{ ParticleApi, PluginResult, Vec2};
 use json::JsonValue;
 
 use crate::{blocks::Actions, plugins::JSPlugin};
@@ -85,7 +85,7 @@ pub fn to_plugin_result(json: &JsonValue) -> Result<PluginResult, String> {
 }
 
 #[rustfmt::skip]
-pub fn build_update_func(json: &JsonValue, api: Option<&ParticleApi>) -> Result<Box<dyn Fn(&JSPlugin, Particle, &mut ParticleApi)>, String>
+pub fn build_update_func(json: &JsonValue, api: Option<&ParticleApi>) -> Result<Box<dyn Fn(&JSPlugin, &mut ParticleApi)>, String>
 {
     if api.is_none()
     {
@@ -107,7 +107,7 @@ pub fn build_update_func(json: &JsonValue, api: Option<&ParticleApi>) -> Result<
         .map(|block| block.to_func(api.unwrap()))
         .collect::<Vec<_>>();
 
-    Ok(Box::new(move |plugin, particle, api| {
-        func_vec.iter().for_each(|func| func(plugin, particle, api));
+    Ok(Box::new(move |plugin, api| {
+        func_vec.iter().for_each(|func| func(plugin, api));
     }))
 }

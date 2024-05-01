@@ -59,7 +59,8 @@ fn register(&mut self) -> PluginResult {
         }
     }
 
-    fn update(&self, cell: Particle, api: &mut ParticleApi) {
+    fn update(&self, api: &mut ParticleApi) {
+        let cell = api.get_current();
         let random_horizontal = api.gen_range(-1, 1);
         let down = -1;
 

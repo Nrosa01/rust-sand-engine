@@ -23,18 +23,18 @@ impl Actions {
     pub fn to_func(
         &self,
         api: &ParticleApi,
-    ) -> Box<dyn Fn(&JSPlugin, Particle, &mut ParticleApi) -> ()> {
+    ) -> Box<dyn Fn(&JSPlugin, &mut ParticleApi) -> ()> {
         let block = self.clone();
         match block {
             Actions::Swap { direction } => match direction {
                 Direction::Constant(direction) => {
                     let direction = direction;
-                    Box::new(move |_, _, api| {
+                    Box::new(move |_, api| {
                         let direction = api.get_transformation().transform(&direction);
                         api.swap(direction[0], direction[1]);
                     })
                 }
-                _ => Box::new(move |_, _, api| {
+                _ => Box::new(move |_, api| {
                     let direction = direction.get_direction(api);
                     let direction = api.get_transformation().transform(&direction);
                     api.swap(direction[0], direction[1]);
@@ -43,15 +43,15 @@ impl Actions {
             Actions::CopyTo { direction } => match direction {
                 Direction::Constant(direction) => {
                     let direction = direction;
-                    Box::new(move |_, particle, api| {
+                    Box::new(move |_, api| {
                         let direction = api.get_transformation().transform(&direction);
-                        api.set(direction[0], direction[1], particle);
+                        api.set(direction[0], direction[1], api.get_current());
                     })
                 }
-                _ => Box::new(move |_, particle, api| {
+                _ => Box::new(move |_, api| {
                     let direction = direction.get_direction(api);
                     let direction = api.get_transformation().transform(&direction);
-                    api.set(direction[0], direction[1], particle);
+                    api.set(direction[0], direction[1], api.get_current());
                 }),
             },
             Actions::ChangeInto { direction, r#type } => {
@@ -59,7 +59,7 @@ impl Actions {
 
                 // As the particle is invalid, all this block is invalid
                 if particle_id >= api.get_particle_count() {
-                    return Box::new(|_, _, _| ());
+                    return Box::new(|_, _| ());
                 }
 
                 // let new_particle = api.new_particle(particle_id);
@@ -67,12 +67,12 @@ impl Actions {
                 match direction {
                     Direction::Constant(direction) => {
                         let direction = direction;
-                        Box::new(move |_, _, api| {
+                        Box::new(move |_, api| {
                             let direction = api.get_transformation().transform(&direction);
                             api.set(direction[0], direction[1], api.new_particle(particle_id));
                         })
                     }
-                    _ => Box::new(move |_, _, api| {
+                    _ => Box::new(move |_, api| {
                         let direction = direction.get_direction(api);
                         let direction = api.get_transformation().transform(&direction);
                         api.set(direction[0], direction[1],  api.new_particle(particle_id));
@@ -85,7 +85,7 @@ impl Actions {
                 block,
             } => {
                 if block.is_none() {
-                    return Box::new(|_, _, _| ());
+                    return Box::new(|_, _| ());
                 }
 
                 let block = block.unwrap();
@@ -94,13 +94,13 @@ impl Actions {
                     .map(|block| block.to_func(api))
                     .collect::<Vec<_>>();
 
-                Box::new(move |plugin, particle, api| {
+                Box::new(move |plugin, api| {
                     let previous_trasnformation = api.get_transformation().clone();
 
                     let transformation = transformation.to_transformation(api);
                     api.set_transformation(transformation);
 
-                    func.iter().for_each(|func| func(plugin, particle, api));
+                    func.iter().for_each(|func| func(plugin, api));
 
                     api.set_transformation(previous_trasnformation);
                 })
@@ -111,7 +111,7 @@ impl Actions {
                 block,
             } => {
                 if block.is_none() {
-                    return Box::new(|_, _, _| ());
+                    return Box::new(|_, _| ());
                 }
 
                 let block = block.unwrap();
@@ -123,78 +123,78 @@ impl Actions {
 
                 match transformation {
                     TransformationInternal::HorizontalReflection => {
-                        Box::new(move |plugin, particle, api| {
+                        Box::new(move |plugin, api| {
                             let previous_trasnformation = api.get_transformation().clone();
 
                             let transformation = Transformation::HorizontalReflection(true);
                             api.set_transformation(transformation);
 
-                            func.iter().for_each(|func| func(plugin, particle, api));
+                            func.iter().for_each(|func| func(plugin, api));
 
                             let transformation = Transformation::HorizontalReflection(false);
                             api.set_transformation(transformation);
 
-                            func.iter().for_each(|func| func(plugin, particle, api));
+                            func.iter().for_each(|func| func(plugin, api));
 
                             api.set_transformation(previous_trasnformation);
                         })
                     }
                     TransformationInternal::VerticalReflection => {
-                        Box::new(move |plugin, particle, api| {
+                        Box::new(move |plugin, api| {
                             let previous_trasnformation = api.get_transformation().clone();
 
                             let transformation = Transformation::VerticalReflection(true);
                             api.set_transformation(transformation);
 
-                            func.iter().for_each(|func| func(plugin, particle, api));
+                            func.iter().for_each(|func| func(plugin, api));
 
                             let transformation = Transformation::VerticalReflection(false);
                             api.set_transformation(transformation);
 
-                            func.iter().for_each(|func| func(plugin, particle, api));
+                            func.iter().for_each(|func| func(plugin, api));
 
                             api.set_transformation(previous_trasnformation);
                         })
                     }
-                    TransformationInternal::Reflection => Box::new(move |plugin, particle, api| {
+                    TransformationInternal::Reflection => Box::new(move |plugin, api| {
                         let previous_trasnformation = api.get_transformation().clone();
 
                         let transformation = Transformation::Reflection(true, true);
                         api.set_transformation(transformation);
 
-                        func.iter().for_each(|func| func(plugin, particle, api));
+                        func.iter().for_each(|func| func(plugin, api));
 
                         let transformation = Transformation::Reflection(false, false);
                         api.set_transformation(transformation);
 
-                        func.iter().for_each(|func| func(plugin, particle, api));
+                        func.iter().for_each(|func| func(plugin, api));
 
                         let transformation = Transformation::Reflection(false, true);
                         api.set_transformation(transformation);
 
-                        func.iter().for_each(|func| func(plugin, particle, api));
+                        func.iter().for_each(|func| func(plugin, api));
 
                         let transformation = Transformation::Reflection(true, false);
                         api.set_transformation(transformation);
 
-                        func.iter().for_each(|func| func(plugin, particle, api));
+                        func.iter().for_each(|func| func(plugin, api));
 
                         api.set_transformation(previous_trasnformation);
                     }),
-                    TransformationInternal::Rotation => Box::new(move |plugin, particle, api| {
+                    TransformationInternal::Rotation => Box::new(move |plugin, api| {
                         let previous_transformation = api.get_transformation().clone();
 
                         for i in 1..=7 {
                             let transformation = Transformation::Rotation(i);
                             api.set_transformation(transformation);
 
-                            func.iter().for_each(|func| func(plugin, particle, api));
+                            func.iter().for_each(|func| func(plugin, api));
                         }
 
                         api.set_transformation(previous_transformation);
                     }),
-                    TransformationInternal::None => Box::new(move |plugin, particle, api| {
-                        func.iter().for_each(|func| func(plugin, particle, api))
+                    TransformationInternal::None => Box::new(move |plugin, api| {
+                        func.iter().for_each(|func| func(plugin, api))
                     }),
                 }
             }
@@ -205,7 +205,7 @@ impl Actions {
                     .collect::<Vec<_>>();
 
                 if non_none_blocks.is_empty() {
-                    return Box::new(|_, _, _| ());
+                    return Box::new(|_, _| ());
                 }
 
                 // Convert to an array of tuples that are functions
@@ -222,19 +222,19 @@ impl Actions {
                     })
                     .collect::<Vec<_>>();
 
-                Box::new(move |plugin, particle, api| {
+                Box::new(move |plugin, api| {
                     // We will iterate until we find a condition that is true, exeduting the block and return
                     non_none_blocks
                         .iter()
-                        .find(|(condition, _)| condition(plugin, particle, api))
+                        .find(|(condition, _)| condition(plugin, api))
                         .map(|(_, action)| {
-                            action.iter().for_each(|func| func(plugin, particle, api))
+                            action.iter().for_each(|func| func(plugin, api))
                         });
                 })
             }
             Actions::RotatedBy { number, block } => {
                 if block.is_none() {
-                    return Box::new(|_, _, _| ());
+                    return Box::new(|_, _| ());
                 }
 
                 let block = block.unwrap();
@@ -242,14 +242,14 @@ impl Actions {
                     .iter()
                     .map(|block| block.to_func(api))
                     .collect::<Vec<_>>();
-                Box::new(move |plugin, particle, api| {
+                Box::new(move |plugin, api| {
                     let previous_transformation = api.get_transformation().clone();
                     let rotations = number.to_number(api);
                     // As this is a runtime number, we have to force it to be between 0 and 7 using modulo
                     let rotations = rotations.rem_euclid(8);
                     let transformation = Transformation::Rotation(rotations as usize);
                     api.set_transformation(transformation);
-                    func.iter().for_each(|func| func(plugin, particle, api));
+                    func.iter().for_each(|func| func(plugin, api));
                     api.set_transformation(previous_transformation);
                 })
             }
@@ -259,21 +259,25 @@ impl Actions {
                 direction,
             } => {
                 match propierty {
-                    ParticlePropierties::Light => Box::new(move |_, _, api| {
+                    ParticlePropierties::Light => Box::new(move |_, api| {
                         let direction = direction.get_direction(api);
                         let direction = api.get_transformation().transform(&direction);
                         let number = number.to_number(api) as i8;
-                        let mut particle = api.get(direction[0], direction[1]);
-                        particle.light = particle.light.saturating_add_signed(number).min(100); // This is to avoid overflow
-                        api.set(direction[0], direction[1], particle);
+                        let particle = api.get_mut(direction[0], direction[1]);
+                        
+                        if let Some(particle) = particle {
+                            particle.light = particle.light.saturating_add_signed(number).min(100); // This is to avoid overflow
+                        }
                     }),
-                    ParticlePropierties::Extra => Box::new(move |_, _, api| {
+                    ParticlePropierties::Extra => Box::new(move |_, api| {
                         let direction = direction.get_direction(api);
                         let direction = api.get_transformation().transform(&direction);
                         let number = number.to_number(api) as i8;
-                        let mut particle = api.get(direction[0], direction[1]);
-                        particle.extra = particle.extra.saturating_add_signed(number).min(100); // This is to avoid overflow
-                        api.set(direction[0], direction[1], particle);
+                        let particle = api.get_mut(direction[0], direction[1]);
+                        
+                        if let Some(particle) = particle {
+                            particle.extra = particle.extra.saturating_add_signed(number).min(100); // This is to avoid overflow
+                        }
                     }),
                 }
             }
@@ -282,26 +286,30 @@ impl Actions {
                 number,
                 direction,
             } => match propierty {
-                ParticlePropierties::Light => Box::new(move |_, _, api| {
+                ParticlePropierties::Light => Box::new(move |_, api| {
                     let direction = direction.get_direction(api);
                     let direction = api.get_transformation().transform(&direction);
                     let number = number.to_number(api).clamp(0, 100) as u8;
-                    let mut particle = api.get(direction[0], direction[1]);
-                    particle.light = number;
-                    api.set(direction[0], direction[1], particle);
+                    let particle = api.get_mut(direction[0], direction[1]);
+                        
+                    if let Some(particle) = particle {
+                        particle.light = number;
+                    }
                 }),
-                ParticlePropierties::Extra => Box::new(move |_, _, api| {
+                ParticlePropierties::Extra => Box::new(move |_, api| {
                     let direction = direction.get_direction(api);
                     let direction = api.get_transformation().transform(&direction);
                     let number = number.to_number(api).clamp(0, 100) as u8;
-                    let mut particle = api.get(direction[0], direction[1]);
-                    particle.extra = number;
-                    api.set(direction[0], direction[1], particle);
+                    let particle = api.get_mut(direction[0], direction[1]);
+                        
+                    if let Some(particle) = particle {
+                        particle.extra = number;// This is to avoid overflow
+                    }
                 }),
             },
             Actions::Repeat { number, block } => {
                 if block.is_none() {
-                    return Box::new(|_, _, _| ());
+                    return Box::new(|_, _| ());
                 }
 
                 let block = block.unwrap();
@@ -310,16 +318,16 @@ impl Actions {
                     .map(|block| block.to_func(api))
                     .collect::<Vec<_>>();
 
-                Box::new(move |plugin, particle, api| {
+                Box::new(move |plugin, api| {
                     let times = number.to_number(api);
                     for _ in 0..times {
-                        func.iter().for_each(|func| func(plugin, particle, api));
+                        func.iter().for_each(|func| func(plugin, api));
                     }
                 })
             }
             Actions::EveryXFrames { number, block } => {
                 if block.is_none() {
-                    return Box::new(|_, _, _| ());
+                    return Box::new(|_, _| ());
                 }
 
                 let block = block.unwrap();
@@ -328,7 +336,7 @@ impl Actions {
                     .map(|block| block.to_func(api))
                     .collect::<Vec<_>>();
 
-                Box::new(move |plugin, particle, api| {
+                Box::new(move |plugin, api| {
                     let frames = number.to_number(api) as u32;
 
                     if frames == 0 {
@@ -336,11 +344,11 @@ impl Actions {
                     }
 
                     if api.get_frame() % frames == 0 {
-                        func.iter().for_each(|func| func(plugin, particle, api));
+                        func.iter().for_each(|func| func(plugin, api));
                     }
                 })
             }
-            Actions::None => Box::new(|_, _, _| ()),
+            Actions::None => Box::new(|_, _| ()),
         }
     }
 }

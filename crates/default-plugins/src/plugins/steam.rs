@@ -19,10 +19,11 @@ fn register(&mut self) -> PluginResult {
         }
     }
 
-    fn update(&self, cell: Particle, api: &mut ParticleApi) {
+    fn update(&self, api: &mut ParticleApi) {
         let random_horizontal = api.gen_range(-1, 1);
         let up = 1;
         
+        let cell = api.get_current();
         let subtract = api.gen_range(-1, 0) as i8;
         
         // Use checked function to avoid overflow and hadle flow better

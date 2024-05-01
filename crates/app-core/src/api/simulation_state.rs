@@ -228,6 +228,25 @@ impl SimulationState {
         &self.color_buffer
     }
 
+    pub fn get_current(&self) -> Particle {
+        self.particles[self.current_y][self.current_x]
+    }
+
+    pub fn get_current_mut(&mut self) -> &mut Particle {
+        &mut self.particles[self.current_y][self.current_x]
+    }
+
+    pub fn get_mut(&mut self, x: i32, y: i32) -> Option<&mut Particle> {
+        let local_x = (self.current_x as i32 + x) as usize;
+        let local_y = (self.current_y as i32 - y) as usize;
+
+        if !self.is_inside_at(local_x, local_y) {
+            return None;
+        }
+
+        Some(&mut self.particles[local_y][local_x])
+    }
+
     pub fn get(&self, x: i32, y: i32) -> Particle {
         let local_x = (self.current_x as i32 + x) as usize;
         let local_y = (self.current_y as i32 - y) as usize;
@@ -415,7 +434,7 @@ impl SimulationState {
                 }
 
                 let plugin = &mut plugins[current_particle.id as usize];
-                plugin.update(self.particles[y][x], self);
+                plugin.update(self);
             }
         }
 

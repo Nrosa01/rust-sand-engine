@@ -20,7 +20,9 @@ fn register(&mut self) -> PluginResult {
         }
     }
 
-    fn update(&self, cell: Particle, api: &mut ParticleApi) {
+    fn update(&self, api: &mut ParticleApi) {
+        let cell = api.get_current();
+
         if cell.extra == 0 {
             return;
         }
@@ -45,11 +47,7 @@ fn register(&mut self) -> PluginResult {
                 api.set(neighbor.x, neighbor.y, cell);
                 api.set(0, 0, cell);
             }
-            // If there is none to transfer the extra, this will decrease at random period.
-            // This way we can simulate the rock being hot even when not in touch with lava
-            else if api.gen_range(0, 100) < 10{
-                api.set(0, 0, cell);
-            }
+            
 
             if cell.extra == 0 {
                 return;

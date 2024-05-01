@@ -29,7 +29,9 @@ fn register(&mut self) -> PluginResult {
         }
     }
 
-    fn update(&self, p: Particle, api: &mut ParticleApi) {
+    fn update(&self, api: &mut ParticleApi) {
+        let p = api.get_current();
+        
         let dir_x = if p.extra == 0  {api.gen_range(-1, 1)} else { if p.extra == 1 {1} else {-1} };
         let dir_y = -1;
 

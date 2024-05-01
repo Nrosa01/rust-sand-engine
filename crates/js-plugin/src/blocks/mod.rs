@@ -12,7 +12,7 @@ pub(crate) use numbers::*;
 pub(crate) use transformations::*;
 pub(crate) use utiliies::*;
 
-use app_core::{Particle, ParticleApi, Transformation};
+use app_core::{ParticleApi, Transformation};
 use serde::{Deserialize, Serialize};
 
 use crate::plugins::JSPlugin;

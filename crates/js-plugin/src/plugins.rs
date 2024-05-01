@@ -1,4 +1,3 @@
-use app_core::Particle;
 use app_core::ParticleApi;
 use app_core::PluginResult;
 use app_core::api::Plugin;
@@ -8,7 +7,7 @@ use crate::json_converter::to_plugin_result;
 
 pub struct JSPlugin
 {
-    update:Box<dyn Fn(&JSPlugin, Particle, &mut ParticleApi)>,
+    update:Box<dyn Fn(&JSPlugin, &mut ParticleApi)>,
     plugin_data: PluginResult,
     json: JsonValue
 }
@@ -24,7 +23,7 @@ impl JSPlugin
             Ok(json_value) => 
             {
                 let plugin_data = to_plugin_result(&json_value)?;
-                let update_func = build_update_func(&json_value, None).unwrap_or(Box::new(|_, _, _| {}));
+                let update_func = build_update_func(&json_value, None).unwrap_or(Box::new(|_, _| {}));
 
                 Ok(
                     JSPlugin
@@ -77,9 +76,9 @@ impl JSPlugin
 
 impl Plugin for JSPlugin
 {
-    fn update(&self, particle: Particle, api: &mut ParticleApi)
+    fn update(&self, api: &mut ParticleApi)
     {
-        (self.update)(self, particle, api);
+        (self.update)(self, api);
     }
     
     fn register(&mut self) -> app_core::PluginResult {
@@ -92,6 +91,6 @@ impl Plugin for JSPlugin
     }
 
     fn on_plugin_changed(&mut self, api: &ParticleApi) {
-        self.update = build_update_func(&self.json, Some(api)).unwrap_or(Box::new(|_, _, _| {}));   
+        self.update = build_update_func(&self.json, Some(api)).unwrap_or(Box::new(|_, _| {}));   
     }
 }
