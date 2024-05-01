@@ -89,7 +89,10 @@ impl Actions {
                 }
 
                 let block = block.unwrap();
-                let func = block.iter().map(|block| block.to_func(api)).collect::<Vec<_>>();
+                let func = block
+                    .iter()
+                    .map(|block| block.to_func(api))
+                    .collect::<Vec<_>>();
 
                 Box::new(move |plugin, particle, api| {
                     let previous_trasnformation = api.get_transformation().clone();
@@ -113,7 +116,10 @@ impl Actions {
 
                 let block = block.unwrap();
 
-                let func = block.iter().map(|block| block.to_func(api)).collect::<Vec<_>>();
+                let func = block
+                    .iter()
+                    .map(|block| block.to_func(api))
+                    .collect::<Vec<_>>();
 
                 match transformation {
                     TransformationInternal::HorizontalReflection => {
@@ -187,34 +193,40 @@ impl Actions {
 
                         api.set_transformation(previous_transformation);
                     }),
-                    TransformationInternal::None => {
-                        Box::new(move |plugin, particle, api| func.iter().for_each(|func| func(plugin, particle, api)))
-                    }
+                    TransformationInternal::None => Box::new(move |plugin, particle, api| {
+                        func.iter().for_each(|func| func(plugin, particle, api))
+                    }),
                 }
             }
-            Actions::If (
-                blocks
-            ) => {
-                let non_none_blocks = blocks.iter().filter(|block| block.is_some()).collect::<Vec<_>>();
+            Actions::If(blocks) => {
+                let non_none_blocks = blocks
+                    .iter()
+                    .filter(|block| block.is_some())
+                    .collect::<Vec<_>>();
 
                 if non_none_blocks.is_empty() {
                     return Box::new(|_, _, _| ());
                 }
 
                 // Convert to an array of tuples that are functions
-                let non_none_blocks = non_none_blocks.iter().map(|block| {
-                    let (condition, action) = block.as_ref().unwrap();
-                    let condition = condition.to_func(api);
-                    let action = action.iter().map(|block| block.to_func(api)).collect::<Vec<_>>();
-                    (condition, action)
-                }).collect::<Vec<_>>();
+                let non_none_blocks = non_none_blocks
+                    .iter()
+                    .map(|block| {
+                        let (condition, action) = block.as_ref().unwrap();
+                        let condition = condition.to_func(api);
+                        let action = action
+                            .iter()
+                            .map(|block| block.to_func(api))
+                            .collect::<Vec<_>>();
+                        (condition, action)
+                    })
+                    .collect::<Vec<_>>();
 
                 Box::new(move |plugin, particle, api| {
-                    non_none_blocks.iter().for_each(|(condition, action)| {
-                        if condition(plugin, particle, api) {
-                            action.iter().for_each(|func| func(plugin, particle, api));
-                        }
-                    })
+                    // We will iterate until we find a condition that is true, exeduting the block and return
+                    non_none_blocks.iter()
+                        .find(|(condition, _)| condition(plugin, particle, api))
+                        .map(|(_, action)| action.iter().for_each(|func| func(plugin, particle, api)));
                 })
             }
             Actions::RotatedBy { number, block } => {
@@ -223,7 +235,10 @@ impl Actions {
                 }
 
                 let block = block.unwrap();
-                let func = block.iter().map(|block| block.to_func(api)).collect::<Vec<_>>();
+                let func = block
+                    .iter()
+                    .map(|block| block.to_func(api))
+                    .collect::<Vec<_>>();
                 Box::new(move |plugin, particle, api| {
                     let previous_transformation = api.get_transformation().clone();
                     let rotations = number.to_number(api);
@@ -287,7 +302,10 @@ impl Actions {
                 }
 
                 let block = block.unwrap();
-                let func = block.iter().map(|block| block.to_func(api)).collect::<Vec<_>>();
+                let func = block
+                    .iter()
+                    .map(|block| block.to_func(api))
+                    .collect::<Vec<_>>();
 
                 Box::new(move |plugin, particle, api| {
                     let times = number.to_number(api);
@@ -302,11 +320,14 @@ impl Actions {
                 }
 
                 let block = block.unwrap();
-                let func = block.iter().map(|block| block.to_func(api)).collect::<Vec<_>>();
+                let func = block
+                    .iter()
+                    .map(|block| block.to_func(api))
+                    .collect::<Vec<_>>();
 
                 Box::new(move |plugin, particle, api| {
                     let frames = number.to_number(api) as u32;
-                    
+
                     if frames == 0 {
                         return; // We don't want to divide by 0 xD
                     }
