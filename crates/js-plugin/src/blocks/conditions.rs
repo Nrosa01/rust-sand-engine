@@ -152,10 +152,15 @@ impl Conditions {
             Conditions::OneInXChance { chance } => match chance {
                 Number::Constant(number) => {
                     let number = number as i32;
-                    Box::new(move |_, _, api| {
-                        let random_number = api.gen_range(1, number);
-                        random_number == 1
-                    })
+                    if number <= 1 {
+                        return Box::new(move |_, _, _| true);
+                    }
+                    else {
+                        Box::new(move |_, _, api| {
+                            let random_number = api.gen_range(1, number);
+                            random_number == 1
+                        })
+                    }
                 }
                 number => Box::new(move |plugin, particle, api| {
                     let chance = number.to_number(api);

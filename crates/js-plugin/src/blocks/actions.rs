@@ -316,6 +316,11 @@ impl Actions {
 
                 Box::new(move |plugin, particle, api| {
                     let frames = number.to_number(api) as u32;
+                    
+                    if frames == 0 {
+                        return; // We don't want to divide by 0 xD
+                    }
+
                     if api.get_frame() % frames == 0 {
                         func.iter().for_each(|func| func(plugin, particle, api));
                     }
