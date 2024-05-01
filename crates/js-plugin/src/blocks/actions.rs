@@ -58,7 +58,7 @@ impl Actions {
                 let particle_id = r#type.get_particle_id(api) as u8;
 
                 // As the particle is invalid, all this block is invalid
-                if particle_id == Particle::INVALID.id {
+                if particle_id >= api.get_particle_count() {
                     return Box::new(|_, _, _| ());
                 }
 

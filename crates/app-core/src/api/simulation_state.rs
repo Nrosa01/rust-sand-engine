@@ -231,6 +231,10 @@ impl SimulationState {
         self.particles[local_y][local_x]
     }
 
+    pub fn get_particle_count(&self) -> u8 {
+        self.particle_definitions.len() as u8
+    }
+
     pub fn new_particle(&self, particle_id: u8) -> Particle {
         let particle_definition = &self.particle_definitions[particle_id as usize];
         let min_alpha = particle_definition.rand_alpha_min as i32;
