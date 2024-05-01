@@ -8,14 +8,15 @@ pub enum Actions
     Swap { direction: Direction },
     CopyTo { direction: Direction },
     ChangeInto { direction: Direction, r#type: ParticleType },
-    RandomTransformation { transformation: TransformationInternal, block: Action},
-    ForEachTransformation { transformation: TransformationInternal, block: Action},
-    RotatedBy { number: Number, block: Action },
-    If { condition: Conditions, result: Action, r#else: Option<Action>}, // If block, if true, execute action
-    IncreaseParticlePropierty { propierty: ParticlePropierties, number: Number,  direction: Option<Direction> },
-    SetParticlePropierty { propierty: ParticlePropierties, number: Number, direction: Option<Direction> },
-    Repeat { number: Number, block: Action },
-    EveryXFrames { number: Number, block: Action },
+    RandomTransformation { transformation: TransformationInternal, block: Option<Action>},
+    ForEachTransformation { transformation: TransformationInternal, block: Option<Action>},
+    RotatedBy { number: Number, block: Option<Action> },
+    If { condition: Option<Conditions>, result: Option<Action>, r#else: Option<Action>}, // If block, if true, execute action
+    IncreaseParticlePropierty { propierty: ParticlePropierties, number: Number,  direction: Direction },
+    SetParticlePropierty { propierty: ParticlePropierties, number: Number, direction: Direction },
+    Repeat { number: Number, block: Option<Action> },
+    EveryXFrames { number: Number, block: Option<Action> },
+    None
 }
 
 impl Actions {
@@ -83,6 +84,11 @@ impl Actions {
                 transformation,
                 block,
             } => {
+                if block.is_none() {
+                    return Box::new(|_, _, _| ());
+                }
+
+                let block = block.unwrap();
                 let func = block.to_func(api);
 
                 Box::new(move |plugin, particle, api| {
@@ -101,6 +107,12 @@ impl Actions {
                 transformation,
                 block,
             } => {
+                if block.is_none() {
+                    return Box::new(|_, _, _| ());
+                }
+
+                let block = block.unwrap();
+
                 let func = block.to_func(api);
 
                 match transformation {
@@ -186,8 +198,12 @@ impl Actions {
                 r#else,
             } => {
                 // We bake the functions here so they don't have to get built every time this block is called
-                let condition = condition.to_func(api);
-                let result = result.to_func(api);
+                if condition.is_none() {
+                    return Box::new(|_, _, _| ());
+                }
+
+                let condition = condition.unwrap().to_func(api);
+                let result = result.unwrap_or(Box::new(Actions::None)).to_func(api);
                 // "Baking" so we only call r#else if there is an else
                 // I could also create an empty function with let r#else = r#else.unwrap_or_else(|| Box::new(|_, _, _| true));
                 // And I could return a single lamnbda instead of this but....
@@ -212,6 +228,11 @@ impl Actions {
                 }
             }
             Actions::RotatedBy { number, block } => {
+                if block.is_none() {
+                    return Box::new(|_, _, _| ());
+                }
+
+                let block = block.unwrap();
                 let func = block.to_func(api);
                 Box::new(move |plugin, particle, api| {
                     let previous_transformation = api.get_transformation().clone();
@@ -229,90 +250,53 @@ impl Actions {
                 number,
                 direction,
             } => {
-                if direction.is_some() {
-                    let direction = direction.unwrap();
-                    match propierty {
-                        ParticlePropierties::Light => Box::new(move |_, _, api| {
-                            let direction = direction.get_direction(api);
-                            let direction = api.get_transformation().transform(&direction);
-                            let number = number.to_number(api) as i8;
-                            let mut particle = api.get(direction[0], direction[1]);
-                            particle.light = particle.light.saturating_add_signed(number).min(100); // This is to avoid overflow
-                            api.set(0, 0, particle);
-                        }),
-                        ParticlePropierties::Extra => Box::new(move |_, _, api| {
-                            let direction = direction.get_direction(api);
-                            let direction = api.get_transformation().transform(&direction);
-                            let number = number.to_number(api) as i8;
-                            let mut particle = api.get(direction[0], direction[1]);
-                            particle.extra = particle.extra.saturating_add_signed(number).min(100); // This is to avoid overflow
-                            api.set(0, 0, particle);
-                        }),
-                    } 
-                } else {
-                    match propierty {
-                        ParticlePropierties::Light => Box::new(move |_, particle, api| {
-                            let number = number.to_number(api) as i8;
-                            let mut particle = particle;
-                            particle.light = particle.light.saturating_add_signed(number).min(100); // This is to avoid overflow
-                            api.set(0, 0, particle);
-                        }),
-                        ParticlePropierties::Extra => Box::new(move |_, particle, api| {
-                            let number = number.to_number(api) as i8;
-                            let mut particle = particle;
-                            particle.extra = particle.extra.saturating_add_signed(number).min(100); // This is to avoid overflow
-                            api.set(0, 0, particle);
-                        }),
-                    }
+                match propierty {
+                    ParticlePropierties::Light => Box::new(move |_, _, api| {
+                        let direction = direction.get_direction(api);
+                        let direction = api.get_transformation().transform(&direction);
+                        let number = number.to_number(api) as i8;
+                        let mut particle = api.get(direction[0], direction[1]);
+                        particle.light = particle.light.saturating_add_signed(number).min(100); // This is to avoid overflow
+                        api.set(0, 0, particle);
+                    }),
+                    ParticlePropierties::Extra => Box::new(move |_, _, api| {
+                        let direction = direction.get_direction(api);
+                        let direction = api.get_transformation().transform(&direction);
+                        let number = number.to_number(api) as i8;
+                        let mut particle = api.get(direction[0], direction[1]);
+                        particle.extra = particle.extra.saturating_add_signed(number).min(100); // This is to avoid overflow
+                        api.set(0, 0, particle);
+                    }),
                 }
             }
             Actions::SetParticlePropierty {
                 propierty,
                 number,
                 direction,
-            } => 
-            {
-                if direction.is_some()
-                {
-                    let direction = direction.unwrap();
-                    match propierty {
-                        ParticlePropierties::Light => Box::new(move |_, _, api| {
-                            let direction = direction.get_direction(api);
-                            let direction = api.get_transformation().transform(&direction);
-                            let number = number.to_number(api).clamp(0, 100) as u8;
-                            let mut particle = api.get(direction[0], direction[1]);
-                            particle.light = number;
-                            api.set(0, 0, particle);
-                        }),
-                        ParticlePropierties::Extra => Box::new(move |_, _, api| {
-                            let direction = direction.get_direction(api);
-                            let direction = api.get_transformation().transform(&direction);
-                            let number = number.to_number(api).clamp(0, 100) as u8;
-                            let mut particle = api.get(direction[0], direction[1]);
-                            particle.extra = number;
-                            api.set(0, 0, particle);
-                        }),
-                    }
-                    
-                }
-                else {
-                    match propierty {
-                        ParticlePropierties::Light => Box::new(move |_, particle, api| {
-                            let number = number.to_number(api).clamp(0, 100) as u8;
-                            let mut particle = particle;
-                            particle.light = number;
-                            api.set(0, 0, particle);
-                        }),
-                        ParticlePropierties::Extra => Box::new(move |_, particle, api| {
-                            let number = number.to_number(api).clamp(0, 100) as u8;
-                            let mut particle = particle;
-                            particle.extra = number;
-                            api.set(0, 0, particle);
-                        }),
-                    }
-                }
-            }
+            } => match propierty {
+                ParticlePropierties::Light => Box::new(move |_, _, api| {
+                    let direction = direction.get_direction(api);
+                    let direction = api.get_transformation().transform(&direction);
+                    let number = number.to_number(api).clamp(0, 100) as u8;
+                    let mut particle = api.get(direction[0], direction[1]);
+                    particle.light = number;
+                    api.set(0, 0, particle);
+                }),
+                ParticlePropierties::Extra => Box::new(move |_, _, api| {
+                    let direction = direction.get_direction(api);
+                    let direction = api.get_transformation().transform(&direction);
+                    let number = number.to_number(api).clamp(0, 100) as u8;
+                    let mut particle = api.get(direction[0], direction[1]);
+                    particle.extra = number;
+                    api.set(0, 0, particle);
+                }),
+            },
             Actions::Repeat { number, block } => {
+                if block.is_none() {
+                    return Box::new(|_, _, _| ());
+                }
+
+                let block = block.unwrap();
                 let func = block.to_func(api);
 
                 Box::new(move |plugin, particle, api| {
@@ -323,6 +307,11 @@ impl Actions {
                 })
             }
             Actions::EveryXFrames { number, block } => {
+                if block.is_none() {
+                    return Box::new(|_, _, _| ());
+                }
+
+                let block = block.unwrap();
                 let func = block.to_func(api);
 
                 Box::new(move |plugin, particle, api| {
@@ -332,6 +321,7 @@ impl Actions {
                     }
                 })
             }
+            Actions::None => Box::new(|_, _, _| ()),
         }
     }
 }
