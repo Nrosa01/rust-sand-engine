@@ -182,6 +182,14 @@ impl SimulationState {
         self.particle_name_to_id.remove(&name);
         self.particle_definitions.remove(id as usize);
 
+        // Now, values in the map might be invalidated, every value higher than the removed one will be shifted (decreased by 1)
+        self.particle_name_to_id.iter_mut().for_each(|(_, value)| {
+            if *value > id {
+                *value -= 1;
+            }
+        });
+
+
         // We have to update the particle buffer as indices higher than the removed one will be shifted
         // If the index is the same as the removed one we'll just replace it with an empty particle
         for y in 0..self.height {
