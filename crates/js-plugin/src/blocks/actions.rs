@@ -263,21 +263,17 @@ impl Actions {
                         let direction = direction.get_direction(api);
                         let direction = api.get_transformation().transform(&direction);
                         let number = number.to_number(api) as i8;
-                        let particle = api.get_mut(direction[0], direction[1]);
-                        
-                        if let Some(particle) = particle {
-                            particle.light = particle.light.saturating_add_signed(number).min(100); // This is to avoid overflow
-                        }
+                        let mut particle = api.get(direction[0], direction[1]);
+                        particle.light = particle.light.saturating_add_signed(number).min(100); // This is to avoid overflow
+                        api.set(direction[0], direction[1], particle);
                     }),
                     ParticlePropierties::Extra => Box::new(move |_, api| {
                         let direction = direction.get_direction(api);
                         let direction = api.get_transformation().transform(&direction);
                         let number = number.to_number(api) as i8;
-                        let particle = api.get_mut(direction[0], direction[1]);
-                        
-                        if let Some(particle) = particle {
-                            particle.extra = particle.extra.saturating_add_signed(number).min(100); // This is to avoid overflow
-                        }
+                        let mut particle = api.get(direction[0], direction[1]);
+                        particle.extra = particle.extra.saturating_add_signed(number).min(100); // This is to avoid overflow
+                        api.set(direction[0], direction[1], particle);
                     }),
                 }
             }
@@ -290,21 +286,17 @@ impl Actions {
                     let direction = direction.get_direction(api);
                     let direction = api.get_transformation().transform(&direction);
                     let number = number.to_number(api).clamp(0, 100) as u8;
-                    let particle = api.get_mut(direction[0], direction[1]);
-                        
-                    if let Some(particle) = particle {
-                        particle.light = number;
-                    }
+                    let mut particle = api.get(direction[0], direction[1]);
+                    particle.light = number;
+                    api.set(direction[0], direction[1], particle);
                 }),
                 ParticlePropierties::Extra => Box::new(move |_, api| {
                     let direction = direction.get_direction(api);
                     let direction = api.get_transformation().transform(&direction);
                     let number = number.to_number(api).clamp(0, 100) as u8;
-                    let particle = api.get_mut(direction[0], direction[1]);
-                        
-                    if let Some(particle) = particle {
-                        particle.extra = number;// This is to avoid overflow
-                    }
+                    let mut particle = api.get(direction[0], direction[1]);                        
+                    particle.extra = number;
+                    api.set(direction[0], direction[1], particle);
                 }),
             },
             Actions::Repeat { number, block } => {
