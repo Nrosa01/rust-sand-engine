@@ -10,7 +10,7 @@ pub enum Conditions {
     Not { block: Condition }, // Negates a block result, it's inverting a boolean
     And { block1: Condition, block2: Condition }, // Logical AND
     Or { block1: Condition, block2: Condition }, // Logical OR
-    IsTouching { r#type: Vec<ParticleType> }, // Looks neighbour to see if it's of type X
+    IsTouching { types: Vec<ParticleType> }, // Looks neighbour to see if it's of type X
     OneInXChance { chance: Number }, // Returns true one in a X chance, for example, if X is 3, it will return true 1/3 of the time
     IsEmpty { direction: Direction }, // Checks if a direction is empty
     CompareNumberEquality { block1: Number, block2: Number }, // Compares two blocks
@@ -91,19 +91,19 @@ impl Conditions {
                     func1(plugin, api) || func2(plugin, api)
                 })
             }
-            Conditions::IsTouching { r#type } => {
-                let types = r#type
+            Conditions::IsTouching { types } => {
+                let types = types
                     .iter()
                     .map(|particle| particle.get_particle_id(api) as u8)
                     .collect::<Vec<_>>();
 
                 if types.len() == 1 {
-                    let r#type = types[0];
+                    let particle_type = types[0];
 
                     Box::new(move |plugin, api| {
                         ParticleApi::NEIGHBORS
                             .iter()
-                            .any(|(direction)| api.get_type(direction.x, direction.y) == r#type)
+                            .any(|(direction)| api.get_type(direction.x, direction.y) == particle_type)
                     })
                 } else {
                     Box::new(move |plugin, api| {
