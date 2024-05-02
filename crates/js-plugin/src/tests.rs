@@ -5,46 +5,13 @@ mod tests {
     use crate::blocks::{Actions, Conditions, Direction, Number, ParticlePropierties, ParticleType, TransformationInternal};
 
     #[test]
-    #[rustfmt::skip]
-    pub fn test_sand_serialization_and_deserialization()
-    {
-        let blocks = vec![
-            Actions::If { 
-                condition:
-                    Conditions::CheckTypesInDirection { 
-                    direction: Direction::Constant([0, -1]), 
-                    types: vec![ParticleType::FromName("empty".to_string()), ParticleType::FromName("water".to_string())] }, 
-                result: Box::new(Actions::Swap { direction: Direction::Constant([0, -1]) }), 
-                r#else: Some(Box::new(Actions::If {
-                    condition: Conditions::CheckTypesInDirection { 
-                        direction: Direction::Constant([-1, -1]), 
-                        types: vec![ParticleType::FromName("empty".to_string()), ParticleType::FromName("water".to_string())] }, 
-                    result: Box::new(Actions::Swap { direction: Direction::Constant([-1, -1]) }), 
-                    r#else: Some(Box::new(Actions::If {
-                        condition: Conditions::CheckTypesInDirection { 
-                            direction: Direction::Constant([1, -1]), 
-                            types: vec![ParticleType::FromName("empty".to_string()), ParticleType::FromName("water".to_string())] }, 
-                        result: Box::new(Actions::Swap { direction: Direction::Constant([1, -1]) }), 
-                        r#else: None
-                    }))
-                }))
-            }
-        ];
-    
-    
-        println!("Block going to be serilized");
-        let serialized = serde_json::to_string(&blocks).map_err(|err| err.to_string()).unwrap();
-        println!("Block serilized");
-    
-        std::fs::write("sand.json", serialized).map_err(|err| err.to_string()).unwrap();
-    }
-
-    #[test]
     pub fn test_replicant()
     {
         let blocks = vec![
-            Actions::ForEachTransformation { transformation: TransformationInternal::Rotation, block: 
-            Box::new(Actions::CopyTo { direction: Direction::Constant([0, -1]) }) }
+            Actions::If(vec![
+                Some((Conditions::Boolean { value: true }, vec![ Actions::Swap { direction: Direction::Constant([0, -1]) }])),
+                None,
+            ])
         ];
     
     
@@ -55,70 +22,6 @@ mod tests {
         std::fs::write("replicant.json", serialized).map_err(|err| err.to_string()).unwrap();
     }
 
-    #[test]
-    pub fn tset_blocks()
-    {
-        let blocks = vec![
-            Actions::SetParticlePropierty { propierty:ParticlePropierties::Light, number: Number::RandomFromXToY(Box::new(Number::Constant(0)), Box::new(Number::Constant(100))), direction: Some(Direction::Constant([0, -1]))}
-        ];
-    
-    
-        println!("Block going to be serilized");
-        let serialized = serde_json::to_string(&blocks).map_err(|err| err.to_string()).unwrap();
-        println!("Block serilized");
-    
-        std::fs::write("aaaaaaaa.json", serialized).map_err(|err| err.to_string()).unwrap();
-    }
-
-    #[test]
-    pub fn test_sand2_serialization_and_deserialization() {
-        let blocks = vec![Actions::RandomTransformation {
-            transformation: TransformationInternal::HorizontalReflection,
-            block: Box::new(Actions::If {
-                condition: Conditions::CheckTypesInDirection {
-                    direction: Direction::Constant([0, -1]),
-                    types: vec![
-                        ParticleType::FromName("empty".to_string()),
-                        ParticleType::FromName("water".to_string()),
-                    ],
-                },
-                result: Box::new(Actions::Swap { direction: Direction::Constant([0, -1]) }),
-                r#else: Some(Box::new(Actions::If {
-                    condition: Conditions::CheckTypesInDirection {
-                        direction: Direction::Constant([-1, -1]),
-                        types: vec![
-                            ParticleType::FromName("empty".to_string()),
-                            ParticleType::FromName("water".to_string()),
-                        ],
-                    },
-                    result: Box::new(Actions::Swap {
-                        direction: Direction::Constant([-1, -1]),
-                    }),
-                    r#else: Some(Box::new(Actions::If {
-                        condition: Conditions::CheckTypesInDirection {
-                            direction: Direction::Constant([1, -1]),
-                            types: vec![
-                                ParticleType::FromName("empty".to_string()),
-                                ParticleType::FromName("water".to_string()),
-                            ],
-                        },
-                        result: Box::new(Actions::Swap { direction: Direction::Constant([1, -1]) }),
-                        r#else: None,
-                    })),
-                })),
-            }),
-        }];
-
-        println!("Block going to be serilized");
-        let serialized = serde_json::to_string(&blocks)
-            .map_err(|err| err.to_string())
-            .unwrap();
-        println!("Block serilized");
-
-        std::fs::write("sand2.json", serialized)
-            .map_err(|err| err.to_string())
-            .unwrap();
-    }
 
     #[test]
     #[rustfmt::skip]
