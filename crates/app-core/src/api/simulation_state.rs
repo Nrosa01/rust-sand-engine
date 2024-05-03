@@ -65,13 +65,7 @@ pub struct SimulationState {
 
 impl SimulationState {
     pub fn new(width: usize, height: usize) -> SimulationState {
-        #[rustfmt::skip]
-        let not_black_color = [Color::NOT_BLACK.r, Color::NOT_BLACK.g, Color::NOT_BLACK.b, Color::NOT_BLACK.a];
-
-        let mut color_buffer = vec![0; width * height * 4];
-        for (_, color) in color_buffer.chunks_mut(4).enumerate() {
-            color.copy_from_slice(&not_black_color);
-        }
+        let color_buffer = vec![0; width * height * 4];
 
         let mut state = SimulationState {
             particles: vec![vec![Particle::new(); width]; height],
@@ -89,9 +83,9 @@ impl SimulationState {
 
         state.add_or_replace_particle_definition(ParticleCommonData {
             name: String::from("Empty"),
-            color: [18, 33, 43, 1],
-            rand_alpha_min: 0,
-            rand_alpha_max: 0,
+            color:  [204, 225, 251, 255],
+            rand_alpha_min: 1,
+            rand_alpha_max: 1,
             rand_extra_min: 0,
             rand_extra_max: 0,
         });

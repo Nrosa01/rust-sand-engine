@@ -7,8 +7,8 @@ use js_plugin::plugins::JSPlugin;
 
 use crate::*;
 
-const SIMULATION_STARTING_WIDTH: usize = 100;
-const SIMULATION_STARTING_HEIGHT: usize = 100;
+const SIMULATION_STARTING_WIDTH: usize = 150;
+const SIMULATION_STARTING_HEIGHT: usize = 150;
 
 
 #[cfg(debug_assertions)]
@@ -133,11 +133,6 @@ impl Entity for Universe {
             self.simulation.select_previous_plugin();
         }
 
-
-        if is_key_pressed(KeyCode::Space) {
-            self.set_paused(!self.paused);
-        }
-        
         
         if is_key_pressed(KeyCode::K)
         {
