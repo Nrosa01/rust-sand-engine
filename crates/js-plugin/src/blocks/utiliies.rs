@@ -12,7 +12,7 @@ pub enum ParticlePropierties {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
-#[serde(tag = "math_op", content = "data", rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
 pub enum MathOperations {
     Addition,
     Subtraction,

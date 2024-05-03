@@ -164,7 +164,7 @@ impl Conditions {
                 }
                 number => Box::new(move |plugin, api| {
                     let chance = number.to_number(api);
-                    let random_number = api.gen_range(1, chance);
+                    let random_number = api.gen_range(1, chance.max(1));
                     random_number == 1
                 }),
             },
