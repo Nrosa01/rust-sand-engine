@@ -7,8 +7,8 @@ use js_plugin::plugins::JSPlugin;
 
 use crate::*;
 
-const SIMULATION_STARTING_WIDTH: usize = 300;
-const SIMULATION_STARTING_HEIGHT: usize = 300;
+const SIMULATION_STARTING_WIDTH: usize = 100;
+const SIMULATION_STARTING_HEIGHT: usize = 100;
 
 
 #[cfg(debug_assertions)]
@@ -133,6 +133,12 @@ impl Entity for Universe {
             self.simulation.select_previous_plugin();
         }
 
+
+        if is_key_pressed(KeyCode::Space) {
+            self.set_paused(!self.paused);
+        }
+        
+        
         if is_key_pressed(KeyCode::K)
         {
             push_command(Command::RemovePlugin(self.simulation.get_selected_plugin()));
@@ -141,8 +147,10 @@ impl Entity for Universe {
 
     fn draw(&self) {
         let clear_color = self.simulation.get_particle_color(0).unwrap_or(&[0,0,0,0]);
-        clear_background(Color::from_rgba(clear_color[0], clear_color[1], clear_color[2], clear_color[3]));
-        draw_simulation(&self.texture, &self.simulation.get_buffer(), (*clear_color).into());
+        // Opactity to max, so when a particle alpha is 0 the color fades properly. First particle alpha shouldn't be something
+        // that changes but given how blockly works we can't do much about it
+        clear_background(Color::from_rgba(clear_color[0], clear_color[1], clear_color[2], 255));
+        draw_simulation(&self.texture, &self.simulation.get_buffer());
 
         #[cfg(debug_assertions)]
         #[cfg(not(target_family = "wasm"))]
@@ -202,7 +210,7 @@ fn resize_texture(texture: &mut Texture2D, width: u32, height: u32, buffer: &[u8
     texture.texture.resize(ctx, width, height, Some(buffer));
 }
 
-fn draw_simulation(texture: &Texture2D, bytes: &[u8], clear_color: Color) {
+fn draw_simulation(texture: &Texture2D, bytes: &[u8]) {
     let raw = texture.raw_miniquad_texture_handle();
     let ctx = unsafe { get_internal_gl().quad_context };
     raw.update(ctx, bytes);
@@ -211,15 +219,6 @@ fn draw_simulation(texture: &Texture2D, bytes: &[u8], clear_color: Color) {
     let pos_y = (screen_height() / 2.0 - screen_width() / 2.0).max(0.);
 
     let dest_size = screen_height().min(screen_width());
-
-    // Draw rect with transparent color
-    draw_rectangle(
-        pos_x,
-        pos_y,
-        dest_size,
-        dest_size,
-        clear_color,
-    );
 
     // Draw the texture
     draw_texture_ex(
