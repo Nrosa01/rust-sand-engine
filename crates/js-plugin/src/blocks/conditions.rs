@@ -27,99 +27,72 @@ impl Conditions {
         let block = self.clone();
         match block {
             Conditions::CheckTypesInDirection { direction, types } => {
-                let first_type = &types[0];
+                let mut constant_types = Vec::new();
+                let mut dynamic_types = Vec::new();
 
-                match first_type {
-                    ParticleType::TypeOf(_) => {
-                        // If the array is only one element, we can optimize it by taking it out.
-                        if types.len() == 1 {
-                            match direction {
-                                Direction::Constant(direction) => {
-                                    let direction = direction;
-                                    Box::new(move |plugin, api| {
-                                        let particle_id = types[0].get_particle_id(api);
+                types.iter().for_each(|particle| match particle {
+                    ParticleType::TypeOf(_) => dynamic_types.push(particle.clone()),
+                    _ => constant_types.push(particle.get_particle_id(api)),
+                });
 
-                                        let direction =
-                                            api.get_transformation().transform(&direction);
-                                        api.get_type(direction[0], direction[1]) == particle_id
-                                    })
-                                }
-                                _ => Box::new(move |plugin, api| {
-                                    let particle_id = types[0].get_particle_id(api);
+                // If the array is only one element, we can optimize it by taking it out.
+                // This makes the code uglier and more duplicate, but I've benchmarked it and it's faster.
+                if types.len() == 1 && dynamic_types.is_empty() {
+                    let particle_id = constant_types[0];
 
-                                    let direction = direction.get_direction(api);
-                                    let direction = api.get_transformation().transform(&direction);
-                                    api.get_type(direction[0], direction[1]) == particle_id
-                                }),
-                            }
-                        } else {
-                            match direction {
-                                Direction::Constant(direction) => {
-                                    let direction = direction;
-                                    Box::new(move |plugin, api| {
-                                        let direction =
-                                            api.get_transformation().transform(&direction);
-
-                                        types.iter().find(|particle| {
-                                            let particle_id = particle.get_particle_id(api);
-                                            api.get_type(direction[0], direction[1]) == particle_id
-                                        }).is_some()
-                                    })
-                                }
-                                _ => Box::new(move |plugin, api| {
-                                    let direction = direction.get_direction(api);
-                                    let direction = api.get_transformation().transform(&direction);
-                                    
-                                    types.iter().find(|particle| {
-                                        let particle_id = particle.get_particle_id(api);
-                                        api.get_type(direction[0], direction[1]) == particle_id
-                                    }).is_some()
-                                }),
-                            }
+                    match direction {
+                        Direction::Constant(direction) => {
+                            let direction = direction;
+                            Box::new(move |plugin, api| {
+                                let direction = api.get_transformation().transform(&direction);
+                                api.get_type(direction[0], direction[1]) == particle_id
+                            })
                         }
+                        _ => Box::new(move |plugin, api| {
+                            let direction = direction.get_direction(api);
+                            let direction = api.get_transformation().transform(&direction);
+                            api.get_type(direction[0], direction[1]) == particle_id
+                        }),
                     }
-                    _ => {
-                        let types = types
-                            .iter()
-                            .map(|particle| particle.get_particle_id(api) as u8)
-                            .collect::<Vec<_>>();
-
-                        // If the array is only one element, we can optimize it by taking it out.
-                        if types.len() == 1 {
-                            let particle_id = types[0];
-
-                            match direction {
-                                Direction::Constant(direction) => {
-                                    let direction = direction;
-                                    Box::new(move |plugin, api| {
-                                        let direction =
-                                            api.get_transformation().transform(&direction);
-                                        api.get_type(direction[0], direction[1]) == particle_id
-                                    })
-                                }
-                                _ => Box::new(move |plugin, api| {
-                                    let direction = direction.get_direction(api);
-                                    let direction = api.get_transformation().transform(&direction);
-                                    api.get_type(direction[0], direction[1]) == particle_id
-                                }),
-                            }
-                        } else {
-                            match direction {
-                                Direction::Constant(direction) => {
-                                    let direction = direction;
-                                    Box::new(move |plugin, api| {
-                                        let direction =
-                                            api.get_transformation().transform(&direction);
-                                        api.is_any_particle_at(direction[0], direction[1], &types)
-                                    })
-                                }
-                                _ => Box::new(move |plugin, api| {
-                                    let direction = direction.get_direction(api);
-                                    let direction = api.get_transformation().transform(&direction);
-                                    api.is_any_particle_at(direction[0], direction[1], &types)
-                                }),
-                            }
+                } else if types.len() == 1 && constant_types.is_empty() {
+                    match direction {
+                        Direction::Constant(direction) => {
+                            let direction = direction;
+                            Box::new(move |plugin, api| {
+                                let direction = api.get_transformation().transform(&direction);
+                                api.get_type(direction[0], direction[1])
+                                    == dynamic_types[0].get_particle_id(api)
+                            })
                         }
+                        _ => Box::new(move |plugin, api| {
+                            let direction = direction.get_direction(api);
+                            let direction = api.get_transformation().transform(&direction);
+                            api.get_type(direction[0], direction[1])
+                                == dynamic_types[0].get_particle_id(api)
+                        }),
+                    }
+                } else {
+                    match direction {
+                        Direction::Constant(direction) => {
+                            let direction = direction;
+                            Box::new(move |plugin, api| {
+                                let direction = api.get_transformation().transform(&direction);
+                                api.is_any_particle_at(direction[0], direction[1], &constant_types)
+                                    || dynamic_types.iter().any(|particle| {
+                                        api.get_type(direction[0], direction[1])
+                                            == particle.get_particle_id(api)
+                                    })
+                            })
+                        }
+                        _ => Box::new(move |plugin, api| {
+                            let direction = direction.get_direction(api);
+                            let direction = api.get_transformation().transform(&direction);
+                            api.is_any_particle_at(direction[0], direction[1], &constant_types)
+                                || dynamic_types.iter().any(|particle| {
+                                    api.get_type(direction[0], direction[1])
+                                        == particle.get_particle_id(api)
+                                })
+                        }),
                     }
                 }
             }
@@ -140,24 +113,39 @@ impl Conditions {
 
                 Box::new(move |plugin, api| func1(plugin, api) || func2(plugin, api))
             }
+            // TODO
             Conditions::IsTouching { types } => {
-                let types = types
-                    .iter()
-                    .map(|particle| particle.get_particle_id(api) as u8)
-                    .collect::<Vec<_>>();
+                let mut constant_types = Vec::new();
+                let mut dynamic_types = Vec::new();
 
-                if types.len() == 1 {
-                    let particle_type = types[0];
+                types.iter().for_each(|particle| match particle {
+                    ParticleType::TypeOf(_) => dynamic_types.push(particle.clone()),
+                    _ => constant_types.push(particle.get_particle_id(api)),
+                });
+
+                if types.len() == 1 && dynamic_types.is_empty() {
+                    let particle_type = constant_types[0];
 
                     Box::new(move |plugin, api| {
                         ParticleApi::NEIGHBORS.iter().any(|(direction)| {
                             api.get_type(direction.x, direction.y) == particle_type
                         })
                     })
+                } else if types.len() == 1 && constant_types.is_empty() {
+                    Box::new(move |plugin, api| {
+                        ParticleApi::NEIGHBORS.iter().any(|(direction)| {
+                            api.get_type(direction.x, direction.y)
+                                == dynamic_types[0].get_particle_id(api)
+                        })
+                    })
                 } else {
                     Box::new(move |plugin, api| {
                         ParticleApi::NEIGHBORS.iter().any(|(direction)| {
-                            types.contains(&api.get_type(direction.x, direction.y))
+                            constant_types.contains(&api.get_type(direction.x, direction.y))
+                                || dynamic_types.iter().any(|particle| {
+                                    api.get_type(direction.x, direction.y)
+                                        == particle.get_particle_id(api)
+                                })
                         })
                     })
                 }
