@@ -46,7 +46,13 @@ impl Number {
                     })
                     .count() as i32
             },
-            Number::RandomFromXToY(min, max) => api.gen_range(min.to_number(api), max.to_number(api)),
+            Number::RandomFromXToY(min, max) => {
+                let min_number = min.to_number(api);
+                let max_number = max.to_number(api);
+                let min_final = min_number.min(max_number);
+                let max_final = min_number.max(max_number);
+                api.gen_range(min_final, max_final)
+            },
             Number::Light(direction) => {
                 let direction = direction.as_ref().unwrap_or(&Direction::Constant([0,0])).get_direction(api);
                 let direction = api.get_transformation().transform(&direction);
