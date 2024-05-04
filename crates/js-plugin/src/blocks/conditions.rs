@@ -23,50 +23,103 @@ pub enum Conditions {
 // Implement from Block into Function
 impl Conditions {
     #[allow(unused)]
-    pub fn to_func(
-        &self,
-        api: &ParticleApi,
-    ) -> Box<dyn Fn(&JSPlugin, &mut ParticleApi) -> bool> {
+    pub fn to_func(&self, api: &ParticleApi) -> Box<dyn Fn(&JSPlugin, &mut ParticleApi) -> bool> {
         let block = self.clone();
         match block {
             Conditions::CheckTypesInDirection { direction, types } => {
-                let types = types
-                    .iter()
-                    .map(|particle| particle.get_particle_id(api) as u8)
-                    .collect::<Vec<_>>();
+                let first_type = &types[0];
 
-                // If the array is only one element, we can optimize it by taking it out.
-                if types.len() == 1 {
-                    let particle_id = types[0];
+                match first_type {
+                    ParticleType::TypeOf(_) => {
+                        // If the array is only one element, we can optimize it by taking it out.
+                        if types.len() == 1 {
+                            match direction {
+                                Direction::Constant(direction) => {
+                                    let direction = direction;
+                                    Box::new(move |plugin, api| {
+                                        let particle_id = types[0].get_particle_id(api);
 
-                    match direction {
-                        Direction::Constant(direction) => {
-                            let direction = direction;
-                            Box::new(move |plugin, api| {
-                                let direction = api.get_transformation().transform(&direction);
-                                api.get_type(direction[0], direction[1]) == particle_id
-                            })
+                                        let direction =
+                                            api.get_transformation().transform(&direction);
+                                        api.get_type(direction[0], direction[1]) == particle_id
+                                    })
+                                }
+                                _ => Box::new(move |plugin, api| {
+                                    let particle_id = types[0].get_particle_id(api);
+
+                                    let direction = direction.get_direction(api);
+                                    let direction = api.get_transformation().transform(&direction);
+                                    api.get_type(direction[0], direction[1]) == particle_id
+                                }),
+                            }
+                        } else {
+                            match direction {
+                                Direction::Constant(direction) => {
+                                    let direction = direction;
+                                    Box::new(move |plugin, api| {
+                                        let direction =
+                                            api.get_transformation().transform(&direction);
+
+                                        types.iter().find(|particle| {
+                                            let particle_id = particle.get_particle_id(api);
+                                            api.get_type(direction[0], direction[1]) == particle_id
+                                        }).is_some()
+                                    })
+                                }
+                                _ => Box::new(move |plugin, api| {
+                                    let direction = direction.get_direction(api);
+                                    let direction = api.get_transformation().transform(&direction);
+                                    
+                                    types.iter().find(|particle| {
+                                        let particle_id = particle.get_particle_id(api);
+                                        api.get_type(direction[0], direction[1]) == particle_id
+                                    }).is_some()
+                                }),
+                            }
                         }
-                        _ => Box::new(move |plugin, api| {
-                            let direction = direction.get_direction(api);
-                            let direction = api.get_transformation().transform(&direction);
-                            api.get_type(direction[0], direction[1]) == particle_id
-                        }),
                     }
-                } else {
-                    match direction {
-                        Direction::Constant(direction) => {
-                            let direction = direction;
-                            Box::new(move |plugin, api| {
-                                let direction = api.get_transformation().transform(&direction);
-                                api.is_any_particle_at(direction[0], direction[1], &types)
-                            })
+                    _ => {
+                        let types = types
+                            .iter()
+                            .map(|particle| particle.get_particle_id(api) as u8)
+                            .collect::<Vec<_>>();
+
+                        // If the array is only one element, we can optimize it by taking it out.
+                        if types.len() == 1 {
+                            let particle_id = types[0];
+
+                            match direction {
+                                Direction::Constant(direction) => {
+                                    let direction = direction;
+                                    Box::new(move |plugin, api| {
+                                        let direction =
+                                            api.get_transformation().transform(&direction);
+                                        api.get_type(direction[0], direction[1]) == particle_id
+                                    })
+                                }
+                                _ => Box::new(move |plugin, api| {
+                                    let direction = direction.get_direction(api);
+                                    let direction = api.get_transformation().transform(&direction);
+                                    api.get_type(direction[0], direction[1]) == particle_id
+                                }),
+                            }
+                        } else {
+                            match direction {
+                                Direction::Constant(direction) => {
+                                    let direction = direction;
+                                    Box::new(move |plugin, api| {
+                                        let direction =
+                                            api.get_transformation().transform(&direction);
+                                        api.is_any_particle_at(direction[0], direction[1], &types)
+                                    })
+                                }
+                                _ => Box::new(move |plugin, api| {
+                                    let direction = direction.get_direction(api);
+                                    let direction = api.get_transformation().transform(&direction);
+                                    api.is_any_particle_at(direction[0], direction[1], &types)
+                                }),
+                            }
                         }
-                        _ => Box::new(move |plugin, api| {
-                            let direction = direction.get_direction(api);
-                            let direction = api.get_transformation().transform(&direction);
-                            api.is_any_particle_at(direction[0], direction[1], &types)
-                        }),
                     }
                 }
             }
@@ -79,17 +132,13 @@ impl Conditions {
                 let func1 = block1.to_func(api);
                 let func2 = block2.to_func(api);
 
-                Box::new(move |plugin, api| {
-                    func1(plugin, api) && func2(plugin, api)
-                })
+                Box::new(move |plugin, api| func1(plugin, api) && func2(plugin, api))
             }
             Conditions::Or { block1, block2 } => {
                 let func1 = block1.to_func(api);
                 let func2 = block2.to_func(api);
 
-                Box::new(move |plugin, api| {
-                    func1(plugin, api) || func2(plugin, api)
-                })
+                Box::new(move |plugin, api| func1(plugin, api) || func2(plugin, api))
             }
             Conditions::IsTouching { types } => {
                 let types = types
@@ -101,9 +150,9 @@ impl Conditions {
                     let particle_type = types[0];
 
                     Box::new(move |plugin, api| {
-                        ParticleApi::NEIGHBORS
-                            .iter()
-                            .any(|(direction)| api.get_type(direction.x, direction.y) == particle_type)
+                        ParticleApi::NEIGHBORS.iter().any(|(direction)| {
+                            api.get_type(direction.x, direction.y) == particle_type
+                        })
                     })
                 } else {
                     Box::new(move |plugin, api| {
@@ -113,27 +162,21 @@ impl Conditions {
                     })
                 }
             }
-            Conditions::CompareNumberEquality { block1, block2 } => {
-                Box::new(move |plugin, api| {
-                    let number1 = block1.to_number(api);
-                    let number2 = block2.to_number(api);
-                    number1 == number2
-                })
-            }
-            Conditions::CompareBiggerThan { block1, block2 } => {
-                Box::new(move |plugin, api| {
-                    let number1 = block1.to_number(api);
-                    let number2 = block2.to_number(api);
-                    number1 > number2
-                })
-            }
-            Conditions::CompareLessThan { block1, block2 } => {
-                Box::new(move |plugin, api| {
-                    let number1 = block1.to_number(api);
-                    let number2 = block2.to_number(api);
-                    number1 < number2
-                })
-            }
+            Conditions::CompareNumberEquality { block1, block2 } => Box::new(move |plugin, api| {
+                let number1 = block1.to_number(api);
+                let number2 = block2.to_number(api);
+                number1 == number2
+            }),
+            Conditions::CompareBiggerThan { block1, block2 } => Box::new(move |plugin, api| {
+                let number1 = block1.to_number(api);
+                let number2 = block2.to_number(api);
+                number1 > number2
+            }),
+            Conditions::CompareLessThan { block1, block2 } => Box::new(move |plugin, api| {
+                let number1 = block1.to_number(api);
+                let number2 = block2.to_number(api);
+                number1 < number2
+            }),
             Conditions::Boolean { value } => Box::new(move |plugin, api| value),
             Conditions::IsEmpty { direction } => match direction {
                 Direction::Constant(direction) => {
@@ -154,8 +197,7 @@ impl Conditions {
                     let number = number as i32;
                     if number <= 1 {
                         return Box::new(move |_, _| true);
-                    }
-                    else {
+                    } else {
                         Box::new(move |_, api| {
                             let random_number = api.gen_range(1, number);
                             random_number == 1
@@ -172,9 +214,7 @@ impl Conditions {
                 let func1 = block1.to_func(api);
                 let func2 = block2.to_func(api);
 
-                Box::new(move |plugin, api| {
-                    func1(plugin, api) == func2(plugin, api)
-                })
+                Box::new(move |plugin, api| func1(plugin, api) == func2(plugin, api))
             }
         }
     }

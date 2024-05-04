@@ -4,7 +4,6 @@ use super::*;
 #[serde(tag = "number", content = "data", rename_all = "camelCase")]
 pub enum Number {
     NumberOfXTouching(Vec<ParticleType>), // Requires ParticleType or panics
-    TypeOf(Direction),
     RandomFromXToY(Box<Number>, Box<Number>),
     Light(Option<Direction>),
     Extra(Option<Direction>),
@@ -17,6 +16,7 @@ pub enum Number {
 pub enum ParticleType{
     FromID(u8), // This shouldn't be used at all, it's more an internal block
     FromName(String),
+    TypeOf(Direction),
 }
 
 impl ParticleType {
@@ -24,6 +24,11 @@ impl ParticleType {
         match self {
             ParticleType::FromID(id) => *id,
             ParticleType::FromName(name) => api.id_from_name(name),
+            ParticleType::TypeOf(direction) => {
+                let direction = direction.get_direction(api);
+                let direction = api.get_transformation().transform(&direction);
+                api.get_type(direction[0], direction[1])
+            }
         }
     }
 }
@@ -43,11 +48,6 @@ impl Number {
                             .filter(move |dir| api.get_type(dir.x, dir.y) == particle_id)
                     })
                     .count() as i32
-            }
-            Number::TypeOf(direction) => {
-                let direction = direction.get_direction(api);
-                let direction = api.get_transformation().transform(&direction);
-                api.get_type(direction[0], direction[1]) as i32
             },
             Number::RandomFromXToY(min, max) => api.gen_range(min.to_number(api), max.to_number(api)),
             Number::Light(direction) => {
