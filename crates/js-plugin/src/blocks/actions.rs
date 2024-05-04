@@ -214,7 +214,7 @@ impl Actions {
                     TransformationInternal::Rotation => Box::new(move |plugin, api| {
                         let previous_transformation = api.get_transformation().clone();
 
-                        for i in 1..=7 {
+                        for i in 0..=7 {
                             let transformation = Transformation::Rotation(i);
                             api.set_transformation(transformation);
 
