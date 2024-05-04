@@ -34,7 +34,7 @@ impl Particle {
     };
 
     pub const INVALID: Particle = Particle {
-        id: u8::MAX,
+        id: 0,
         clock: 0,
         light: 100,
         extra: 0,
