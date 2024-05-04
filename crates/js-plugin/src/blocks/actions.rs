@@ -8,14 +8,14 @@ pub enum Actions
     Swap { direction: Direction },
     CopyTo { direction: Direction },
     ChangeInto { direction: Direction, r#type: Number },
-    RandomTransformation { transformation: TransformationInternal, block: Option<Vec<Action>>},
-    ForEachTransformation { transformation: TransformationInternal, block: Option<Vec<Action>>},
-    RotatedBy { number: Number, block: Option<Vec<Action>> },
+    RandomTransformation { transformation: TransformationInternal, block: Option<Vec<Actions>>},
+    ForEachTransformation { transformation: TransformationInternal, block: Option<Vec<Actions>>},
+    RotatedBy { number: Number, block: Option<Vec<Actions>> },
     If (Vec<Option<(Conditions, Vec<Actions>)>>), 
     IncreaseParticlePropierty { propierty: ParticlePropierties, number: Number,  direction: Direction },
     SetParticlePropierty { propierty: ParticlePropierties, number: Number, direction: Direction },
-    Repeat { number: Number, block: Option<Vec<Action>> },
-    EveryXFrames { number: Number, block: Option<Vec<Action>> },
+    Repeat { number: Number, block: Option<Vec<Actions>> },
+    EveryXFrames { number: Number, block: Option<Vec<Actions>> },
     None
 }
 
@@ -361,11 +361,13 @@ impl Actions {
                 Box::new(move |plugin, api| {
                     let frames = number.to_number(api) as u32;
 
-                    if frames == 0 {
-                        return; // We don't want to divide by 0 xD
+                    // We don't want to divide by 0 xD
+                    // And negative numbers are not allowed, they don't make sense
+                    if frames <= 0 {
+                        return;
                     }
 
-                    if api.get_frame() % frames == 0 {
+                    if api.get_frame_count() % frames == 0 {
                         func.iter().for_each(|func| func(plugin, api));
                     }
                 })

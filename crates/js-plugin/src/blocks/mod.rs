@@ -16,7 +16,5 @@ use app_core::{ParticleApi, Transformation};
 use serde::{Deserialize, Serialize};
 
 use crate::plugins::JSPlugin;
-
-type Action = Box<Actions>;
 type Condition = Box<Conditions>;
 

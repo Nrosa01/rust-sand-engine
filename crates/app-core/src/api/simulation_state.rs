@@ -437,7 +437,7 @@ impl SimulationState {
         self.frame_count += 1;
     }
 
-    pub fn get_frame(&self) -> u32 {
+    pub fn get_frame_count(&self) -> u32 {
         self.frame_count
     }
 

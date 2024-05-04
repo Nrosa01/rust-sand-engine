@@ -126,6 +126,10 @@ impl Simulation {
         self.simulation_state.repaint();
     }
 
+    pub fn get_frame_count (&self) -> u32 {
+        self.simulation_state.get_frame_count()
+    }
+
     pub fn resize(&mut self, size: u32) -> () {
         self.simulation_state.resize(size);
         self.order_scheme = OrderSchemes::new(self.get_width(), self.get_height());
