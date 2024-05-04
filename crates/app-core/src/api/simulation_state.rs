@@ -226,21 +226,6 @@ impl SimulationState {
         self.particles[self.current_y][self.current_x]
     }
 
-    pub fn get_current_mut(&mut self) -> &mut Particle {
-        &mut self.particles[self.current_y][self.current_x]
-    }
-
-    pub fn get_mut(&mut self, x: i32, y: i32) -> Option<&mut Particle> {
-        let local_x = (self.current_x as i32 + x) as usize;
-        let local_y = (self.current_y as i32 - y) as usize;
-
-        if !self.is_inside_at(local_x, local_y) {
-            return None;
-        }
-
-        Some(&mut self.particles[local_y][local_x])
-    }
-
     pub fn get(&self, x: i32, y: i32) -> Particle {
         let local_x = (self.current_x as i32 + x) as usize;
         let local_y = (self.current_y as i32 - y) as usize;
@@ -303,10 +288,42 @@ impl SimulationState {
         // self.color_buffer[start_index + 3] = particle.light;
     }
 
+    pub(crate) fn set_particle_at_unchecked_relaxed(
+        &mut self,
+        x: usize,
+        y: usize,
+        particle: Particle,
+    ) -> () {
+        self.particles[y][x].id = particle.id;
+        self.particles[y][x].light = particle.light;
+        self.particles[y][x].extra = particle.extra;
+        // self.particles[y][x].clock = !self.clock; // Litetarlly that's the only difference
+        // I could also add a parameter to the function, but that would incur into branching, having to see if update_clock etc
+        // I prefer to just duplicate code
+        let color = self.particle_definitions[particle.id as usize].color;
+
+        // This was better to read, but it uses unsafe code under the hood
+        // self.image.get_image_data_mut()[y * self.width + x] = [255,255,255,255];
+
+        // Wasm lto optimizes this better than the above
+        let start_index = (y * self.width + x) * 4;
+        self.color_buffer[start_index] = color[0];
+        self.color_buffer[start_index + 1] = color[1];
+        self.color_buffer[start_index + 2] = color[2];
+        self.color_buffer[start_index + 3] = ((particle.light as u16 * 255) / 100) as u8;
+        // self.color_buffer[start_index + 3] = particle.light;
+    }
+
+
     pub fn get_particles(&self) -> &Vec<Vec<Particle>> {
         &self.particles
     }
 
+    // Sets a particle at x, y relative to the current position
+    // The set particle can't be processed in the same frame
+    // Use this to swap particles, move particles, copy particles etc...
+    // But don't use this if you just want to mutate partile state, it doesn't make sense
+    // That changing a particle opacity or extra negates the particle update, and it also makes some bugs arise
     pub fn set(&mut self, x: i32, y: i32, particle: Particle) -> bool {
         let local_x = (self.current_x as i32 + x) as usize;
         let local_y = (self.current_y as i32 - y) as usize;
@@ -316,6 +333,18 @@ impl SimulationState {
         }
 
         self.set_particle_at_unchecked(local_x, local_y, particle);
+        true
+    }
+
+    pub fn set_relaxed(&mut self, x: i32, y: i32, particle: Particle) -> bool {
+        let local_x = (self.current_x as i32 + x) as usize;
+        let local_y = (self.current_y as i32 - y) as usize;
+
+        if !self.is_inside_at(local_x, local_y) {
+            return false;
+        }
+
+        self.set_particle_at_unchecked_relaxed(local_x, local_y, particle);
         true
     }
 
