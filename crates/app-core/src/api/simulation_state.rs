@@ -429,6 +429,10 @@ impl SimulationState {
 
                 let plugin = &mut plugins[current_particle.id as usize];
                 plugin.update(self);
+
+                // Make sure the particle is updated next frame and also that is updated next frame
+                // If the user makes some operation that doesn't change the particle, its clock won't change so to avoid that we do this patch
+                self.particles[y][x].clock = !self.clock;
             }
         }
 
