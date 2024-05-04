@@ -3,45 +3,42 @@ use super::*;
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[serde(tag = "number", content = "data", rename_all = "camelCase")]
 pub enum Number {
-    NumberOfXTouching(Vec<ParticleType>), // Requires ParticleType or panics
+    NumberOfXTouching(Vec<Number>), // Requires ParticleType or panics
     RandomFromXToY(Box<Number>, Box<Number>),
     Light(Option<Direction>),
     Extra(Option<Direction>),
     MathOperation(MathOperations, Box<Number>, Box<Number>),
     Constant(i32),
-}
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
-#[serde(tag = "particle_type", content = "data", rename_all = "camelCase")]
-pub enum ParticleType{
+    // Particle Types
     FromID(u8), // This shouldn't be used at all, it's more an internal block
     FromName(String),
     TypeOf(Direction),
 }
 
-impl ParticleType {
-    pub fn get_particle_id(&self, api: &ParticleApi) -> u8 {
-        match self {
-            ParticleType::FromID(id) => *id,
-            ParticleType::FromName(name) => api.id_from_name(name),
-            ParticleType::TypeOf(direction) => {
-                let direction = direction.get_direction(api);
-                let direction = api.get_transformation().transform(&direction);
-                api.get_type(direction[0], direction[1])
-            }
-        }
-    }
-}
-
 #[rustfmt::skip]
 // Enum that holds values that cannot be precomputed
 impl Number {
+    pub fn to_particle_id(&self, api: &ParticleApi) -> u8 
+    {
+        match self {
+            Number::FromID(id) => *id,
+            Number::FromName(name) => api.id_from_name(name),
+            Number::TypeOf(direction) => {
+                let direction = direction.get_direction(api);
+                let direction = api.get_transformation().transform(&direction);
+                api.get_type(direction[0], direction[1])
+        }
+        _ => self.to_number(api) as u8
+        }   
+    }
+
     pub fn to_number(&self, api: &ParticleApi) -> i32 {
         match self {
             Number::NumberOfXTouching(particle_type_vec) => {
                 particle_type_vec
                     .iter()
-                    .map(|particle_type| particle_type.get_particle_id(api))
+                    .map(|particle_type| particle_type.to_particle_id(api))
                     .flat_map(|particle_id| {
                         ParticleApi::NEIGHBORS
                             .iter()
@@ -72,6 +69,7 @@ impl Number {
                 }
             },
             Number::Constant(constant) => *constant,
+            _ => self.to_particle_id(api) as i32
         }
     }
 }

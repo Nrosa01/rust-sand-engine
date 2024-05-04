@@ -7,7 +7,7 @@ pub enum Actions
 {
     Swap { direction: Direction },
     CopyTo { direction: Direction },
-    ChangeInto { direction: Direction, r#type: ParticleType },
+    ChangeInto { direction: Direction, r#type: Number },
     RandomTransformation { transformation: TransformationInternal, block: Option<Vec<Action>>},
     ForEachTransformation { transformation: TransformationInternal, block: Option<Vec<Action>>},
     RotatedBy { number: Number, block: Option<Vec<Action>> },
@@ -54,29 +54,59 @@ impl Actions {
                     api.set(direction[0], direction[1], api.get_current());
                 }),
             },
+            // TODO
             Actions::ChangeInto { direction, r#type } => {
-                let particle_id = r#type.get_particle_id(api) as u8;
-
-                // As the particle is invalid, all this block is invalid
-                if particle_id >= api.get_particle_count() {
-                    return Box::new(|_, _| ());
-                }
-
-                // let new_particle = api.new_particle(particle_id);
-
-                match direction {
-                    Direction::Constant(direction) => {
-                        let direction = direction;
-                        Box::new(move |_, api| {
-                            let direction = api.get_transformation().transform(&direction);
-                            api.set(direction[0], direction[1], api.new_particle(particle_id));
-                        })
+                match r#type {
+                    Number::FromID(r#type) => {
+                        let r#type = r#type as u8;
+                        if r#type >= api.get_particle_count() {
+                            return Box::new(|_, _| ());
+                        }
+                        let particle_id = r#type;
+                        match direction {
+                            Direction::Constant(direction) => {
+                                let direction = direction;
+                                Box::new(move |_, api| {
+                                    let direction = api.get_transformation().transform(&direction);
+                                    api.set(direction[0], direction[1], api.new_particle(particle_id));
+                                })
+                            }
+                            _ => Box::new(move |_, api| {
+                                let direction = direction.get_direction(api);
+                                let direction = api.get_transformation().transform(&direction);
+                                api.set(direction[0], direction[1], api.new_particle(particle_id));
+                            }),
+                        }
                     }
-                    _ => Box::new(move |_, api| {
-                        let direction = direction.get_direction(api);
-                        let direction = api.get_transformation().transform(&direction);
-                        api.set(direction[0], direction[1],  api.new_particle(particle_id));
-                    }),
+                    _ => 
+                    {
+                        match direction {
+                            Direction::Constant(direction) => {
+                                let direction = direction;
+                                Box::new(move |_, api| {
+                                    let direction = api.get_transformation().transform(&direction);
+                                    let particle_id = r#type.to_number(api) as u8;
+
+                                    if particle_id >= api.get_particle_count() {
+                                        return;
+                                    }
+
+                                    api.set(direction[0], direction[1], api.new_particle(particle_id));
+                                })
+                            }
+                            _ => Box::new(move |_, api| {
+                                let direction = direction.get_direction(api);
+                                let direction = api.get_transformation().transform(&direction);
+
+                                let particle_id = r#type.to_number(api) as u8;
+
+                                    if particle_id >= api.get_particle_count() {
+                                        return;
+                                    }
+                                api.set(direction[0], direction[1], api.new_particle(particle_id));
+                            }),
+                        }
+                    }
                 }
             }
 

@@ -1,16 +1,14 @@
-use self::numbers::ParticleType;
-
 use super::*;
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[serde(tag = "block", content = "data", rename_all = "camelCase")]
 #[rustfmt::skip]
 pub enum Conditions {
-    CheckTypesInDirection { direction: Direction, types: Vec<ParticleType> }, // If particle at direction is of type X
+    CheckTypesInDirection { direction: Direction, types: Vec<Number> }, // If particle at direction is of type X
     Not { block: Condition }, // Negates a block result, it's inverting a boolean
     And { block1: Condition, block2: Condition }, // Logical AND
     Or { block1: Condition, block2: Condition }, // Logical OR
-    IsTouching { types: Vec<ParticleType> }, // Looks neighbour to see if it's of type X
+    IsTouching { types: Vec<Number> }, // Looks neighbour to see if it's of type X
     OneInXChance { chance: Number }, // Returns true one in a X chance, for example, if X is 3, it will return true 1/3 of the time
     IsEmpty { direction: Direction }, // Checks if a direction is empty
     CompareNumberEquality { block1: Number, block2: Number }, // Compares two blocks
@@ -30,9 +28,10 @@ impl Conditions {
                 let mut constant_types = Vec::new();
                 let mut dynamic_types = Vec::new();
 
+                // There are many number types, but we assume that this function will only receive Typeof, FromID and FromName
                 types.iter().for_each(|particle| match particle {
-                    ParticleType::TypeOf(_) => dynamic_types.push(particle.clone()),
-                    _ => constant_types.push(particle.get_particle_id(api)),
+                    Number::FromID(_) =>  constant_types.push(particle.to_particle_id(api)),
+                    _ => dynamic_types.push(particle.clone()),
                 });
 
                 // If the array is only one element, we can optimize it by taking it out.
@@ -61,14 +60,14 @@ impl Conditions {
                             Box::new(move |plugin, api| {
                                 let direction = api.get_transformation().transform(&direction);
                                 api.get_type(direction[0], direction[1])
-                                    == dynamic_types[0].get_particle_id(api)
+                                    == dynamic_types[0].to_particle_id(api)
                             })
                         }
                         _ => Box::new(move |plugin, api| {
                             let direction = direction.get_direction(api);
                             let direction = api.get_transformation().transform(&direction);
                             api.get_type(direction[0], direction[1])
-                                == dynamic_types[0].get_particle_id(api)
+                                == dynamic_types[0].to_particle_id(api)
                         }),
                     }
                 } else {
@@ -80,7 +79,7 @@ impl Conditions {
                                 api.is_any_particle_at(direction[0], direction[1], &constant_types)
                                     || dynamic_types.iter().any(|particle| {
                                         api.get_type(direction[0], direction[1])
-                                            == particle.get_particle_id(api)
+                                            == particle.to_particle_id(api)
                                     })
                             })
                         }
@@ -90,7 +89,7 @@ impl Conditions {
                             api.is_any_particle_at(direction[0], direction[1], &constant_types)
                                 || dynamic_types.iter().any(|particle| {
                                     api.get_type(direction[0], direction[1])
-                                        == particle.get_particle_id(api)
+                                        == particle.to_particle_id(api)
                                 })
                         }),
                     }
@@ -119,8 +118,8 @@ impl Conditions {
                 let mut dynamic_types = Vec::new();
 
                 types.iter().for_each(|particle| match particle {
-                    ParticleType::TypeOf(_) => dynamic_types.push(particle.clone()),
-                    _ => constant_types.push(particle.get_particle_id(api)),
+                    Number::FromID(_) =>  constant_types.push(particle.to_particle_id(api)),
+                    _ => dynamic_types.push(particle.clone()),
                 });
 
                 if types.len() == 1 && dynamic_types.is_empty() {
@@ -135,7 +134,7 @@ impl Conditions {
                     Box::new(move |plugin, api| {
                         ParticleApi::NEIGHBORS.iter().any(|(direction)| {
                             api.get_type(direction.x, direction.y)
-                                == dynamic_types[0].get_particle_id(api)
+                                == dynamic_types[0].to_particle_id(api)
                         })
                     })
                 } else {
@@ -144,7 +143,7 @@ impl Conditions {
                             constant_types.contains(&api.get_type(direction.x, direction.y))
                                 || dynamic_types.iter().any(|particle| {
                                     api.get_type(direction.x, direction.y)
-                                        == particle.get_particle_id(api)
+                                        == particle.to_particle_id(api)
                                 })
                         })
                     })
