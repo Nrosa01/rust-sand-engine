@@ -2,8 +2,6 @@ use super::*;
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[serde(
-    tag = "particle_propierty_descriptor",
-    content = "data",
     rename_all = "camelCase"
 )]
 pub enum ParticlePropierties {

@@ -1,7 +1,7 @@
 use super::*;
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
-#[serde(tag = "direction", content = "data", rename_all = "camelCase")]
+#[serde(untagged, rename_all = "camelCase")]
 pub enum Direction {
     Constant([i32; 2]),
     Random,
