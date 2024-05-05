@@ -461,7 +461,11 @@ impl SimulationState {
 
                 // Make sure the particle is updated next frame and also that is updated next frame
                 // If the user makes some operation that doesn't change the particle, its clock won't change so to avoid that we do this patch
-                self.particles[y][x].clock = !self.clock;
+                
+                // But for some reason calling this single line here makes the simulation twice slower
+                // Not havint his only affects one kind of block and it's still easily solvable modifying that block
+                // so even if it's not formally correct, I'll leave it like this, but I'll keep this comment as a reminder
+                // self.particles[y][x].clock = !self.clock;
             }
         }
 

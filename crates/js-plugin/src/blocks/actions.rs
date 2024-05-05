@@ -366,11 +366,13 @@ impl Actions {
                     if frames <= 0 {
                         return;
                     }
-
+                    
                     // Print frames and api frame count and whether they are equal
                     if api.get_frame_count() % frames == 0 {
                         func.iter().for_each(|func| func(plugin, api));
                     }
+                    
+                    api.set(0, 0, api.get_current());
                 })
             }
             Actions::None => Box::new(|_, _| ()),
