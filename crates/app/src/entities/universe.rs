@@ -109,6 +109,9 @@ impl Entity for Universe {
             Command::ParticleSelected(id) => self.select_particle(*id as usize),
             Command::RemovePlugin(id) => {
                 self.simulation.remove_plugin(*id);
+            },
+            Command::StepSimulation => {
+                self.simulation.update();
             }
             _ => {}
         }
@@ -146,7 +149,8 @@ impl Entity for Universe {
         // that changes but given how blockly works we can't do much about it
         clear_background(Color::from_rgba(clear_color[0], clear_color[1], clear_color[2], 255));
         draw_simulation(&self.texture, &self.simulation.get_buffer());
-
+        // draw_text(&format!("FPS: {}", get_fps()), 10.0, 30.0, 30.0, RED);
+        
         #[cfg(debug_assertions)]
         #[cfg(not(target_family = "wasm"))]
         {

@@ -120,6 +120,36 @@ pub extern "C" fn set_mouse_hidden(data: sapp_jsutils::JsObject) {
 }
 
 #[no_mangle]
+pub extern "C" fn set_brush_size(data: sapp_jsutils::JsObject) {
+
+    if data.is_nil() {
+        return;
+    }
+
+    let mut buffer = String::new();
+    data.to_string(&mut buffer);
+
+    let size = buffer.parse();
+
+    match size {
+        Ok(size) => {
+            push_command(Command::SetBrushSize(size));
+            add_dbg((&format!("Set brush size command received with data: {}", size), 5.0));
+        }
+        Err(_) => {
+            add_dbg((&format!("Set brush size command received with data: {}", buffer), 2.0));
+        }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn step_simulation() {
+    push_command(Command::StepSimulation);
+    add_dbg(("Step simulation command received", 5.0));
+}
+
+
+#[no_mangle]
 pub fn pixel_creator_api_crate_version() -> u32
 {
     (1 << 24) + (0 << 16) + 0
