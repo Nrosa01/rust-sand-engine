@@ -14,7 +14,7 @@ pub trait Plugin {
 pub struct PluginResult {
     pub name: String,
     pub color: Color,
-    pub alpha: Vec2,
+    pub hue: Vec2,
     pub extra: Vec2,
 }
 
@@ -23,7 +23,7 @@ impl Default for PluginResult {
         PluginResult {
             name: String::from("Empty"),
             color: NOT_BLACK,
-            alpha: Vec2 { x: 0.9, y: 1.0 },
+            hue: Vec2 { x: 0.9, y: 1.0 },
             extra: Vec2 { x: 0.0, y: 0.0 },
         }
     }
@@ -38,10 +38,8 @@ impl From<PluginResult> for ParticleCommonData {
         ParticleCommonData {
             name: plugin_result.name,
             color: plugin_result.color.into(),
-            rand_alpha_min: (plugin_result.alpha.x * FROM_NORMALIZED_TO_COLOR) as u8,
-            rand_alpha_max: (plugin_result.alpha.y * FROM_NORMALIZED_TO_COLOR) as u8,
-            rand_extra_min: (plugin_result.extra.x * FROM_NORMALIZED_TO_COLOR) as u8,
-            rand_extra_max: (plugin_result.extra.y * FROM_NORMALIZED_TO_COLOR) as u8,
+            rand_hue_min: (plugin_result.hue.x * FROM_NORMALIZED_TO_COLOR) as u8,
+            rand_hue_max: (plugin_result.hue.y * FROM_NORMALIZED_TO_COLOR) as u8,
             color_h: h,
             color_s: s,
             color_l: l,
@@ -70,10 +68,8 @@ pub struct ParticleCommonData {
     pub color_h: f32,
     pub color_s: f32,
     pub color_l: f32,
-    pub rand_alpha_min: u8,
-    pub rand_alpha_max: u8,
-    pub rand_extra_min: u8,
-    pub rand_extra_max: u8,
+    pub rand_hue_min: u8,
+    pub rand_hue_max: u8,
 }
 
 // impl ParticleCommonData {

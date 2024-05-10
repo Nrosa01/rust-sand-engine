@@ -168,7 +168,7 @@ impl Entity for Universe {
                 &format!(
                     "Particle: {}\nLight: {}\nExtra: {}\n Pos: {} {}",
                     particle.id,
-                    particle.light,
+                    particle.opacity,
                     particle.extra,
                     particle_x,
                     particle_y

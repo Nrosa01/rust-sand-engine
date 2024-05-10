@@ -27,12 +27,12 @@ fn register(&mut self) -> PluginResult {
         let subtract = api.gen_range(-1, 0) as i8;
         
         // Use checked function to avoid overflow and hadle flow better
-        match cell.light.checked_add_signed(subtract)
+        match cell.opacity.checked_add_signed(subtract)
         {
             Some(result) => 
             {
                 let mut cell = cell;
-                cell.light = result;
+                cell.opacity = result;
                 let _  = (api.get(random_horizontal, up) != cell && api.get(random_horizontal, up) != self.rock_id) && 
                           api.swap_using(random_horizontal, up, cell) ||
                           api.set(0, 0, cell);

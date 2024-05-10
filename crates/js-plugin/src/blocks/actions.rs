@@ -289,12 +289,12 @@ impl Actions {
                 direction,
             } => {
                 match propierty {
-                    ParticlePropierties::Light => Box::new(move |_, api| {
+                    ParticlePropierties::Opacity => Box::new(move |_, api| {
                         let direction = direction.get_direction(api);
                         let direction = api.get_transformation().transform(&direction);
                         let number = number.to_number(api) as i8;
                         let mut particle = api.get(direction[0], direction[1]);
-                        particle.light = particle.light.saturating_add_signed(number).min(100); // This is to avoid overflow
+                        particle.opacity = particle.opacity.saturating_add_signed(number).min(100); // This is to avoid overflow
                         api.set_relaxed(direction[0], direction[1], particle);
                     }),
                     ParticlePropierties::Extra => Box::new(move |_, api| {
@@ -305,6 +305,38 @@ impl Actions {
                         particle.extra = particle.extra.saturating_add_signed(number).min(100); // This is to avoid overflow
                         api.set_relaxed(direction[0], direction[1], particle);
                     }),
+                    ParticlePropierties::HueShift => Box::new(move |_, api| {
+                        let direction = direction.get_direction(api);
+                        let direction = api.get_transformation().transform(&direction);
+                        let number = number.to_number(api) as i8;
+                        let mut particle = api.get(direction[0], direction[1]);
+                        particle.hue_shift = (particle.hue_shift.saturating_add_signed(number) % 101).max(0); // This is to avoid overflow
+                        api.set_relaxed(direction[0], direction[1], particle);
+                    }),
+                    ParticlePropierties::Extra2 => Box::new(move |_, api| {
+                        let direction = direction.get_direction(api);
+                        let direction = api.get_transformation().transform(&direction);
+                        let number = number.to_number(api) as i8;
+                        let mut particle = api.get(direction[0], direction[1]);
+                        particle.extra2 = particle.extra2.saturating_add_signed(number).min(100); // This is to avoid overflow
+                        api.set_relaxed(direction[0], direction[1], particle);
+                    }),
+                    ParticlePropierties::Extra3 => Box::new(move |_, api| {
+                        let direction = direction.get_direction(api);
+                        let direction = api.get_transformation().transform(&direction);
+                        let number = number.to_number(api) as i8;
+                        let mut particle = api.get(direction[0], direction[1]);
+                        particle.extra3 = particle.extra3.saturating_add_signed(number).min(100); // This is to avoid overflow
+                        api.set_relaxed(direction[0], direction[1], particle);
+                    }),
+                    ParticlePropierties::Extra4 => Box::new(move |_, api| {
+                        let direction = direction.get_direction(api);
+                        let direction = api.get_transformation().transform(&direction);
+                        let number = number.to_number(api) as i8;
+                        let mut particle = api.get(direction[0], direction[1]);
+                        particle.extra4 = particle.extra4.saturating_add_signed(number).min(100); // This is to avoid overflow
+                        api.set_relaxed(direction[0], direction[1], particle);
+                    }),
                 }
             }
             Actions::SetParticlePropierty {
@@ -312,12 +344,12 @@ impl Actions {
                 number,
                 direction,
             } => match propierty {
-                ParticlePropierties::Light => Box::new(move |_, api| {
+                ParticlePropierties::Opacity => Box::new(move |_, api| {
                     let direction = direction.get_direction(api);
                     let direction = api.get_transformation().transform(&direction);
                     let number = number.to_number(api).clamp(0, 100) as u8;
                     let mut particle = api.get(direction[0], direction[1]);
-                    particle.light = number;
+                    particle.opacity = number;
                     api.set_relaxed(direction[0], direction[1], particle);
                 }),
                 ParticlePropierties::Extra => Box::new(move |_, api| {
@@ -326,6 +358,38 @@ impl Actions {
                     let number = number.to_number(api).clamp(0, 100) as u8;
                     let mut particle = api.get(direction[0], direction[1]);                        
                     particle.extra = number;
+                    api.set_relaxed(direction[0], direction[1], particle);
+                }),
+                ParticlePropierties::HueShift => Box::new(move |_, api| {
+                    let direction = direction.get_direction(api);
+                    let direction = api.get_transformation().transform(&direction);
+                    let number = number.to_number(api).clamp(0, 100) as u8;
+                    let mut particle = api.get(direction[0], direction[1]);                        
+                    particle.hue_shift = number;
+                    api.set_relaxed(direction[0], direction[1], particle);
+                }),
+                ParticlePropierties::Extra2 => Box::new(move |_, api| {
+                    let direction = direction.get_direction(api);
+                    let direction = api.get_transformation().transform(&direction);
+                    let number = number.to_number(api).clamp(0, 100) as u8;
+                    let mut particle = api.get(direction[0], direction[1]);                        
+                    particle.extra2 = number;
+                    api.set_relaxed(direction[0], direction[1], particle);
+                }),
+                ParticlePropierties::Extra3 => Box::new(move |_, api| {
+                    let direction = direction.get_direction(api);
+                    let direction = api.get_transformation().transform(&direction);
+                    let number = number.to_number(api).clamp(0, 100) as u8;
+                    let mut particle = api.get(direction[0], direction[1]);                        
+                    particle.extra3 = number;
+                    api.set_relaxed(direction[0], direction[1], particle);
+                }),
+                ParticlePropierties::Extra4 => Box::new(move |_, api| {
+                    let direction = direction.get_direction(api);
+                    let direction = api.get_transformation().transform(&direction);
+                    let number = number.to_number(api).clamp(0, 100) as u8;
+                    let mut particle = api.get(direction[0], direction[1]);                        
+                    particle.extra4 = number;
                     api.set_relaxed(direction[0], direction[1], particle);
                 }),
             },

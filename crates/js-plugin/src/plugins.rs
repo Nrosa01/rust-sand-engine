@@ -86,7 +86,7 @@ impl Plugin for JSPlugin
             name: self.plugin_data.name.clone(),
             color: self.plugin_data.color,
             extra: self.plugin_data.extra,
-            alpha: self.plugin_data.alpha,
+            hue: self.plugin_data.hue,
         }
     }
 

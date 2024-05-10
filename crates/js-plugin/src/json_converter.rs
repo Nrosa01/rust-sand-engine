@@ -43,7 +43,7 @@ fn get_alpha(json: &JsonValue) -> Vec2 {
             y: max as f32,
         }
     } else {
-        PluginResult::default().alpha
+        PluginResult::default().hue
     }
 }
 
@@ -79,7 +79,7 @@ pub fn to_plugin_result(json: &JsonValue) -> Result<PluginResult, String> {
     Ok(PluginResult {
         name: name.to_string(),
         color: color.into(),
-        alpha: alpha,
+        hue: alpha,
         extra: extra,
     })
 }

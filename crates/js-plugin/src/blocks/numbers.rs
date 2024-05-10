@@ -56,7 +56,7 @@ impl Number {
             Number::Light(direction) => {
                 let direction = direction.as_ref().unwrap_or(&Direction::Constant([0,0])).get_direction(api);
                 let direction = api.get_transformation().transform(&direction);
-                api.get(direction[0], direction[1]).light as i32},
+                api.get(direction[0], direction[1]).opacity as i32},
             Number::Extra(direction) => {
                 let direction = direction.as_ref().unwrap_or(&Direction::Constant([0,0])).get_direction(api);
                 let direction = api.get_transformation().transform(&direction);

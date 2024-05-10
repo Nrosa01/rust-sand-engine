@@ -85,7 +85,7 @@ impl SimulationState {
             PluginResult {
                 name: String::from("Empty"),
                 color: Color::from_rgba(204, 225, 251, 255),
-                alpha: Vec2 { x: 1.0, y: 1.0 },
+                hue: Vec2 { x: 1.0, y: 1.0 },
                 extra: Vec2 { x: 0.0, y: 0.0 },
             }
             .into(),
@@ -248,16 +248,18 @@ impl SimulationState {
 
     pub fn new_particle(&self, particle_id: u8) -> Particle {
         let particle_definition = &self.particle_definitions[particle_id as usize];
-        let min_alpha = particle_definition.rand_alpha_min as i32;
-        let max_alpha = particle_definition.rand_alpha_max as i32;
-        let extra_min = particle_definition.rand_extra_min as i32;
-        let extra_max = particle_definition.rand_extra_max as i32;
+        let min_alpha = particle_definition.rand_hue_min as i32;
+        let max_alpha = particle_definition.rand_hue_max as i32;
 
         Particle {
             id: particle_id,
-            light: self.gen_range(min_alpha, max_alpha) as u8,
+            opacity: self.gen_range(min_alpha, max_alpha) as u8,
+            hue_shift: 0,
             clock: !self.clock,
-            extra: self.gen_range(extra_min, extra_max) as u8,
+            extra: 0,
+            extra2: 0,
+            extra3: 0,
+            extra4: 0,
         }
     }
 
@@ -269,18 +271,9 @@ impl SimulationState {
         self.set_particle_at_unchecked(x, y, self.new_particle(particle_id));
     }
 
-    pub(crate) fn update_particle_data(
-        &mut self,
-        x: usize,
-        y: usize,
-        particle: Particle,
-        new_clock: u8,
-    ) {
-        self.particles[y][x].id = particle.id;
-        self.particles[y][x].light = particle.light;
-        self.particles[y][x].extra = particle.extra;
-        self.particles[y][x].clock = new_clock;
-        
+    pub(crate) fn update_particle_data(&mut self, x: usize, y: usize, particle: Particle) {
+        self.particles[y][x] = particle;
+
         // All this hue shifting mangling should be done on the GPU
         // Sadly I can't send an array of floats to the GPU because macroquad
         // shader uniforms don't support that, so I have to compute in the CPU
@@ -293,14 +286,14 @@ impl SimulationState {
             self.particle_definitions[particle.id as usize].color_l,
         );
 
-        let h = (h as f32 + particle.extra as f32 / 100.0) % 1.0;
-        let (r,g,b) = hsl_to_rgb(h, s, l);
+        let h = (h as f32 + particle.hue_shift as f32 / 100.0) % 1.0;
+        let (r, g, b) = hsl_to_rgb(h, s, l);
 
         let start_index = (y * self.width + x) * 4;
         self.color_buffer[start_index] = (r * 255.0) as u8;
         self.color_buffer[start_index + 1] = (g * 255.0) as u8;
         self.color_buffer[start_index + 2] = (b * 255.0) as u8;
-        self.color_buffer[start_index + 3] = ((particle.light as u16 * 255) / 100) as u8;
+        self.color_buffer[start_index + 3] = ((particle.opacity as u16 * 255) / 100) as u8;
     }
 
     pub(crate) fn set_particle_at_unchecked(
@@ -309,7 +302,8 @@ impl SimulationState {
         y: usize,
         particle: Particle,
     ) -> () {
-        self.update_particle_data(x, y, particle, !self.clock);
+        self.update_particle_data(x, y, particle);
+        self.particles[y][x].clock = !self.clock;
     }
 
     pub(crate) fn set_particle_at_unchecked_relaxed(
@@ -318,7 +312,7 @@ impl SimulationState {
         y: usize,
         particle: Particle,
     ) -> () {
-        self.update_particle_data(x, y, particle, self.clock);
+        self.update_particle_data(x, y, particle);
     }
 
     pub fn get_particles(&self) -> &Vec<Vec<Particle>> {

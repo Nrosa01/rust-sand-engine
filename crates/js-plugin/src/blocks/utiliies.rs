@@ -5,8 +5,12 @@ use super::*;
     rename_all = "camelCase"
 )]
 pub enum ParticlePropierties {
-    Light,
+    Opacity,
+    HueShift,
     Extra,
+    Extra2,
+    Extra3,
+    Extra4,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]

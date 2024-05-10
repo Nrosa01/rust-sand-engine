@@ -16,6 +16,7 @@ impl Plugin for Sand {
         PluginResult {
             name: String::from("Sand"),
             color: app_core::Color::from_hex(0xFFFF00),
+            hue: app_core::Vec2::new(0.0, 1.0),
             ..Default::default()
         }
     }
