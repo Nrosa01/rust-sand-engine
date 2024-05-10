@@ -15,6 +15,7 @@ pub(crate) use crate::custom_range::*;
 pub use crate::simulation::*;
 pub(crate) use crate::order_scheme::*;
 pub use crate::color::*;
+pub use crate::color::constants::*;
 pub use crate::vec2::*;
 
 pub const TO_NORMALIZED_COLOR: f32 = 1.0 / 255.0;

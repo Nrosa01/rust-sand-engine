@@ -81,14 +81,15 @@ impl SimulationState {
             frame_count: 0,
         };
 
-        state.add_or_replace_particle_definition(ParticleCommonData {
-            name: String::from("Empty"),
-            color:  [204, 225, 251, 255],
-            rand_alpha_min: 1,
-            rand_alpha_max: 1,
-            rand_extra_min: 0,
-            rand_extra_max: 0,
-        });
+        state.add_or_replace_particle_definition(
+            PluginResult {
+                name: String::from("Empty"),
+                color: Color::from_rgba(204, 225, 251, 255),
+                alpha: Vec2 { x: 1.0, y: 1.0 },
+                extra: Vec2 { x: 0.0, y: 0.0 },
+            }
+            .into(),
+        );
 
         state
     }
@@ -154,7 +155,10 @@ impl SimulationState {
     }
 
     // Returns Some(id) if particle was updated None if it was added
-    pub(crate) fn add_or_replace_particle_definition(&mut self, particle_definition: ParticleCommonData) -> Option<usize>{
+    pub(crate) fn add_or_replace_particle_definition(
+        &mut self,
+        particle_definition: ParticleCommonData,
+    ) -> Option<usize> {
         let name = particle_definition.name.to_lowercase();
 
         if self.particle_name_to_id.contains_key(&name) {
@@ -163,8 +167,10 @@ impl SimulationState {
             Some(id as usize)
         } else {
             self.particle_definitions.push(particle_definition);
-            self.particle_name_to_id
-                .insert(name.to_lowercase().clone(), (self.particle_definitions.len() - 1) as u8);
+            self.particle_name_to_id.insert(
+                name.to_lowercase().clone(),
+                (self.particle_definitions.len() - 1) as u8,
+            );
 
             println!("Added or updated particle definition: {}", name);
             None
@@ -182,7 +188,6 @@ impl SimulationState {
                 *value -= 1;
             }
         });
-
 
         // We have to update the particle buffer as indices higher than the removed one will be shifted
         // If the index is the same as the removed one we'll just replace it with an empty particle
@@ -264,28 +269,47 @@ impl SimulationState {
         self.set_particle_at_unchecked(x, y, self.new_particle(particle_id));
     }
 
+    pub(crate) fn update_particle_data(
+        &mut self,
+        x: usize,
+        y: usize,
+        particle: Particle,
+        new_clock: u8,
+    ) {
+        self.particles[y][x].id = particle.id;
+        self.particles[y][x].light = particle.light;
+        self.particles[y][x].extra = particle.extra;
+        self.particles[y][x].clock = new_clock;
+        
+        // All this hue shifting mangling should be done on the GPU
+        // Sadly I can't send an array of floats to the GPU because macroquad
+        // shader uniforms don't support that, so I have to compute in the CPU
+
+        // It has a noticeable performance impact. But for once I'll sacrifice
+        // performance for a feature, I'll try to optimize this later
+        let (h, s, l) = (
+            self.particle_definitions[particle.id as usize].color_h,
+            self.particle_definitions[particle.id as usize].color_s,
+            self.particle_definitions[particle.id as usize].color_l,
+        );
+
+        let h = (h as f32 + particle.extra as f32 / 100.0) % 1.0;
+        let (r,g,b) = hsl_to_rgb(h, s, l);
+
+        let start_index = (y * self.width + x) * 4;
+        self.color_buffer[start_index] = (r * 255.0) as u8;
+        self.color_buffer[start_index + 1] = (g * 255.0) as u8;
+        self.color_buffer[start_index + 2] = (b * 255.0) as u8;
+        self.color_buffer[start_index + 3] = ((particle.light as u16 * 255) / 100) as u8;
+    }
+
     pub(crate) fn set_particle_at_unchecked(
         &mut self,
         x: usize,
         y: usize,
         particle: Particle,
     ) -> () {
-        self.particles[y][x].id = particle.id;
-        self.particles[y][x].light = particle.light;
-        self.particles[y][x].extra = particle.extra;
-        self.particles[y][x].clock = !self.clock;
-        let color = self.particle_definitions[particle.id as usize].color;
-
-        // This was better to read, but it uses unsafe code under the hood
-        // self.image.get_image_data_mut()[y * self.width + x] = [255,255,255,255];
-
-        // Wasm lto optimizes this better than the above
-        let start_index = (y * self.width + x) * 4;
-        self.color_buffer[start_index] = color[0];
-        self.color_buffer[start_index + 1] = color[1];
-        self.color_buffer[start_index + 2] = color[2];
-        self.color_buffer[start_index + 3] = ((particle.light as u16 * 255) / 100) as u8;
-        // self.color_buffer[start_index + 3] = particle.light;
+        self.update_particle_data(x, y, particle, !self.clock);
     }
 
     pub(crate) fn set_particle_at_unchecked_relaxed(
@@ -294,26 +318,8 @@ impl SimulationState {
         y: usize,
         particle: Particle,
     ) -> () {
-        self.particles[y][x].id = particle.id;
-        self.particles[y][x].light = particle.light;
-        self.particles[y][x].extra = particle.extra;
-        // self.particles[y][x].clock = !self.clock; // Litetarlly that's the only difference
-        // I could also add a parameter to the function, but that would incur into branching, having to see if update_clock etc
-        // I prefer to just duplicate code
-        let color = self.particle_definitions[particle.id as usize].color;
-
-        // This was better to read, but it uses unsafe code under the hood
-        // self.image.get_image_data_mut()[y * self.width + x] = [255,255,255,255];
-
-        // Wasm lto optimizes this better than the above
-        let start_index = (y * self.width + x) * 4;
-        self.color_buffer[start_index] = color[0];
-        self.color_buffer[start_index + 1] = color[1];
-        self.color_buffer[start_index + 2] = color[2];
-        self.color_buffer[start_index + 3] = ((particle.light as u16 * 255) / 100) as u8;
-        // self.color_buffer[start_index + 3] = particle.light;
+        self.update_particle_data(x, y, particle, self.clock);
     }
-
 
     pub fn get_particles(&self) -> &Vec<Vec<Particle>> {
         &self.particles
@@ -451,8 +457,7 @@ impl SimulationState {
                 self.current_x = x;
                 self.current_y = y;
                 let current_particle = self.particles[y][x];
-                if current_particle.clock != self.clock
-                {
+                if current_particle.clock != self.clock {
                     continue;
                 }
 
@@ -461,7 +466,7 @@ impl SimulationState {
 
                 // Make sure the particle is updated next frame and also that is updated next frame
                 // If the user makes some operation that doesn't change the particle, its clock won't change so to avoid that we do this patch
-                
+
                 // But for some reason calling this single line here makes the simulation twice slower
                 // Not havint his only affects one kind of block and it's still easily solvable modifying that block
                 // so even if it's not formally correct, I'll leave it like this, but I'll keep this comment as a reminder
