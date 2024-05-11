@@ -9,21 +9,6 @@ pub struct Color {
     pub a: f32,
 }
 
-/// Build a color from 4 components of 0..255 values
-/// This is a temporary solution and going to be replaced with const fn,
-/// waiting for [this issue](https://github.com/rust-lang/rust/issues/57241) to be resolved.
-#[macro_export]
-macro_rules! color_u8 {
-    ($r:expr, $g:expr, $b:expr, $a:expr) => {
-        Color::new(
-            $r as f32 / 255.,
-            $g as f32 / 255.,
-            $b as f32 / 255.,
-            $a as f32 / 255.,
-        )
-    };
-}
-
 impl Into<[u8; 4]> for Color {
     fn into(self) -> [u8; 4] {
         [
@@ -42,6 +27,17 @@ impl Into<Color> for [u8; 4] {
             self[1] as f32 / 255.,
             self[2] as f32 / 255.,
             self[3] as f32 / 255.,
+        )
+    }
+}
+
+impl Into<Color> for [u8; 3] {
+    fn into(self) -> Color {
+        Color::new(
+            self[0] as f32 / 255.,
+            self[1] as f32 / 255.,
+            self[2] as f32 / 255.,
+            1.,
         )
     }
 }

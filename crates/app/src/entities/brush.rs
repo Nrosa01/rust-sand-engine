@@ -62,7 +62,7 @@ impl Entity for Brush {
             if mouse_wheel != 0.0 {
                 let sim_width = 300;
 
-                let sensitivity = WINDOW_WIDTH as isize / sim_width as isize * 5;
+                let sensitivity = crate::WINDOW_WIDTH as isize / sim_width as isize * 5;
                 let sign = mouse_wheel.signum() as isize;
                 self.radius = self.radius + sign * sensitivity;
 
