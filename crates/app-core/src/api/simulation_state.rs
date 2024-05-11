@@ -291,7 +291,8 @@ impl SimulationState {
             self.particle_definitions[particle.id as usize].color_hsl2[2],
         );
         
-        let h = (h as f32 + particle.hue_shift as f32 / 100.0) % 1.0;
+        let h = (h + particle.hue_shift as f32 / 100.0) % 1.0;
+        let h2 = (h2 + particle.hue_shift as f32 / 100.0) % 1.0;
         let (r, g, b) = hsl_to_rgb(h, s, l);
         let (r2, g2, b2) = hsl_to_rgb(h2, s2, l2);
 
