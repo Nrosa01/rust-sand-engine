@@ -82,24 +82,28 @@ impl Simulation {
         Ok(&self.simulation_state.get_particle_color(id))
     }
 
+
     pub fn add_plugin(&mut self, plugin: Box<dyn Plugin>) -> () {
         let mut plugin = plugin;
 
         // The simulation state returns the id of the particle definition if it already exists
-        let id = self.simulation_state.add_or_replace_particle_definition(plugin.register().into());
+        let id = self
+            .simulation_state
+            .add_or_replace_particle_definition(plugin.register().into());
 
-        match id
-        {
+        match id {
             Some(id) => {
                 self.plugin_data.plugins[id] = plugin;
+                self.plugin_data.plugins[id].on_plugin_changed(&self.simulation_state);
                 // Maybe it was just a color change
                 self.simulation_state.repaint();
-            },
+            }
             None => {
                 self.plugin_data.plugins.push(plugin);
             }
         }
         
+        #[cfg(not(target_family = "wasm"))] // This shouldnt be here, this is because of our wasm version specific thing...
         self.plugin_data.notify(&self.simulation_state);
     }
 

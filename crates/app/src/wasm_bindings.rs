@@ -155,6 +155,6 @@ pub fn pixel_creator_api_crate_version() -> u32
     (1 << 24) + (0 << 16) + 0
 }
 
-extern "C" {
-    pub fn send_to_js(data: sapp_jsutils::JsObject);
-}
+// extern "C" {
+//     pub fn send_to_js(data: sapp_jsutils::JsObject);
+// }

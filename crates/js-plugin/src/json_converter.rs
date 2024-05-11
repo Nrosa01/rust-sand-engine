@@ -1,4 +1,4 @@
-use app_core::{ ParticleApi, PluginResult, Vec2};
+use app_core::{ ParticleApi, PluginResult };
 use json::JsonValue;
 
 use crate::{blocks::Actions, plugins::JSPlugin};

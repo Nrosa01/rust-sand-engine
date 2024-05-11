@@ -6,7 +6,7 @@ use egui_macroquad::macroquad::{
     window::*,
 };
 
-use crate::{push_command, Command, Entity, WINDOW_WIDTH};
+use crate::{push_command, Command, Entity};
 
 // I'm just mapping the mouse position to the texture coordinates
 fn mouse_pos_to_square(width: usize, height: usize) -> (isize, isize) {
