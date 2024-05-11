@@ -14,8 +14,7 @@ pub trait Plugin {
 pub struct PluginResult {
     pub name: String,
     pub color: Color,
-    pub hue: Vec2,
-    pub extra: Vec2,
+    pub color2: Color,
 }
 
 impl Default for PluginResult {
@@ -23,8 +22,7 @@ impl Default for PluginResult {
         PluginResult {
             name: String::from("Empty"),
             color: NOT_BLACK,
-            hue: Vec2 { x: 0.9, y: 1.0 },
-            extra: Vec2 { x: 0.0, y: 0.0 },
+            color2: NOT_BLACK,
         }
     }
 }
@@ -33,16 +31,16 @@ impl From<PluginResult> for ParticleCommonData {
     fn from(plugin_result: PluginResult) -> Self {
 
         let color = Color::from(plugin_result.color);
+        let color2 = Color::from(plugin_result.color2);
         let (h,s,l) = rgb_to_hsl(color);
+        let (h2, s2, l2) = rgb_to_hsl(color2);
 
         ParticleCommonData {
             name: plugin_result.name,
             color: plugin_result.color.into(),
-            rand_hue_min: (plugin_result.hue.x * FROM_NORMALIZED_TO_COLOR) as u8,
-            rand_hue_max: (plugin_result.hue.y * FROM_NORMALIZED_TO_COLOR) as u8,
-            color_h: h,
-            color_s: s,
-            color_l: l,
+            color2: plugin_result.color2.into(),
+            color_hsl: [h, s, l],
+            color_hsl2: [h2, s2, l2],
         }
     }
 }
@@ -65,11 +63,9 @@ impl Plugin for Empty {
 pub struct ParticleCommonData {
     pub name: String,
     pub color: [u8; 4],
-    pub color_h: f32,
-    pub color_s: f32,
-    pub color_l: f32,
-    pub rand_hue_min: u8,
-    pub rand_hue_max: u8,
+    pub color2: [u8; 4],
+    pub color_hsl: [f32; 3],
+    pub color_hsl2: [f32; 3],
 }
 
 // impl ParticleCommonData {

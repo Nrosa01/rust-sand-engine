@@ -85,8 +85,7 @@ impl SimulationState {
             PluginResult {
                 name: String::from("Empty"),
                 color: Color::from_rgba(204, 225, 251, 255),
-                hue: Vec2 { x: 1.0, y: 1.0 },
-                extra: Vec2 { x: 0.0, y: 0.0 },
+                color2: Color::from_rgba(204, 225, 251, 255),
             }
             .into(),
         );
@@ -247,19 +246,15 @@ impl SimulationState {
     }
 
     pub fn new_particle(&self, particle_id: u8) -> Particle {
-        let particle_definition = &self.particle_definitions[particle_id as usize];
-        let min_alpha = particle_definition.rand_hue_min as i32;
-        let max_alpha = particle_definition.rand_hue_max as i32;
-
         Particle {
             id: particle_id,
-            opacity: self.gen_range(min_alpha, max_alpha) as u8,
+            opacity: 100,
             hue_shift: 0,
+            color_fade: self.gen_range(0, 100) as u8,
             clock: !self.clock,
             extra: 0,
             extra2: 0,
             extra3: 0,
-            extra4: 0,
         }
     }
 
@@ -272,6 +267,10 @@ impl SimulationState {
     }
 
     pub(crate) fn update_particle_data(&mut self, x: usize, y: usize, particle: Particle) {
+        fn lerp(a: f32, b: f32, t: f32) -> f32 {
+            a + (b - a) * t
+        }
+        
         self.particles[y][x] = particle;
 
         // All this hue shifting mangling should be done on the GPU
@@ -281,13 +280,24 @@ impl SimulationState {
         // It has a noticeable performance impact. But for once I'll sacrifice
         // performance for a feature, I'll try to optimize this later
         let (h, s, l) = (
-            self.particle_definitions[particle.id as usize].color_h,
-            self.particle_definitions[particle.id as usize].color_s,
-            self.particle_definitions[particle.id as usize].color_l,
+            self.particle_definitions[particle.id as usize].color_hsl[0],
+            self.particle_definitions[particle.id as usize].color_hsl[1],
+            self.particle_definitions[particle.id as usize].color_hsl[2],
         );
 
+        let (h2, s2, l2) = (
+            self.particle_definitions[particle.id as usize].color_hsl2[0],
+            self.particle_definitions[particle.id as usize].color_hsl2[1],
+            self.particle_definitions[particle.id as usize].color_hsl2[2],
+        );
+        
         let h = (h as f32 + particle.hue_shift as f32 / 100.0) % 1.0;
         let (r, g, b) = hsl_to_rgb(h, s, l);
+        let (r2, g2, b2) = hsl_to_rgb(h2, s2, l2);
+
+        let r = lerp(r, r2, particle.color_fade as f32 / 100.0);
+        let g = lerp(g, g2, particle.color_fade as f32 / 100.0);
+        let b = lerp(b, b2, particle.color_fade as f32 / 100.0);
 
         let start_index = (y * self.width + x) * 4;
         self.color_buffer[start_index] = (r * 255.0) as u8;

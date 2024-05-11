@@ -54,8 +54,7 @@ fn register(&mut self) -> PluginResult {
         PluginResult {
             name: String::from("Lava"),
             color: app_core::Color::from_rgba(255, 12, 12, 255),
-            hue: Vec2 { x: 1.0, y: 1.0 },
-            ..Default::default()
+            color2: app_core::Color::from_rgba(255, 12, 12, 255),
         }
     }
 

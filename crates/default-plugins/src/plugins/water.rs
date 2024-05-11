@@ -24,8 +24,7 @@ fn register(&mut self) -> PluginResult {
         PluginResult {
             name: String::from("Water"),
             color: app_core::Color::from_hex(0x00FFFF),
-            hue: Vec2 { x: 1.0, y: 1.0 },
-            ..Default::default()
+            color2: app_core::Color::from_hex(0x00FFFF),
         }
     }
 

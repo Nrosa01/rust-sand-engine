@@ -7,10 +7,10 @@ use super::*;
 pub enum ParticlePropierties {
     Opacity,
     HueShift,
+    ColorFade,
     Extra,
     Extra2,
     Extra3,
-    Extra4,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]

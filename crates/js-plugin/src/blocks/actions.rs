@@ -329,12 +329,12 @@ impl Actions {
                         particle.extra3 = particle.extra3.saturating_add_signed(number).min(100); // This is to avoid overflow
                         api.set_relaxed(direction[0], direction[1], particle);
                     }),
-                    ParticlePropierties::Extra4 => Box::new(move |_, api| {
+                    ParticlePropierties::ColorFade => Box::new(move |_, api| {
                         let direction = direction.get_direction(api);
                         let direction = api.get_transformation().transform(&direction);
                         let number = number.to_number(api) as i8;
                         let mut particle = api.get(direction[0], direction[1]);
-                        particle.extra4 = particle.extra4.saturating_add_signed(number).min(100); // This is to avoid overflow
+                        particle.color_fade = particle.color_fade.saturating_add_signed(number).min(100); // This is to avoid overflow
                         api.set_relaxed(direction[0], direction[1], particle);
                     }),
                 }
@@ -384,12 +384,12 @@ impl Actions {
                     particle.extra3 = number;
                     api.set_relaxed(direction[0], direction[1], particle);
                 }),
-                ParticlePropierties::Extra4 => Box::new(move |_, api| {
+                ParticlePropierties::ColorFade => Box::new(move |_, api| {
                     let direction = direction.get_direction(api);
                     let direction = api.get_transformation().transform(&direction);
                     let number = number.to_number(api).clamp(0, 100) as u8;
                     let mut particle = api.get(direction[0], direction[1]);                        
-                    particle.extra4 = number;
+                    particle.color_fade = number;
                     api.set_relaxed(direction[0], direction[1], particle);
                 }),
             },

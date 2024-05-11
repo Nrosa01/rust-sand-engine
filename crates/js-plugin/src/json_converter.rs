@@ -28,59 +28,20 @@ fn get_color(json: &JsonValue) -> [u8; 4] {
     }
 }
 
-fn get_alpha(json: &JsonValue) -> Vec2 {
-    if json.is_number() {
-        let alpha = json.as_f64().unwrap();
-        Vec2 {
-            x: alpha as f32,
-            y: alpha as f32,
-        }
-    } else if json.is_array() {
-        let min = json[0].as_f64().unwrap();
-        let max = json[1].as_f64().unwrap();
-        Vec2 {
-            x: min as f32,
-            y: max as f32,
-        }
-    } else {
-        PluginResult::default().hue
-    }
-}
-
-fn get_extra(json: &JsonValue) -> Vec2 {
-    if json.is_number() {
-        let extra = json.as_f64().unwrap();
-        Vec2 {
-            x: extra as f32,
-            y: extra as f32,
-        }
-    } else if json.is_array() {
-        let min = json[0].as_f64().unwrap();
-        let max = json[1].as_f64().unwrap();
-        Vec2 {
-            x: min as f32,
-            y: max as f32,
-        }
-    } else {
-        PluginResult::default().extra
-    }
-}
 
 pub fn to_plugin_result(json: &JsonValue) -> Result<PluginResult, String> {
     let name = json["name"].as_str().ok_or("name")?;
     let color = get_color(&json["color"]);
-    let alpha = get_alpha(&json["alpha"]);
-    let extra = get_extra(&json["extra"]);
+    let color2 = get_color(&json["color2"]);
 
-    if json["color"].is_empty() || json["color"].is_null() {
+    if json["color"].is_empty() || json["color"].is_null() || json["color2"].is_empty() || json["color2"].is_null(){
         return Err("color was empty or null".to_string());
     }
 
     Ok(PluginResult {
         name: name.to_string(),
         color: color.into(),
-        hue: alpha,
-        extra: extra,
+        color2: color2.into(),
     })
 }
 
