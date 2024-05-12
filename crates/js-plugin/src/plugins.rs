@@ -22,9 +22,9 @@ pub struct JSPlugin
 
 impl JSPlugin
 {
-    pub fn new(json: &str) -> Result<JSPlugin, String>
+    pub fn new(json: &str) -> Result<JSPlugin, serde_json::Error>
     {
-        let data = serde_json::from_str(json).map_err(|e| e.to_string())?;
+        let data = serde_json::from_str(json)?;
 
        Ok(JSPlugin{
            update: Box::new(|_, _| {}),
