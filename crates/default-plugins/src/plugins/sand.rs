@@ -16,11 +16,11 @@ impl Plugin for Sand {
         PluginResult {
             name: String::from("Sand"),
             color: app_core::Color::from_hex(0xFFFF00),
-            ..Default::default()
+            color2: app_core::Color::from_hex(0xFFFF00),
         }
     }
 
-    fn update(&self, _: Particle, api: &mut ParticleApi) {
+    fn update(&self, api: &mut ParticleApi) {
         let random_horizontal = api.gen_range(-1, 1);
         let down = -1;
 
@@ -29,7 +29,7 @@ impl Plugin for Sand {
                 swap_if_match(api, -random_horizontal, down, &self.collision_targets);
     }
 
-    fn post_update(&mut self, api: &ParticleApi) {
+    fn on_plugin_changed(&mut self, api: &ParticleApi) {
         self.collision_targets[1] = api.id_from_name("Water");
     }
 }

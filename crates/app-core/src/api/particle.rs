@@ -1,8 +1,12 @@
 #[derive(Clone, Debug, Copy)]
 pub struct Particle {
     pub id: u8,
-    pub light: u8,
+    pub opacity: u8,
+    pub hue_shift: u8,
+    pub color_fade: u8,
     pub extra: u8,
+    pub extra2: u8,
+    pub extra3: u8,
     pub(crate) clock: u8,
 }
 
@@ -11,8 +15,12 @@ impl Particle {
         Particle {
             id: 0,
             clock: 0,
-            light: 255,
+            opacity: 100,
+            color_fade: 0,
+            hue_shift: 0,
             extra: 0,
+            extra2: 0,
+            extra3: 0,
         }
     }
 
@@ -21,23 +29,35 @@ impl Particle {
         Particle {
             id,
             clock: 0,
-            light: 255,
+            opacity: 100,
+            hue_shift: 0,
+            color_fade: 0,
             extra: 0,
+            extra2: 0,
+            extra3: 0,
         }
     }
 
     pub const EMPTY: Particle = Particle {
         id: 0,
         clock: 0,
-        light: 255,
+        opacity: 100,
+        color_fade: 0,
+        hue_shift: 0,
         extra: 0,
+        extra2: 0,
+        extra3: 0,
     };
 
-    pub(crate) const INVALID: Particle = Particle {
+    pub const INVALID: Particle = Particle {
         id: u8::MAX,
         clock: 0,
-        light: 255,
+        opacity: 100,
+        color_fade: 0,
+        hue_shift: 0,
         extra: 0,
+        extra2: 0,
+        extra3: 0,
     };
 }
 

@@ -1,0 +1,84 @@
+{
+  "name": "TestParticle",
+  "version": "1.0.0",
+  "color": [204, 198, 159],
+  "alpha": [0.9, 1],
+  "update": [
+    {
+      "action": "randomTransformation",
+      "data": {
+        "transformation": "HorizontalReflection",
+        "block": {
+          "action": "if",
+          "data": {
+            "condition": {
+              "block": "checkTypesInDirection",
+              "data": {
+                "direction": { "direction": "constant", "data": [0, -1] },
+                "types": [
+                  { "particle_type": "fromName", "data": "empty" },
+                  { "particle_type": "fromName", "data": "water" }
+                ]
+              }
+            },
+            "result": {
+              "action": "swap",
+              "data": {
+                "direction": { "direction": "constant", "data": [0, -1] }
+              }
+            },
+            "else": {
+              "action": "if",
+              "data": {
+                "condition": {
+                  "block": "checkTypesInDirection",
+                  "data": {
+                    "direction": { "direction": "constant", "data": [-1, -1] },
+                    "types": [
+                      { "particle_type": "fromName", "data": "empty" },
+                      { "particle_type": "fromName", "data": "water" }
+                    ]
+                  }
+                },
+                "result": {
+                  "action": "swap",
+                  "data": {
+                    "direction": { "direction": "constant", "data": [-1, -1] }
+                  }
+                },
+                "else": {
+                  "action": "if",
+                  "data": {
+                    "condition": {
+                      "block": "checkTypesInDirection",
+                      "data": {
+                        "direction": {
+                          "direction": "constant",
+                          "data": [1, -1]
+                        },
+                        "types": [
+                          { "particle_type": "fromName", "data": "empty" },
+                          { "particle_type": "fromName", "data": "water" }
+                        ]
+                      }
+                    },
+                    "result": {
+                      "action": "swap",
+                      "data": {
+                        "direction": {
+                          "direction": "constant",
+                          "data": [1, -1]
+                        }
+                      }
+                    },
+                    "else": null
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

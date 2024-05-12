@@ -12,7 +12,7 @@ impl Rock {
 }
 
 impl Plugin for Rock {
-    fn register(&mut self) -> PluginResult {
+fn register(&mut self) -> PluginResult {
         PluginResult {
             name: String::from("Rock"),
             color: app_core::Color::from_rgba(123, 133, 145, 255),
@@ -20,7 +20,9 @@ impl Plugin for Rock {
         }
     }
 
-    fn update(&self, cell: Particle, api: &mut ParticleApi) {
+    fn update(&self, api: &mut ParticleApi) {
+        let cell = api.get_current();
+
         if cell.extra == 0 {
             return;
         }
@@ -45,11 +47,7 @@ impl Plugin for Rock {
                 api.set(neighbor.x, neighbor.y, cell);
                 api.set(0, 0, cell);
             }
-            // If there is none to transfer the extra, this will decrease at random period.
-            // This way we can simulate the rock being hot even when not in touch with lava
-            else if api.gen_range(0, 100) < 10{
-                api.set(0, 0, cell);
-            }
+            
 
             if cell.extra == 0 {
                 return;
@@ -57,7 +55,7 @@ impl Plugin for Rock {
         }
     }
 
-    fn post_update(&mut self, api: &ParticleApi) {
+    fn on_plugin_changed(&mut self, api: &ParticleApi) {
         self.water_id = api.id_from_name("Water");
     }
 }

@@ -50,16 +50,16 @@ impl Lava {
 }
 
 impl Plugin for Lava {
-    fn register(&mut self) -> PluginResult {
+fn register(&mut self) -> PluginResult {
         PluginResult {
             name: String::from("Lava"),
             color: app_core::Color::from_rgba(255, 12, 12, 255),
-            alpha: Vec2 { x: 1.0, y: 1.0 },
-            ..Default::default()
+            color2: app_core::Color::from_rgba(255, 12, 12, 255),
         }
     }
 
-    fn update(&self, cell: Particle, api: &mut ParticleApi) {
+    fn update(&self, api: &mut ParticleApi) {
+        let cell = api.get_current();
         let random_horizontal = api.gen_range(-1, 1);
         let down = -1;
 
@@ -83,7 +83,7 @@ impl Plugin for Lava {
             || move_if_empty(api, -random_horizontal, 0);
     }
 
-    fn post_update(&mut self, api: &ParticleApi) {
+    fn on_plugin_changed(&mut self, api: &ParticleApi) {
         self.water_id = api.id_from_name("Water");
         self.rock_id = api.id_from_name("Rock");
         self.steam_id = api.id_from_name("Steam");

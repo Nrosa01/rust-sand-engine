@@ -1,0 +1,56 @@
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>Macroquad Sand</title>
+    <style>
+        html,
+        body,
+        canvas {
+            margin: 0px;
+            padding: 0px;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            position: absolute;
+            background: black;
+            z-index: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="glcanvas" tabindex='1'></canvas>
+    <!-- Minified and statically hosted version of https://github.com/not-fl3/macroquad/blob/master/js/mq_js_bundle.js -->
+    <script src="https://not-fl3.github.io/miniquad-samples/mq_js_bundle.js"></script>
+    <script src="https://not-fl3.github.io/miniquad-samples/sapp_jsutils.js"></script>
+    <script>load("app.wasm");</script> <!-- Your compiled wasm file -->
+    <script type="module">
+        // load data.json and add it to thisGlobal
+        globalThis.data = null;
+        fetch('data.json')
+            .then(response => response.json())
+            .then(data => {
+                globalThis.data = data;
+            });
+       
+        fetch("replicant.json")
+            .then(response => response.json())
+            .then(data => {
+                globalThis.replicant = data;
+            });
+
+
+        //await 1 second to let the wasm to be loaded
+        await new Promise(r => setTimeout(r, 1000));
+        console.log("Promised fiished")
+        console.log(consume_js_object(wasm_exports.receive_json_plugin(js_object('{"name":"John", "age":30, "car":null}'))))
+        console.log(consume_js_object(wasm_exports.receive_json_plugin(js_object(JSON.stringify(data)))))
+        console.log(consume_js_object(wasm_exports.receive_json_plugin(js_object(JSON.stringify(replicant)))))
+
+        /*  var rust = wasm_exports.receive_json_plugin(js_object(data))
+        console.log(consume_js_object(rust));  */
+    </script>
+</body>
+
+</html>

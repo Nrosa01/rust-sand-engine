@@ -20,7 +20,7 @@ impl Plugin for Dust {
         }
     }
 
-    fn update(&self, _: Particle, api: &mut ParticleApi) {
+    fn update(&self, api: &mut ParticleApi) {
         let random_horizontal = api.gen_range(-1, 1);
         let down = -1;
 

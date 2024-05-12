@@ -1,3 +1,4 @@
 {
-    "workbench.activityBar.location": "top"
+    "workbench.activityBar.location": "top",
+    "rust-analyzer.showUnlinkedFileNotification": false
 }
